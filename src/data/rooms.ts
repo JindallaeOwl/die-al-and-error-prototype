@@ -8,11 +8,17 @@ export interface EnemySpawn {
   y: number;
 }
 
+export interface ObstacleSpawn {
+  x: number;
+  y: number;
+}
+
 export interface RoomTemplate {
   id: string;
   roomType: RoomType;
   accentColor: number;
   spawnSets: EnemySpawn[][];
+  obstacles?: ObstacleSpawn[];
 }
 
 export const START_ROOM_TEMPLATE: RoomTemplate = {
@@ -60,6 +66,10 @@ export const COMBAT_ROOM_TEMPLATES: RoomTemplate[] = [
         { enemyId: 'shooter', x: 710, y: 400 },
       ],
     ],
+    obstacles: [
+      { x: 400, y: 260 },
+      { x: 560, y: 380 },
+    ],
   },
   {
     id: 'burnt-cross',
@@ -78,6 +88,10 @@ export const COMBAT_ROOM_TEMPLATES: RoomTemplate[] = [
         { enemyId: 'chaser', x: 480, y: 320 },
       ],
     ],
+    obstacles: [
+      { x: 350, y: 320 },
+      { x: 610, y: 320 },
+    ],
   },
   {
     id: 'staggered-rail',
@@ -95,6 +109,10 @@ export const COMBAT_ROOM_TEMPLATES: RoomTemplate[] = [
         { enemyId: 'dasher', x: 720, y: 405 },
         { enemyId: 'chaser', x: 480, y: 320 },
       ],
+    ],
+    obstacles: [
+      { x: 480, y: 260 },
+      { x: 480, y: 380 },
     ],
   },
   {

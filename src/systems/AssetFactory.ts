@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { TextureKeys } from '../config/assets';
+import { itemIconKey, TextureKeys } from '../config/assets';
+import { PASSIVE_ITEMS } from '../data/items';
 
 export function createPlaceholderTextures(scene: Phaser.Scene): void {
   createPlayerTexture(scene, TextureKeys.player, 0x6ff5ff, 0x12343d);
@@ -12,13 +13,14 @@ export function createPlaceholderTextures(scene: Phaser.Scene): void {
   createBossTexture(scene);
   createDoorTexture(scene, TextureKeys.doorHorizontal, 86, 24);
   createDoorTexture(scene, TextureKeys.doorVertical, 24, 86);
-  createItemTexture(scene);
+  createPassiveItemIcons(scene);
   createKeyTexture(scene);
   createBombTexture(scene);
   createCoinTexture(scene);
   createChestTexture(scene);
   createFloorTile(scene);
   createWallTexture(scene);
+  createObstacleTexture(scene);
 }
 
 function createPlayerTexture(scene: Phaser.Scene, key: string, fill: number, stroke: number): void {
@@ -118,16 +120,114 @@ function createDoorTexture(scene: Phaser.Scene, key: string, width: number, heig
   graphics.destroy();
 }
 
-function createItemTexture(scene: Phaser.Scene): void {
+// Placeholder icons: a tinted badge circle plus a shape hinting at the
+// item's effect, so pickups read as distinct even before real pixel art
+// replaces them (only tint currently distinguishes them, which is hard to
+// tell apart at a glance).
+function createPassiveItemIcons(scene: Phaser.Scene): void {
+  for (const item of PASSIVE_ITEMS) {
+    createItemIcon(scene, item.id, item.tint);
+  }
+}
+
+function createItemIcon(scene: Phaser.Scene, id: string, tint: number): void {
+  const symbolColor = 0x10151c;
   const graphics = scene.add.graphics();
-  graphics.fillStyle(0xffffff, 1);
-  graphics.fillCircle(16, 16, 13);
-  graphics.lineStyle(3, 0x222831, 1);
-  graphics.strokeCircle(16, 16, 12);
-  graphics.lineStyle(2, 0xffffff, 0.7);
-  graphics.strokeCircle(16, 16, 7);
-  graphics.generateTexture(TextureKeys.item, 32, 32);
+
+  graphics.fillStyle(tint, 1);
+  graphics.fillCircle(16, 16, 14);
+  graphics.lineStyle(2, symbolColor, 0.5);
+  graphics.strokeCircle(16, 16, 14);
+
+  drawItemSymbol(graphics, id, symbolColor, tint);
+
+  graphics.generateTexture(itemIconKey(id), 32, 32);
   graphics.destroy();
+}
+
+function drawItemSymbol(
+  graphics: Phaser.GameObjects.Graphics,
+  id: string,
+  color: number,
+  tint: number,
+): void {
+  switch (id) {
+    case 'pulse-relay': {
+      // fire rate: two small ">" chevrons, rapid-fire cue
+      graphics.fillStyle(color, 1);
+      graphics.fillTriangle(9, 9, 9, 23, 15, 16);
+      graphics.fillTriangle(17, 9, 17, 23, 23, 16);
+      break;
+    }
+    case 'glass-fern': {
+      // damage: a single sharp upward shard
+      graphics.fillStyle(color, 1);
+      graphics.fillTriangle(16, 7, 24, 24, 8, 24);
+      break;
+    }
+    case 'feather-coil': {
+      // move speed: one bold forward "play" arrow
+      graphics.fillStyle(color, 1);
+      graphics.fillTriangle(10, 8, 10, 24, 23, 16);
+      break;
+    }
+    case 'hot-pebble': {
+      // range + projectile speed + damage: a small flame
+      graphics.fillStyle(color, 1);
+      graphics.fillTriangle(16, 8, 22, 22, 10, 22);
+      graphics.fillCircle(16, 23, 4);
+      break;
+    }
+    case 'pocket-battery': {
+      // health: a medical cross
+      graphics.fillStyle(color, 1);
+      graphics.fillRect(13, 8, 6, 16);
+      graphics.fillRect(8, 13, 16, 6);
+      break;
+    }
+    case 'steady-pin': {
+      // fire rate + projectile speed: a steady crosshair
+      graphics.lineStyle(2, color, 1);
+      graphics.strokeCircle(16, 16, 7);
+      graphics.lineBetween(16, 5, 16, 27);
+      graphics.lineBetween(5, 16, 27, 16);
+      break;
+    }
+    case 'moon-dial': {
+      // luck: a crescent moon (dark circle bitten by a badge-colored one)
+      graphics.fillStyle(color, 1);
+      graphics.fillCircle(15, 16, 8);
+      graphics.fillStyle(tint, 1);
+      graphics.fillCircle(19, 13, 8);
+      break;
+    }
+    case 'long-echo': {
+      // range: concentric ripples
+      graphics.lineStyle(2, color, 1);
+      graphics.strokeCircle(16, 16, 4);
+      graphics.strokeCircle(16, 16, 8);
+      graphics.strokeCircle(16, 16, 12);
+      break;
+    }
+    case 'prism-lance': {
+      // charge beam ability: a prism with a beam line through it
+      graphics.fillStyle(color, 1);
+      graphics.beginPath();
+      graphics.moveTo(16, 6);
+      graphics.lineTo(25, 16);
+      graphics.lineTo(16, 26);
+      graphics.lineTo(7, 16);
+      graphics.closePath();
+      graphics.fillPath();
+      graphics.lineStyle(2, tint, 1);
+      graphics.lineBetween(9, 16, 23, 16);
+      break;
+    }
+    default: {
+      graphics.fillStyle(color, 1);
+      graphics.fillCircle(16, 16, 6);
+    }
+  }
 }
 
 function createKeyTexture(scene: Phaser.Scene): void {
@@ -196,5 +296,18 @@ function createWallTexture(scene: Phaser.Scene): void {
   graphics.lineStyle(2, 0x1b2027, 1);
   graphics.strokeRect(0, 0, 48, 48);
   graphics.generateTexture(TextureKeys.wall, 48, 48);
+  graphics.destroy();
+}
+
+function createObstacleTexture(scene: Phaser.Scene): void {
+  const graphics = scene.add.graphics();
+  graphics.fillStyle(0x6b4a2f, 1);
+  graphics.fillRoundedRect(2, 2, 36, 36, 4);
+  graphics.lineStyle(3, 0x2b1b10, 1);
+  graphics.strokeRoundedRect(2, 2, 36, 36, 4);
+  graphics.lineStyle(2, 0x8a6640, 0.8);
+  graphics.lineBetween(2, 20, 38, 20);
+  graphics.lineBetween(20, 2, 20, 38);
+  graphics.generateTexture(TextureKeys.obstacleCrate, 40, 40);
   graphics.destroy();
 }

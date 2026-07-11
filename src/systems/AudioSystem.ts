@@ -9,7 +9,8 @@ export type SoundCue =
   | 'roomClear'
   | 'bossPhaseTwo'
   | 'beamCharge'
-  | 'beamFire';
+  | 'beamFire'
+  | 'bombUse';
 
 const CUE_SETTINGS: Record<
   SoundCue,
@@ -24,6 +25,7 @@ const CUE_SETTINGS: Record<
   bossPhaseTwo: { frequency: 64, durationMs: 260, type: 'sawtooth' },
   beamCharge: { frequency: 310, durationMs: 95, type: 'sine' },
   beamFire: { frequency: 120, durationMs: 220, type: 'sawtooth' },
+  bombUse: { frequency: 58, durationMs: 300, type: 'square' },
 };
 
 export class AudioSystem {

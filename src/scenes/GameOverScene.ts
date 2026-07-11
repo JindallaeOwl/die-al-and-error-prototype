@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { TextureKeys } from '../config/assets';
-import { GAME_HEIGHT, GAME_WIDTH } from '../config/gameConfig';
+import { GAME_HEIGHT, GAME_WIDTH, RENDER_SCALE } from '../config/gameConfig';
 import { koreanFontStack, t } from '../i18n';
+import { applyRenderScale } from '../utils/render';
 
 interface GameOverData {
   clearedRooms: number;
@@ -17,6 +18,7 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   create(data: GameOverData): void {
+    applyRenderScale(this);
     this.add.tileSprite(
       GAME_WIDTH / 2,
       GAME_HEIGHT / 2,
@@ -33,6 +35,7 @@ export class GameOverScene extends Phaser.Scene {
         color: '#ff8b8b',
         stroke: '#0d1117',
         strokeThickness: 8,
+        resolution: RENDER_SCALE,
       })
       .setOrigin(0.5);
 
@@ -51,6 +54,7 @@ export class GameOverScene extends Phaser.Scene {
           color: '#f7f3e8',
           stroke: '#0d1117',
           strokeThickness: 5,
+          resolution: RENDER_SCALE,
         },
       )
       .setOrigin(0.5);
@@ -62,6 +66,7 @@ export class GameOverScene extends Phaser.Scene {
         color: '#ffe39b',
         stroke: '#0d1117',
         strokeThickness: 5,
+        resolution: RENDER_SCALE,
       })
       .setOrigin(0.5);
 

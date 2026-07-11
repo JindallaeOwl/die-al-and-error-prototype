@@ -45,7 +45,6 @@ export const en: TranslationTree = {
   },
   messages: {
     floor: 'Floor {floor}',
-    roomEntered: 'Room entered',
     roomClear: 'Room clear',
     floorCleared: 'Floor cleared',
     nextFloorOpening: 'Next floor opening',
@@ -56,6 +55,7 @@ export const en: TranslationTree = {
     bossPhaseTwo: 'Fault Warden: Phase II',
     treasureUnlocked: 'Treasure room unlocked',
     keyNeeded: 'A key is needed',
+    noBombs: 'No bombs left',
     rewardGain: '+{amount} {resource}',
     resourceFull: '{resource} is full',
     chestHealed: 'Chest: healed {amount}',
@@ -82,39 +82,39 @@ export const en: TranslationTree = {
   items: {
     pulseRelay: {
       name: 'Pulse Relay',
-      description: 'Faster rhythm for repeat shots.',
+      description: 'Fire rate increases (+0.55).',
     },
     glassFern: {
       name: 'Glass Fern',
-      description: 'A sharp little growth that boosts shot force.',
+      description: 'Damage increases (+0.45).',
     },
     featherCoil: {
       name: 'Feather Coil',
-      description: 'Lighter footwork and cleaner dodges.',
+      description: 'Move speed increases (+34).',
     },
     hotPebble: {
       name: 'Hot Pebble',
-      description: 'Shots travel farther before losing steam.',
+      description: 'Range, projectile speed, and damage all increase (+85 range, +72 speed, +0.15 damage).',
     },
     pocketBattery: {
       name: 'Pocket Battery',
-      description: 'More room for mistakes and one quick recharge.',
+      description: 'Max health increases and current health is refilled (+2 max HP, +2 heal).',
     },
     steadyPin: {
       name: 'Steady Pin',
-      description: 'A compact upgrade for control and pressure.',
+      description: 'Fire rate and projectile speed both increase (+0.35 rate, +40 speed).',
     },
     moonDial: {
       name: 'Moon Dial',
-      description: 'Better odds when a room goes quiet.',
+      description: 'Luck increases, improving reward odds (+1 luck).',
     },
     longEcho: {
       name: 'Long Echo',
-      description: 'Shots hold their line for longer.',
+      description: 'Range increases significantly (+115).',
     },
     prismLance: {
       name: 'Prism Lance',
-      description: 'Hold a shot direction to charge a piercing beam.',
+      description: 'Unlocks a charged piercing beam — hold a direction to charge and release.',
     },
   },
 };

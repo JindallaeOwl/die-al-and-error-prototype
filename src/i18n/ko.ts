@@ -45,7 +45,6 @@ export const ko: TranslationTree = {
   },
   messages: {
     floor: '{floor}층',
-    roomEntered: '방 진입',
     roomClear: '방 클리어',
     floorCleared: '층 클리어',
     nextFloorOpening: '다음 층 개방',
@@ -56,6 +55,7 @@ export const ko: TranslationTree = {
     bossPhaseTwo: 'Fault Warden: 2페이즈',
     treasureUnlocked: '보물방 개방',
     keyNeeded: '열쇠가 필요합니다',
+    noBombs: '폭탄이 없습니다',
     rewardGain: '+{amount} {resource}',
     resourceFull: '{resource} 가득',
     chestHealed: '상자: 체력 {amount} 회복',
@@ -82,39 +82,39 @@ export const ko: TranslationTree = {
   items: {
     pulseRelay: {
       name: '맥동 릴레이',
-      description: '발사 리듬이 빨라집니다.',
+      description: '연사 속도가 빨라집니다 (연사 +0.55).',
     },
     glassFern: {
       name: '유리 고사리',
-      description: '날카로운 잎이 공격력을 높입니다.',
+      description: '공격력이 올라갑니다 (공격 +0.45).',
     },
     featherCoil: {
       name: '깃털 코일',
-      description: '몸놀림이 조금 더 가벼워집니다.',
+      description: '이동 속도가 빨라집니다 (속도 +34).',
     },
     hotPebble: {
       name: '뜨거운 조약돌',
-      description: '탄환이 더 멀리 나아갑니다.',
+      description: '사거리, 탄환 속도, 공격력이 함께 오릅니다 (사거리 +85, 탄속 +72, 공격 +0.15).',
     },
     pocketBattery: {
       name: '주머니 전지',
-      description: '최대 체력과 현재 체력을 조금 채웁니다.',
+      description: '최대 체력이 늘고 체력을 즉시 채웁니다 (최대체력 +2, 회복 +2).',
     },
     steadyPin: {
       name: '고정 핀',
-      description: '정박한 의지가 전투를 안정시킵니다.',
+      description: '연사 속도와 탄환 속도가 함께 오릅니다 (연사 +0.35, 탄속 +40).',
     },
     moonDial: {
       name: '달 시계',
-      description: '방이 조용해질 때 운이 따라줍니다.',
+      description: '행운이 올라 보상 확률이 좋아집니다 (행운 +1).',
     },
     longEcho: {
       name: '긴 메아리',
-      description: '탄환의 사거리가 길어집니다.',
+      description: '사거리가 크게 늘어납니다 (사거리 +115).',
     },
     prismLance: {
       name: '프리즘 창',
-      description: '방향키를 길게 눌러 관통 빔을 충전합니다.',
+      description: '방향키를 길게 눌러 관통 빔을 쏘는 특수 공격을 얻습니다.',
     },
   },
 };

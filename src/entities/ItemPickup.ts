@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { TextureKeys } from '../config/assets';
+import { itemIconKey } from '../config/assets';
 import { DEPTH } from '../config/gameConfig';
 import type { PassiveItemDefinition } from '../data/items';
 
@@ -7,11 +7,10 @@ export class ItemPickup extends Phaser.Physics.Arcade.Sprite {
   readonly item: PassiveItemDefinition;
 
   constructor(scene: Phaser.Scene, x: number, y: number, item: PassiveItemDefinition) {
-    super(scene, x, y, TextureKeys.item);
+    super(scene, x, y, itemIconKey(item.id));
     this.item = item;
     scene.add.existing(this);
     scene.physics.add.existing(this);
-    this.setTint(item.tint);
     this.setDepth(DEPTH.item);
 
     const body = this.body as Phaser.Physics.Arcade.Body;

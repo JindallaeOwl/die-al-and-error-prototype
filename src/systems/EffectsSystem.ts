@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { DEPTH, FEEDBACK_TUNING, GAME_HEIGHT, GAME_WIDTH } from '../config/gameConfig';
+import { DEPTH, FEEDBACK_TUNING, GAME_HEIGHT, GAME_WIDTH, RENDER_SCALE } from '../config/gameConfig';
 import { koreanFontStack, t } from '../i18n';
 
 type ShakeKind = keyof typeof FEEDBACK_TUNING.cameraShake;
@@ -104,6 +104,17 @@ export class EffectsSystem {
     this.impact(x, y, 0xff7af2);
   }
 
+  obstacleBreak(x: number, y: number): void {
+    this.burst(x, y, 0xa87848, 8);
+    this.expandingRing(x, y, 0x8a6640, 16, 200);
+  }
+
+  bombBlast(x: number, y: number): void {
+    this.burst(x, y, 0xffb35a, 16);
+    this.expandingRing(x, y, 0xffd166, 40, 320);
+    this.expandingRing(x, y, 0xff8f4d, 24, 260);
+  }
+
   floatingText(x: number, y: number, text: string, color: number): void {
     const label = this.scene.add
       .text(x, y, text, {
@@ -112,6 +123,7 @@ export class EffectsSystem {
         color: Phaser.Display.Color.IntegerToColor(color).rgba,
         stroke: '#090b10',
         strokeThickness: 3,
+        resolution: RENDER_SCALE,
       })
       .setOrigin(0.5)
       .setDepth(DEPTH.effect);

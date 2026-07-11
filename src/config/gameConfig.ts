@@ -1,6 +1,12 @@
 ﻿export const GAME_WIDTH = 960;
 export const GAME_HEIGHT = 640;
 
+// The Phaser canvas is rendered at GAME_WIDTH/HEIGHT * RENDER_SCALE physical
+// pixels while every gameplay coordinate (ROOM_RECT, spawns, HUD layout)
+// stays authored in GAME_WIDTH/HEIGHT space; each scene camera zooms by this
+// factor so the extra buffer resolution shows up as sharpness, not more world.
+export const RENDER_SCALE = 2;
+
 export const ROOM_RECT = {
   left: 80,
   right: 880,
@@ -44,6 +50,8 @@ export const COMBAT_TUNING = {
   enemyContactCooldownMs: 650,
 };
 
+export const ITEM_PREVIEW_RADIUS = 90;
+
 export const INVENTORY_TUNING = {
   maxConsumable: 99,
   treasureRoomKeyCost: 1,
@@ -74,6 +82,7 @@ export const FEEDBACK_TUNING = {
     playerHurt: { durationMs: 130, intensity: 0.006 },
     roomClear: { durationMs: 130, intensity: 0.0024 },
     bossPhaseTwo: { durationMs: 230, intensity: 0.007 },
+    bombUse: { durationMs: 200, intensity: 0.0065 },
   },
   effects: {
     enemyHitFlashMs: 28,
@@ -112,6 +121,19 @@ export const BOSS_TUNING = {
   phaseTwoDashCooldownMs: 1550,
   phaseTwoTransitionLockMs: 500,
   phaseTwoRadialCount: 8,
+};
+
+export const BOMB_TUNING = {
+  damage: 5,
+  radius: 230,
+  cooldownMs: 900,
+  knockback: 260,
+};
+
+export const OBSTACLE_TUNING = {
+  maxHealth: 3,
+  hitTint: 0xffe8ad,
+  hitFlashMs: 60,
 };
 
 export const DEPTH = {

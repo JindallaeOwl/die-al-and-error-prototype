@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
 import { TextureKeys } from '../config/assets';
-import { DEPTH, GAME_HEIGHT, GAME_WIDTH } from '../config/gameConfig';
+import { DEPTH, GAME_HEIGHT, GAME_WIDTH, RENDER_SCALE } from '../config/gameConfig';
 import { getLocale, koreanFontStack, t, toggleLocale } from '../i18n';
 import { AudioSystem } from '../systems/AudioSystem';
+import { applyRenderScale } from '../utils/render';
 
 type MenuMode = 'main' | 'settings';
 type MenuAction = 'start' | 'settings' | 'quit' | 'language' | 'sound' | 'back';
@@ -33,6 +34,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   create(): void {
+    applyRenderScale(this);
     this.audio = new AudioSystem();
     this.input.once('pointerdown', () => this.audio?.unlock());
     this.input.keyboard?.once('keydown', () => this.audio?.unlock());
@@ -104,6 +106,7 @@ export class TitleScene extends Phaser.Scene {
           blur: 0,
           fill: true,
         },
+        resolution: RENDER_SCALE,
       })
       .setOrigin(0.5)
       .setDepth(DEPTH.ui);
@@ -115,6 +118,7 @@ export class TitleScene extends Phaser.Scene {
         color: '#ffcf75',
         stroke: '#0d1117',
         strokeThickness: 5,
+        resolution: RENDER_SCALE,
       })
       .setOrigin(0.5)
       .setDepth(DEPTH.ui);
@@ -126,6 +130,7 @@ export class TitleScene extends Phaser.Scene {
         color: '#ffe39b',
         stroke: '#0d1117',
         strokeThickness: 5,
+        resolution: RENDER_SCALE,
       })
       .setOrigin(0.5)
       .setDepth(DEPTH.ui);
@@ -173,6 +178,7 @@ export class TitleScene extends Phaser.Scene {
           color: '#f7f3e8',
           stroke: '#0d1117',
           strokeThickness: 7,
+          resolution: RENDER_SCALE,
         })
         .setOrigin(0.5)
         .setInteractive({ useHandCursor: true });

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { DEPTH, GAME_WIDTH, type PlayerStats } from '../config/gameConfig';
+import { DEPTH, GAME_WIDTH, RENDER_SCALE, type PlayerStats } from '../config/gameConfig';
 import { koreanFontStack, t } from '../i18n';
 import type { DungeonManager } from '../systems/DungeonManager';
 import type { RunState } from '../systems/RunState';
@@ -11,6 +11,7 @@ export class Hud {
   private readonly statsText: Phaser.GameObjects.Text;
   private readonly roomText: Phaser.GameObjects.Text;
   private readonly messageText: Phaser.GameObjects.Text;
+  private readonly itemHintText: Phaser.GameObjects.Text;
   private readonly debugText: Phaser.GameObjects.Text;
   private readonly minimap: Phaser.GameObjects.Graphics;
   private messageUntil = 0;
@@ -24,6 +25,7 @@ export class Hud {
     this.statsText = this.createText(18, 63, 14);
     this.roomText = this.createText(18, 84, 14);
     this.messageText = this.createText(GAME_WIDTH / 2, 584, 16).setOrigin(0.5);
+    this.itemHintText = this.createText(GAME_WIDTH / 2, 606, 13).setOrigin(0.5);
     this.debugText = this.createText(18, 116, 13).setVisible(false);
     this.minimap = scene.add.graphics();
     this.minimap.setDepth(DEPTH.ui);
@@ -37,6 +39,14 @@ export class Hud {
   showMessage(message: string, durationMs = 2200): void {
     this.messageText.setText(message);
     this.messageUntil = this.scene.time.now + durationMs;
+  }
+
+  showItemHint(text: string): void {
+    this.itemHintText.setText(text);
+  }
+
+  clearItemHint(): void {
+    this.itemHintText.setText('');
   }
 
   update(
@@ -136,6 +146,7 @@ export class Hud {
         color: '#f7f3e8',
         stroke: '#090b10',
         strokeThickness: 4,
+        resolution: RENDER_SCALE,
       })
       .setDepth(DEPTH.ui);
   }

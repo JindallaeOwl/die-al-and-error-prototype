@@ -1,6 +1,7 @@
 ﻿import Phaser from 'phaser';
 import { Door } from '../entities/Door';
 import { ItemPickup } from '../entities/ItemPickup';
+import { Obstacle } from '../entities/Obstacle';
 import { createEnemy } from '../entities/enemies/EnemyFactory';
 import { DEPTH, ROOM_RECT, WALL_THICKNESS } from '../config/gameConfig';
 import { PASSIVE_ITEMS, TEST_BEAM_ITEM_ID } from '../data/items';
@@ -26,6 +27,7 @@ interface RoomControllerConfig {
 export class RoomController {
   readonly walls: Phaser.Physics.Arcade.StaticGroup;
   readonly doors: Phaser.Physics.Arcade.Group;
+  readonly obstacles: Phaser.Physics.Arcade.StaticGroup;
 
   private readonly scene: Phaser.Scene;
   private readonly dungeon: DungeonManager;
@@ -54,6 +56,7 @@ export class RoomController {
     this.floorGraphics.setDepth(DEPTH.floor);
     this.walls = this.scene.physics.add.staticGroup();
     this.doors = this.scene.physics.add.group({ allowGravity: false, immovable: true });
+    this.obstacles = this.scene.physics.add.staticGroup();
 
     this.createWalls();
     this.createDoors();
@@ -62,6 +65,7 @@ export class RoomController {
   enterCurrentRoom(): void {
     this.enemies.clear(true, true);
     this.items.clear(true, true);
+    this.obstacles.clear(true, true);
 
     const room = this.dungeon.getCurrentRoom();
     const template = getRoomTemplate(room.templateId);
@@ -141,6 +145,10 @@ export class RoomController {
       if (enemy.isBoss && this.onBossPhaseTwo) {
         enemy.once('boss-phase-two', this.onBossPhaseTwo);
       }
+    }
+
+    for (const obstaclePosition of template.obstacles ?? []) {
+      this.obstacles.add(new Obstacle(this.scene, obstaclePosition.x, obstaclePosition.y));
     }
   }
 

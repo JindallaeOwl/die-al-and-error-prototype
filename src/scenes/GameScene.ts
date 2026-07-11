@@ -3,17 +3,21 @@ import { BeamAttack } from '../entities/BeamAttack';
 import { Bullet } from '../entities/Bullet';
 import { Door } from '../entities/Door';
 import { ItemPickup } from '../entities/ItemPickup';
+import type { Obstacle } from '../entities/Obstacle';
 import { Player, type PlayerControls } from '../entities/Player';
 import { RewardPickup } from '../entities/RewardPickup';
 import type { BaseEnemy } from '../entities/enemies/BaseEnemy';
 import {
   BEAM_TUNING,
+  BOMB_TUNING,
   BOSS_TUNING,
   COMBAT_TUNING,
   FEEDBACK_TUNING,
   GAME_HEIGHT,
   GAME_WIDTH,
   INVENTORY_TUNING,
+  ITEM_PREVIEW_RADIUS,
+  RENDER_SCALE,
 } from '../config/gameConfig';
 import { koreanFontStack, t, toggleLocale } from '../i18n';
 import { AudioSystem } from '../systems/AudioSystem';
@@ -25,6 +29,7 @@ import { RewardSystem } from '../systems/RewardSystem';
 import { RoomController } from '../systems/RoomController';
 import { createInitialRunState, type RunState } from '../systems/RunState';
 import { Hud } from '../ui/Hud';
+import { applyRenderScale } from '../utils/render';
 import { clamp } from '../utils/math';
 
 export class GameScene extends Phaser.Scene {
@@ -39,8 +44,10 @@ export class GameScene extends Phaser.Scene {
   private controls!: PlayerControls;
   private debugKey?: Phaser.Input.Keyboard.Key;
   private localeKey?: Phaser.Input.Keyboard.Key;
+  private bombKey?: Phaser.Input.Keyboard.Key;
   private debugVisible = false;
   private nextDoorAt = 0;
+  private nextBombAt = 0;
   private gameOverStarted = false;
   private floorAdvanceQueued = false;
   private playerDamageFeedbackQueued = false;
@@ -62,7 +69,18 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
+    // Phaser reuses this Scene instance across restarts, so field initializers
+    // like `= false` only ever run once. Reset run-scoped state explicitly or
+    // a prior game-over leaves gameOverStarted stuck true and freezes update().
+    this.debugVisible = false;
+    this.nextDoorAt = 0;
+    this.nextBombAt = 0;
+    this.gameOverStarted = false;
+    this.floorAdvanceQueued = false;
+    this.playerDamageFeedbackQueued = false;
+
     this.cameras.main.setBackgroundColor('#0d1117');
+    applyRenderScale(this);
     this.physics.world.setBounds(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
     this.runState = createInitialRunState();
@@ -122,6 +140,10 @@ export class GameScene extends Phaser.Scene {
       this.hud.showMessage(t(locale === 'ko' ? 'messages.localeKo' : 'messages.localeEn'), 1100);
     }
 
+    if (this.bombKey && Phaser.Input.Keyboard.JustDown(this.bombKey)) {
+      this.tryUseBomb();
+    }
+
     this.player.update(time, this.controls, this.playerBullets);
 
     for (const enemy of this.enemies.getChildren() as BaseEnemy[]) {
@@ -146,6 +168,7 @@ export class GameScene extends Phaser.Scene {
 
     this.roomController.update();
     this.updateBossHud();
+    this.updateItemHint();
     this.hud.update(this.runState, this.dungeon, this.enemies.countActive(true), {
       x: this.player.x,
       y: this.player.y,
@@ -161,6 +184,7 @@ export class GameScene extends Phaser.Scene {
 
     this.debugKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F3);
     this.localeKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.L);
+    this.bombKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
 
     return {
       up: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
@@ -177,6 +201,8 @@ export class GameScene extends Phaser.Scene {
   private setupPhysics(): void {
     this.physics.add.collider(this.player, this.roomController.walls);
     this.physics.add.collider(this.enemies, this.roomController.walls);
+    this.physics.add.collider(this.player, this.roomController.obstacles);
+    this.physics.add.collider(this.enemies, this.roomController.obstacles);
     this.physics.add.collider(this.playerBullets, this.roomController.walls, (bulletObject) => {
       const bullet = bulletObject as Bullet;
       const x = bullet.x;
@@ -190,6 +216,42 @@ export class GameScene extends Phaser.Scene {
       bullet.queueDestroy();
     });
     this.physics.add.collider(this.enemyBullets, this.roomController.walls, (bulletObject) => {
+      const bullet = bulletObject as Bullet;
+      const x = bullet.x;
+      const y = bullet.y;
+
+      if (!bullet.consume()) {
+        return;
+      }
+
+      this.effects.impact(x, y, 0xffb347);
+      bullet.queueDestroy();
+    });
+    this.physics.add.collider(
+      this.playerBullets,
+      this.roomController.obstacles,
+      (bulletObject, obstacleObject) => {
+        const bullet = bulletObject as Bullet;
+        const obstacle = obstacleObject as Obstacle;
+        const x = bullet.x;
+        const y = bullet.y;
+
+        if (!bullet.consume()) {
+          return;
+        }
+
+        const destroyed = obstacle.takeDamage(bullet.damage);
+        this.effects.impact(x, y, 0xc7fff4);
+
+        if (destroyed) {
+          this.effects.obstacleBreak(obstacle.x, obstacle.y);
+          this.audio.play('hit');
+        }
+
+        bullet.queueDestroy();
+      },
+    );
+    this.physics.add.collider(this.enemyBullets, this.roomController.obstacles, (bulletObject) => {
       const bullet = bulletObject as Bullet;
       const x = bullet.x;
       const y = bullet.y;
@@ -443,15 +505,50 @@ export class GameScene extends Phaser.Scene {
     (this.player.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
 
     this.roomController.enterCurrentRoom();
-    this.hud.showMessage(
+
+    const roomEnteredMessage =
       moved.type === 'reward'
         ? t('messages.cacheFound')
         : moved.type === 'treasure'
           ? t('messages.treasureRoom')
           : moved.type === 'boss'
             ? t('messages.bossRoom')
-            : t('messages.roomEntered'),
-      1100,
+            : null;
+
+    if (roomEnteredMessage) {
+      this.hud.showMessage(roomEnteredMessage, 1100);
+    }
+  }
+
+  private updateItemHint(): void {
+    let nearest: ItemPickup | null = null;
+    let nearestDistSq = ITEM_PREVIEW_RADIUS * ITEM_PREVIEW_RADIUS;
+
+    for (const pickup of this.items.getChildren() as ItemPickup[]) {
+      if (!pickup.active) {
+        continue;
+      }
+
+      const dx = pickup.x - this.player.x;
+      const dy = pickup.y - this.player.y;
+      const distSq = dx * dx + dy * dy;
+
+      if (distSq <= nearestDistSq) {
+        nearest = pickup;
+        nearestDistSq = distSq;
+      }
+    }
+
+    if (!nearest) {
+      this.hud.clearItemHint();
+      return;
+    }
+
+    this.hud.showItemHint(
+      t('messages.itemPickup', {
+        name: t(nearest.item.nameKey),
+        description: t(nearest.item.descriptionKey),
+      }),
     );
   }
 
@@ -577,6 +674,79 @@ export class GameScene extends Phaser.Scene {
     this.audio.play('bossPhaseTwo');
   }
 
+  private tryUseBomb(): void {
+    if (this.gameOverStarted || this.time.now < this.nextBombAt) {
+      return;
+    }
+
+    const updatedInventory = spendConsumable(this.runState.inventory, 'bombs', 1);
+
+    if (!updatedInventory) {
+      this.hud.showMessage(t('messages.noBombs'), 900);
+      return;
+    }
+
+    this.runState.inventory = updatedInventory;
+    this.nextBombAt = this.time.now + BOMB_TUNING.cooldownMs;
+    this.detonateBomb();
+  }
+
+  private detonateBomb(): void {
+    const originX = this.player.x;
+    const originY = this.player.y;
+    const radiusSq = BOMB_TUNING.radius * BOMB_TUNING.radius;
+    const withinRadius = (x: number, y: number): boolean => {
+      const dx = x - originX;
+      const dy = y - originY;
+      return dx * dx + dy * dy <= radiusSq;
+    };
+
+    const enemiesInRoom = [...(this.enemies.getChildren() as BaseEnemy[])];
+
+    for (const enemy of enemiesInRoom) {
+      if (!enemy.active || !enemy.body || !withinRadius(enemy.x, enemy.y)) {
+        continue;
+      }
+
+      const enemyX = enemy.x;
+      const enemyY = enemy.y;
+      const defeated = enemy.takeDamage(BOMB_TUNING.damage, originX, originY);
+
+      if (defeated) {
+        this.effects.enemyDeath(enemyX, enemyY, enemy.scoreValue);
+        this.audio.play('enemyDeath');
+      }
+    }
+
+    const enemyBulletsInRoom = [...(this.enemyBullets.getChildren() as Bullet[])];
+
+    for (const bullet of enemyBulletsInRoom) {
+      if (!bullet.active || !withinRadius(bullet.x, bullet.y)) {
+        continue;
+      }
+
+      if (bullet.consume()) {
+        bullet.queueDestroy();
+      }
+    }
+
+    const obstaclesInRoom = [...(this.roomController.obstacles.getChildren() as Obstacle[])];
+
+    for (const obstacle of obstaclesInRoom) {
+      if (!obstacle.active || !withinRadius(obstacle.x, obstacle.y)) {
+        continue;
+      }
+
+      obstacle.destroyByBomb();
+    }
+
+    this.effects.bombBlast(originX, originY);
+    this.effects.shake('bombUse');
+    this.effects.hitStop(FEEDBACK_TUNING.hitStop.enemyDeathMs);
+    this.cameras.main.flash(140, 255, 176, 90, false);
+    this.audio.play('bombUse');
+  }
+
   private dropRoomClearReward(room: RoomNode): void {
     const reward = this.rewardSystem.rollRoomClearReward(this.runState.stats);
 
@@ -692,6 +862,7 @@ export class GameScene extends Phaser.Scene {
         color: '#ffe39b',
         stroke: '#090b10',
         strokeThickness: 4,
+        resolution: RENDER_SCALE,
       })
       .setOrigin(0.5)
       .setDepth(103)
