@@ -21,14 +21,14 @@ export class Hud {
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
 
-    this.createPanel(300, 57, 584, 104);
+    this.createPanel(254, 50, 492, 90, 0.62);
     this.createPanel(GAME_WIDTH - 92, 55, 168, 94);
     this.messagePanel = this.createPanel(GAME_WIDTH / 2, 594, 680, 54).setVisible(false);
 
-    this.healthText = this.createText(18, 14, 19);
-    this.inventoryText = this.createText(18, 42, 14);
-    this.statsText = this.createText(18, 63, 14);
-    this.roomText = this.createText(18, 84, 14);
+    this.healthText = this.createText(14, 9, 18);
+    this.inventoryText = this.createText(14, 34, 13);
+    this.statsText = this.createText(14, 54, 13);
+    this.roomText = this.createText(14, 74, 13);
     this.messageText = this.createText(GAME_WIDTH / 2, 584, 16).setOrigin(0.5);
     this.itemHintText = this.createText(GAME_WIDTH / 2, 606, 13).setOrigin(0.5);
     this.debugText = this.createText(18, 116, 13).setVisible(false);
@@ -168,9 +168,10 @@ export class Hud {
     y: number,
     width: number,
     height: number,
+    alpha = 0.78,
   ): Phaser.GameObjects.Rectangle {
     return this.scene.add
-      .rectangle(x, y, width, height, 0x070c12, 0.78)
+      .rectangle(x, y, width, height, 0x070c12, alpha)
       .setStrokeStyle(2, 0x40525f, 0.82)
       .setDepth(DEPTH.ui - 1);
   }
