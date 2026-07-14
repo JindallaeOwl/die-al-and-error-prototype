@@ -21,17 +21,17 @@ export class Hud {
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
 
-    this.createPanel(254, 50, 492, 90, 0.62);
-    this.createPanel(GAME_WIDTH - 92, 55, 168, 94);
+    this.createPanel(132, 66, 244, 122, 0.62);
+    this.createPanel(GAME_WIDTH - 68, 55, 128, 94);
     this.messagePanel = this.createPanel(GAME_WIDTH / 2, 594, 680, 54).setVisible(false);
 
-    this.healthText = this.createText(14, 9, 18);
-    this.inventoryText = this.createText(14, 34, 13);
-    this.statsText = this.createText(14, 54, 13);
-    this.roomText = this.createText(14, 74, 13);
+    this.healthText = this.createText(14, 10, 18);
+    this.inventoryText = this.createText(14, 35, 13);
+    this.statsText = this.createText(14, 55, 12);
+    this.roomText = this.createText(14, 103, 12);
     this.messageText = this.createText(GAME_WIDTH / 2, 584, 16).setOrigin(0.5);
     this.itemHintText = this.createText(GAME_WIDTH / 2, 606, 13).setOrigin(0.5);
-    this.debugText = this.createText(18, 116, 13).setVisible(false);
+    this.debugText = this.createText(18, 140, 13).setVisible(false);
     this.minimap = scene.add.graphics();
     this.minimap.setDepth(DEPTH.ui);
   }
@@ -75,11 +75,14 @@ export class Hud {
       )} ${runState.inventory.coins}`,
     );
     this.statsText.setText(
-      `${t('hud.damage')} ${stats.damage.toFixed(1)}  ${t('hud.range')} ${Math.round(
-        stats.range,
-      )}  ${t('hud.fireRate')} ${stats.fireRate.toFixed(1)}  ${t('hud.luck')} ${stats.luck.toFixed(
-        1,
-      )}  ${t('hud.speed')} ${Math.round(stats.moveSpeed)}`,
+      [
+        `${t('hud.damage')} ${stats.damage.toFixed(1)}  ${t('hud.range')} ${Math.round(
+          stats.range,
+        )}  ${t('hud.fireRate')} ${stats.fireRate.toFixed(1)}`,
+        `${t('hud.luck')} ${stats.luck.toFixed(1)}  ${t('hud.speed')} ${Math.round(
+          stats.moveSpeed,
+        )}`,
+      ].join('\n'),
     );
     this.roomText.setText(
       `${t('hud.floor')} ${runState.floor}  ${t('hud.cleared')} ${
@@ -118,7 +121,7 @@ export class Hud {
     const current = dungeon.getCurrentRoom();
     const size = 12;
     const gap = 3;
-    const originX = GAME_WIDTH - 156;
+    const originX = GAME_WIDTH - 124;
     const originY = 18;
     const minX = Math.min(...rooms.map((room) => room.coord.x));
     const minY = Math.min(...rooms.map((room) => room.coord.y));
