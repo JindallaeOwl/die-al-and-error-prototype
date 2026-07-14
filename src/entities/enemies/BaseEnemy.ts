@@ -58,7 +58,7 @@ export abstract class BaseEnemy extends Phaser.Physics.Arcade.Sprite {
     this.setTint(FEEDBACK_TUNING.effects.enemyHitTint);
     this.scene.time.delayedCall(FEEDBACK_TUNING.effects.enemyHitFlashMs, () => {
       if (this.active) {
-        this.clearTint();
+        this.restorePersistentTint();
       }
     });
 

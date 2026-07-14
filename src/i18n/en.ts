@@ -16,6 +16,21 @@ export const en: TranslationTree = {
     sound: 'Sound',
     soundOn: 'On',
     soundOff: 'Off',
+    volume: 'Effects volume',
+    screenShake: 'Screen shake',
+    renderQuality: 'Render quality',
+    fullscreen: 'Fullscreen',
+    low: 'Low',
+    balanced: 'Balanced',
+    high: 'High',
+    nextLaunch: 'Render quality applies on the next launch',
+  },
+  pause: {
+    title: 'PAUSED',
+    continue: 'Continue',
+    settings: 'Settings',
+    fullscreen: 'Fullscreen',
+    titleScreen: 'Return to title',
   },
   gameOver: {
     title: 'RUN ENDED',
@@ -36,6 +51,8 @@ export const en: TranslationTree = {
     left: 'Left',
     room: 'Room',
     enemies: 'Enemies',
+    bullets: 'Bullets',
+    fps: 'FPS',
     player: 'Player',
     items: 'Items',
     abilities: 'Abilities',
@@ -65,6 +82,7 @@ export const en: TranslationTree = {
     localeKo: 'Korean',
     localeEn: 'English',
     quitHint: 'Close the browser tab to quit',
+    objective: 'Objective: clear combat rooms and defeat the boss',
   },
   resources: {
     keys: 'Keys',
@@ -94,7 +112,8 @@ export const en: TranslationTree = {
     },
     hotPebble: {
       name: 'Hot Pebble',
-      description: 'Range, projectile speed, and damage all increase (+85 range, +72 speed, +0.15 damage).',
+      description:
+        'Range, projectile speed, and damage all increase (+85 range, +72 speed, +0.15 damage).',
     },
     pocketBattery: {
       name: 'Pocket Battery',

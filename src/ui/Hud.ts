@@ -14,11 +14,16 @@ export class Hud {
   private readonly itemHintText: Phaser.GameObjects.Text;
   private readonly debugText: Phaser.GameObjects.Text;
   private readonly minimap: Phaser.GameObjects.Graphics;
+  private readonly messagePanel: Phaser.GameObjects.Rectangle;
   private messageUntil = 0;
   private debugVisible = false;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
+
+    this.createPanel(300, 57, 584, 104);
+    this.createPanel(GAME_WIDTH - 92, 55, 168, 94);
+    this.messagePanel = this.createPanel(GAME_WIDTH / 2, 594, 680, 54).setVisible(false);
 
     this.healthText = this.createText(18, 14, 19);
     this.inventoryText = this.createText(18, 42, 14);
@@ -39,14 +44,17 @@ export class Hud {
   showMessage(message: string, durationMs = 2200): void {
     this.messageText.setText(message);
     this.messageUntil = this.scene.time.now + durationMs;
+    this.messagePanel.setVisible(true);
   }
 
   showItemHint(text: string): void {
     this.itemHintText.setText(text);
+    this.messagePanel.setVisible(true);
   }
 
   clearItemHint(): void {
     this.itemHintText.setText('');
+    this.messagePanel.setVisible(this.scene.time.now <= this.messageUntil);
   }
 
   update(
@@ -54,6 +62,8 @@ export class Hud {
     dungeon: DungeonManager,
     enemyCount: number,
     playerPosition: { x: number; y: number },
+    activeBulletCount: number,
+    fps: number,
   ): void {
     const stats = runState.stats;
     this.healthText.setText(
@@ -79,6 +89,7 @@ export class Hud {
 
     if (this.scene.time.now > this.messageUntil) {
       this.messageText.setText('');
+      this.messagePanel.setVisible(this.itemHintText.text.length > 0);
     }
 
     this.drawMinimap(dungeon);
@@ -91,6 +102,7 @@ export class Hud {
             room.cleared ? t('hud.open') : t('hud.locked')
           }`,
           `${t('hud.enemies')} ${enemyCount}`,
+          `${t('hud.bullets')} ${activeBulletCount}  ${t('hud.fps')} ${fps}`,
           `${t('hud.player')} ${Math.round(playerPosition.x)}, ${Math.round(playerPosition.y)}`,
           `${t('hud.items')} ${runState.collectedItemIds.length}  ${t('hud.abilities')} ${
             runState.unlockedAbilityIds.length
@@ -149,6 +161,18 @@ export class Hud {
         resolution: RENDER_SCALE,
       })
       .setDepth(DEPTH.ui);
+  }
+
+  private createPanel(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): Phaser.GameObjects.Rectangle {
+    return this.scene.add
+      .rectangle(x, y, width, height, 0x070c12, 0.78)
+      .setStrokeStyle(2, 0x40525f, 0.82)
+      .setDepth(DEPTH.ui - 1);
   }
 }
 

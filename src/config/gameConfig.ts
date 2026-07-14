@@ -5,7 +5,26 @@ export const GAME_HEIGHT = 640;
 // pixels while every gameplay coordinate (ROOM_RECT, spawns, HUD layout)
 // stays authored in GAME_WIDTH/HEIGHT space; each scene camera zooms by this
 // factor so the extra buffer resolution shows up as sharpness, not more world.
-export const RENDER_SCALE = 2;
+export const RENDER_SCALE = readStoredRenderScale();
+
+function readStoredRenderScale(): number {
+  try {
+    const raw = window.localStorage.getItem('die-al-and-error-settings-v1');
+    const parsed = raw ? (JSON.parse(raw) as { renderQuality?: string }) : null;
+
+    if (parsed?.renderQuality === 'low') {
+      return 1.5;
+    }
+
+    if (parsed?.renderQuality === 'high') {
+      return 2.5;
+    }
+  } catch {
+    // Use the balanced fallback when storage is unavailable or malformed.
+  }
+
+  return 2;
+}
 
 export const ROOM_RECT = {
   left: 80,
@@ -127,6 +146,7 @@ export const BOMB_TUNING = {
   damage: 5,
   radius: 230,
   cooldownMs: 900,
+  fuseMs: 3000,
   knockback: 260,
 };
 

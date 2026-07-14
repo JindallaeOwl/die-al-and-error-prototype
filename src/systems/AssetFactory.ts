@@ -1,21 +1,26 @@
 import Phaser from 'phaser';
-import { itemIconKey, TextureKeys } from '../config/assets';
+import { AnimationKeys, itemIconKey, TextureKeys } from '../config/assets';
 import { PASSIVE_ITEMS } from '../data/items';
 
 export function createPlaceholderTextures(scene: Phaser.Scene): void {
-  createPlayerTexture(scene, TextureKeys.player, 0x6ff5ff, 0x12343d);
-  createPlayerTexture(scene, TextureKeys.playerHit, 0xffffff, 0xff6b6b);
-  createCircleTexture(scene, TextureKeys.playerBullet, 6, 0xc7fff4, 0x1e7e73);
-  createCircleTexture(scene, TextureKeys.enemyBullet, 7, 0xffb347, 0x7a3322);
-  createCircleTexture(scene, TextureKeys.enemyChaser, 17, 0xff5d7d, 0x551827);
-  createDiamondTexture(scene, TextureKeys.enemyShooter, 36, 0xffcf5a, 0x553b13);
-  createTriangleTexture(scene, TextureKeys.enemyDasher, 38, 0xb58cff, 0x352363);
+  createPlayerFrameTexture(scene, TextureKeys.player, 0, 0, 0, false);
+  createPlayerFrameTexture(scene, TextureKeys.playerHit, 0, 0, 0, true);
+  createPlayerFrameTexture(scene, TextureKeys.playerIdle, 0, 0, 0, false);
+  createPlayerFrameTexture(scene, TextureKeys.playerWalkA, 3, -2, -1, false);
+  createPlayerFrameTexture(scene, TextureKeys.playerWalkMid, 0, 0, 0, false);
+  createPlayerFrameTexture(scene, TextureKeys.playerWalkB, -2, 3, -1, false);
+  createBulletTexture(scene, TextureKeys.playerBullet, 14, 0xe8ffff, 0x58e8ed, 0x104954);
+  createBulletTexture(scene, TextureKeys.enemyBullet, 16, 0xfff0b8, 0xff8b3d, 0x681f1c);
+  createChaserTexture(scene);
+  createShooterTexture(scene);
+  createDasherTexture(scene);
   createBossTexture(scene);
   createDoorTexture(scene, TextureKeys.doorHorizontal, 86, 24);
   createDoorTexture(scene, TextureKeys.doorVertical, 24, 86);
   createPassiveItemIcons(scene);
   createKeyTexture(scene);
   createBombTexture(scene);
+  createPlacedBombTexture(scene);
   createCoinTexture(scene);
   createChestTexture(scene);
   createFloorTile(scene);
@@ -23,15 +28,62 @@ export function createPlaceholderTextures(scene: Phaser.Scene): void {
   createObstacleTexture(scene);
 }
 
-function createPlayerTexture(scene: Phaser.Scene, key: string, fill: number, stroke: number): void {
+export function createPlaceholderAnimations(scene: Phaser.Scene): void {
+  if (scene.anims.exists(AnimationKeys.playerWalk)) {
+    return;
+  }
+
+  scene.anims.create({
+    key: AnimationKeys.playerWalk,
+    frames: [
+      { key: TextureKeys.playerWalkA },
+      { key: TextureKeys.playerWalkMid },
+      { key: TextureKeys.playerWalkB },
+      { key: TextureKeys.playerWalkMid },
+    ],
+    frameRate: 9,
+    repeat: -1,
+  });
+}
+
+function createPlayerFrameTexture(
+  scene: Phaser.Scene,
+  key: string,
+  leftFootOffset: number,
+  rightFootOffset: number,
+  bodyBob: number,
+  hit: boolean,
+): void {
   const graphics = scene.add.graphics();
-  graphics.fillStyle(fill, 1);
-  graphics.fillCircle(18, 18, 16);
-  graphics.fillStyle(stroke, 1);
-  graphics.fillCircle(24, 14, 4);
-  graphics.lineStyle(3, 0xffffff, 0.6);
-  graphics.strokeCircle(18, 18, 16);
-  graphics.generateTexture(key, 36, 36);
+  const bodyY = 20 + bodyBob;
+
+  graphics.fillStyle(0x05090e, 0.42);
+  graphics.fillEllipse(22, 40, 30, 8);
+
+  graphics.fillStyle(0x164956, 1);
+  graphics.lineStyle(2, 0x07171d, 1);
+  graphics.fillEllipse(15, 34 + leftFootOffset, 11, 9);
+  graphics.strokeEllipse(15, 34 + leftFootOffset, 11, 9);
+  graphics.fillEllipse(29, 34 + rightFootOffset, 11, 9);
+  graphics.strokeEllipse(29, 34 + rightFootOffset, 11, 9);
+
+  graphics.fillStyle(hit ? 0xffa3a8 : 0x62e8ef, 1);
+  graphics.lineStyle(3, hit ? 0xff5964 : 0x0b3540, 1);
+  graphics.fillCircle(22, bodyY, 17);
+  graphics.strokeCircle(22, bodyY, 16);
+
+  graphics.fillStyle(hit ? 0xffffff : 0xc9ffff, 0.72);
+  graphics.fillEllipse(17, bodyY - 6, 12, 7);
+  graphics.fillStyle(0x08222a, 1);
+  graphics.fillCircle(17, bodyY + 2, 3);
+  graphics.fillCircle(28, bodyY + 2, 3);
+  graphics.fillStyle(0xeaffff, 1);
+  graphics.fillCircle(18, bodyY + 1, 1);
+  graphics.fillCircle(29, bodyY + 1, 1);
+  graphics.lineStyle(2, 0x164956, 0.9);
+  graphics.lineBetween(19, bodyY + 9, 25, bodyY + 9);
+
+  graphics.generateTexture(key, 44, 46);
   graphics.destroy();
 }
 
@@ -48,6 +100,97 @@ function createCircleTexture(
   graphics.lineStyle(2, stroke, 1);
   graphics.strokeCircle(radius, radius, radius - 2);
   graphics.generateTexture(key, radius * 2, radius * 2);
+  graphics.destroy();
+}
+
+function createBulletTexture(
+  scene: Phaser.Scene,
+  key: string,
+  size: number,
+  core: number,
+  fill: number,
+  stroke: number,
+): void {
+  const half = size / 2;
+  const graphics = scene.add.graphics();
+  graphics.fillStyle(fill, 0.22);
+  graphics.fillCircle(half, half, half);
+  graphics.fillStyle(fill, 1);
+  graphics.fillCircle(half, half, half - 2);
+  graphics.lineStyle(2, stroke, 1);
+  graphics.strokeCircle(half, half, half - 2);
+  graphics.fillStyle(core, 1);
+  graphics.fillCircle(half - 1, half - 1, Math.max(2, half - 4));
+  graphics.generateTexture(key, size, size);
+  graphics.destroy();
+}
+
+function createChaserTexture(scene: Phaser.Scene): void {
+  const graphics = scene.add.graphics();
+  graphics.fillStyle(0x05090e, 0.4);
+  graphics.fillEllipse(20, 35, 30, 7);
+  graphics.fillStyle(0xff5d72, 1);
+  graphics.lineStyle(3, 0x541725, 1);
+  graphics.fillEllipse(20, 20, 34, 31);
+  graphics.strokeEllipse(20, 20, 34, 31);
+  graphics.fillStyle(0xff8191, 0.8);
+  graphics.fillCircle(14, 12, 6);
+  graphics.fillStyle(0x1b0b12, 1);
+  graphics.fillTriangle(11, 17, 16, 17, 14, 23);
+  graphics.fillTriangle(24, 17, 29, 17, 26, 23);
+  graphics.fillStyle(0xf7f3e8, 1);
+  graphics.fillTriangle(15, 27, 19, 27, 17, 32);
+  graphics.fillTriangle(21, 27, 25, 27, 23, 32);
+  graphics.generateTexture(TextureKeys.enemyChaser, 40, 40);
+  graphics.destroy();
+}
+
+function createShooterTexture(scene: Phaser.Scene): void {
+  const graphics = scene.add.graphics();
+  graphics.fillStyle(0x05090e, 0.4);
+  graphics.fillEllipse(21, 37, 31, 7);
+  graphics.fillStyle(0xf7bd4d, 1);
+  graphics.lineStyle(3, 0x563514, 1);
+  graphics.beginPath();
+  graphics.moveTo(21, 2);
+  graphics.lineTo(39, 20);
+  graphics.lineTo(21, 38);
+  graphics.lineTo(3, 20);
+  graphics.closePath();
+  graphics.fillPath();
+  graphics.strokePath();
+  graphics.fillStyle(0x6b4219, 1);
+  graphics.fillRect(17, 2, 8, 12);
+  graphics.fillStyle(0x17202a, 1);
+  graphics.fillCircle(21, 21, 9);
+  graphics.lineStyle(2, 0xfff0ad, 1);
+  graphics.strokeCircle(21, 21, 7);
+  graphics.fillStyle(0xff7b3d, 1);
+  graphics.fillCircle(21, 21, 4);
+  graphics.generateTexture(TextureKeys.enemyShooter, 42, 42);
+  graphics.destroy();
+}
+
+function createDasherTexture(scene: Phaser.Scene): void {
+  const graphics = scene.add.graphics();
+  graphics.fillStyle(0x05090e, 0.4);
+  graphics.fillEllipse(21, 37, 30, 7);
+  graphics.fillStyle(0xa97cff, 1);
+  graphics.lineStyle(3, 0x352363, 1);
+  graphics.beginPath();
+  graphics.moveTo(21, 2);
+  graphics.lineTo(39, 36);
+  graphics.lineTo(21, 29);
+  graphics.lineTo(3, 36);
+  graphics.closePath();
+  graphics.fillPath();
+  graphics.strokePath();
+  graphics.lineStyle(3, 0xe6d8ff, 0.9);
+  graphics.lineBetween(21, 9, 21, 27);
+  graphics.lineStyle(2, 0x5c3a9e, 1);
+  graphics.lineBetween(10, 31, 16, 27);
+  graphics.lineBetween(32, 31, 26, 27);
+  graphics.generateTexture(TextureKeys.enemyDasher, 42, 42);
   graphics.destroy();
 }
 
@@ -97,25 +240,57 @@ function createTriangleTexture(
 
 function createBossTexture(scene: Phaser.Scene): void {
   const graphics = scene.add.graphics();
-  graphics.fillStyle(0x4f6d7a, 1);
-  graphics.lineStyle(5, 0xffd166, 1);
+  graphics.fillStyle(0x05090e, 0.5);
+  graphics.fillEllipse(38, 70, 60, 10);
+  graphics.fillStyle(0x3f5966, 1);
+  graphics.lineStyle(5, 0xe9b94e, 1);
   graphics.fillRoundedRect(4, 4, 68, 68, 10);
   graphics.strokeRoundedRect(4, 4, 68, 68, 10);
+  graphics.fillStyle(0x263944, 1);
+  graphics.fillRoundedRect(11, 11, 54, 50, 7);
+  graphics.lineStyle(2, 0x78909b, 0.8);
+  graphics.strokeRoundedRect(11, 11, 54, 50, 7);
+  graphics.fillStyle(0x111920, 1);
+  graphics.fillRect(18, 22, 12, 12);
+  graphics.fillRect(46, 22, 12, 12);
+  graphics.fillStyle(0xffd166, 1);
+  graphics.fillCircle(24, 28, 3);
+  graphics.fillCircle(52, 28, 3);
   graphics.fillStyle(0x10151c, 1);
-  graphics.fillRect(20, 26, 10, 12);
-  graphics.fillRect(46, 26, 10, 12);
-  graphics.lineStyle(4, 0xff7a90, 1);
-  graphics.lineBetween(20, 52, 56, 52);
+  graphics.fillCircle(38, 45, 13);
+  graphics.lineStyle(3, 0xff6687, 1);
+  graphics.strokeCircle(38, 45, 10);
+  graphics.lineBetween(38, 35, 38, 55);
+  graphics.lineBetween(28, 45, 48, 45);
+  graphics.fillStyle(0xff6687, 1);
+  graphics.fillCircle(38, 45, 4);
+  graphics.lineStyle(2, 0xe9b94e, 0.8);
+  graphics.lineBetween(8, 18, 16, 18);
+  graphics.lineBetween(60, 18, 68, 18);
+  graphics.lineBetween(8, 58, 16, 58);
+  graphics.lineBetween(60, 58, 68, 58);
   graphics.generateTexture(TextureKeys.enemyBoss, 76, 76);
   graphics.destroy();
 }
 
 function createDoorTexture(scene: Phaser.Scene, key: string, width: number, height: number): void {
   const graphics = scene.add.graphics();
-  graphics.fillStyle(0x2b3038, 1);
+  graphics.fillStyle(0x111820, 1);
   graphics.fillRoundedRect(0, 0, width, height, 5);
-  graphics.lineStyle(3, 0xf4d47c, 1);
+  graphics.lineStyle(4, 0x667988, 1);
   graphics.strokeRoundedRect(2, 2, width - 4, height - 4, 5);
+  graphics.lineStyle(2, 0xf0c85a, 0.95);
+
+  if (width > height) {
+    graphics.lineBetween(10, height / 2, width - 10, height / 2);
+    graphics.fillStyle(0x2b3843, 1);
+    graphics.fillRect(width / 2 - 5, 4, 10, height - 8);
+  } else {
+    graphics.lineBetween(width / 2, 10, width / 2, height - 10);
+    graphics.fillStyle(0x2b3843, 1);
+    graphics.fillRect(4, height / 2 - 5, width - 8, 10);
+  }
+
   graphics.generateTexture(key, width, height);
   graphics.destroy();
 }
@@ -232,6 +407,10 @@ function drawItemSymbol(
 
 function createKeyTexture(scene: Phaser.Scene): void {
   const graphics = scene.add.graphics();
+  graphics.fillStyle(0x05090e, 0.4);
+  graphics.fillEllipse(18, 28, 28, 5);
+  graphics.lineStyle(8, 0x143f4d, 0.55);
+  graphics.strokeCircle(12, 16, 8);
   graphics.lineStyle(5, 0x8bd3ff, 1);
   graphics.strokeCircle(12, 16, 7);
   graphics.lineBetween(19, 16, 31, 16);
@@ -243,18 +422,38 @@ function createKeyTexture(scene: Phaser.Scene): void {
 
 function createBombTexture(scene: Phaser.Scene): void {
   const graphics = scene.add.graphics();
+  graphics.fillStyle(0x05090e, 0.4);
+  graphics.fillEllipse(18, 32, 28, 5);
   graphics.fillStyle(0x323946, 1);
   graphics.fillCircle(17, 19, 12);
   graphics.lineStyle(3, 0xff8f70, 1);
   graphics.strokeCircle(17, 19, 11);
   graphics.lineStyle(3, 0xf7f3e8, 1);
   graphics.lineBetween(22, 10, 28, 4);
+  graphics.fillStyle(0xffd166, 1);
+  graphics.fillCircle(30, 3, 3);
   graphics.generateTexture(TextureKeys.bombPickup, 36, 36);
+  graphics.destroy();
+}
+
+function createPlacedBombTexture(scene: Phaser.Scene): void {
+  const graphics = scene.add.graphics();
+  graphics.fillStyle(0x202630, 1);
+  graphics.fillCircle(20, 22, 15);
+  graphics.lineStyle(4, 0xffb35a, 1);
+  graphics.strokeCircle(20, 22, 13);
+  graphics.fillStyle(0xff6b4a, 1);
+  graphics.fillCircle(31, 5, 4);
+  graphics.lineStyle(4, 0xf7d774, 1);
+  graphics.lineBetween(25, 12, 30, 7);
+  graphics.generateTexture(TextureKeys.bombPlaced, 40, 40);
   graphics.destroy();
 }
 
 function createCoinTexture(scene: Phaser.Scene): void {
   const graphics = scene.add.graphics();
+  graphics.fillStyle(0x05090e, 0.4);
+  graphics.fillEllipse(16, 29, 25, 5);
   graphics.fillStyle(0xffd166, 1);
   graphics.fillCircle(16, 16, 12);
   graphics.lineStyle(3, 0x7d5f1a, 1);
@@ -267,6 +466,8 @@ function createCoinTexture(scene: Phaser.Scene): void {
 
 function createChestTexture(scene: Phaser.Scene): void {
   const graphics = scene.add.graphics();
+  graphics.fillStyle(0x05090e, 0.45);
+  graphics.fillEllipse(20, 36, 35, 6);
   graphics.fillStyle(0x8b5a2b, 1);
   graphics.fillRoundedRect(3, 9, 34, 24, 4);
   graphics.fillStyle(0xd6a15f, 1);
@@ -275,39 +476,74 @@ function createChestTexture(scene: Phaser.Scene): void {
   graphics.strokeRoundedRect(3, 9, 34, 24, 4);
   graphics.fillStyle(0xf7f3e8, 1);
   graphics.fillRect(18, 18, 5, 7);
+  graphics.lineStyle(2, 0xffd166, 0.75);
+  graphics.lineBetween(7, 13, 33, 13);
   graphics.generateTexture(TextureKeys.chestPickup, 40, 40);
   graphics.destroy();
 }
 
 function createFloorTile(scene: Phaser.Scene): void {
   const graphics = scene.add.graphics();
-  graphics.fillStyle(0x151a22, 1);
+  graphics.fillStyle(0x111820, 1);
   graphics.fillRect(0, 0, 48, 48);
-  graphics.lineStyle(1, 0x27313c, 0.55);
-  graphics.strokeRect(0, 0, 48, 48);
+  graphics.fillStyle(0x17212b, 1);
+  graphics.fillRect(3, 3, 42, 42);
+  graphics.lineStyle(1, 0x2d3a47, 0.8);
+  graphics.strokeRect(3, 3, 42, 42);
+  graphics.lineStyle(1, 0x080d12, 0.75);
+  graphics.lineBetween(4, 45, 45, 45);
+  graphics.lineBetween(45, 4, 45, 45);
+  graphics.fillStyle(0x4d5f6d, 0.65);
+  graphics.fillCircle(7, 7, 1.5);
+  graphics.fillCircle(41, 7, 1.5);
+  graphics.fillCircle(7, 41, 1.5);
+  graphics.fillCircle(41, 41, 1.5);
+  graphics.lineStyle(1, 0x263440, 0.7);
+  graphics.lineBetween(17, 15, 29, 14);
+  graphics.lineBetween(28, 34, 37, 30);
   graphics.generateTexture(TextureKeys.floorTile, 48, 48);
   graphics.destroy();
 }
 
 function createWallTexture(scene: Phaser.Scene): void {
   const graphics = scene.add.graphics();
-  graphics.fillStyle(0x303843, 1);
+  graphics.fillStyle(0x25313b, 1);
   graphics.fillRect(0, 0, 48, 48);
-  graphics.lineStyle(2, 0x1b2027, 1);
-  graphics.strokeRect(0, 0, 48, 48);
+  graphics.fillStyle(0x3e4d59, 1);
+  graphics.fillRect(2, 2, 44, 9);
+  graphics.fillStyle(0x131b22, 1);
+  graphics.fillRect(2, 38, 44, 8);
+  graphics.lineStyle(2, 0x0d141a, 1);
+  graphics.strokeRect(1, 1, 46, 46);
+  graphics.lineStyle(1, 0x60717e, 0.65);
+  graphics.lineBetween(8, 16, 40, 16);
+  graphics.lineBetween(8, 29, 40, 29);
   graphics.generateTexture(TextureKeys.wall, 48, 48);
   graphics.destroy();
 }
 
 function createObstacleTexture(scene: Phaser.Scene): void {
   const graphics = scene.add.graphics();
-  graphics.fillStyle(0x6b4a2f, 1);
+  graphics.fillStyle(0x160e09, 0.45);
+  graphics.fillEllipse(20, 37, 34, 6);
+  graphics.fillStyle(0x765033, 1);
   graphics.fillRoundedRect(2, 2, 36, 36, 4);
   graphics.lineStyle(3, 0x2b1b10, 1);
   graphics.strokeRoundedRect(2, 2, 36, 36, 4);
-  graphics.lineStyle(2, 0x8a6640, 0.8);
-  graphics.lineBetween(2, 20, 38, 20);
-  graphics.lineBetween(20, 2, 20, 38);
+  graphics.lineStyle(3, 0xa8794c, 0.9);
+  graphics.lineBetween(5, 9, 35, 9);
+  graphics.lineBetween(5, 30, 35, 30);
+  graphics.lineStyle(4, 0x4a2d1c, 1);
+  graphics.lineBetween(7, 6, 33, 34);
+  graphics.lineBetween(33, 6, 7, 34);
+  graphics.fillStyle(0xd4b07a, 1);
+  graphics.fillCircle(8, 8, 2);
+  graphics.fillCircle(32, 8, 2);
+  graphics.fillCircle(8, 32, 2);
+  graphics.fillCircle(32, 32, 2);
+  graphics.lineStyle(2, 0x2b1b10, 1);
+  graphics.lineBetween(18, 13, 22, 19);
+  graphics.lineBetween(22, 19, 18, 24);
   graphics.generateTexture(TextureKeys.obstacleCrate, 40, 40);
   graphics.destroy();
 }

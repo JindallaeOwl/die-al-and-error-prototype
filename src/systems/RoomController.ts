@@ -193,9 +193,16 @@ export class RoomController {
 
   private drawRoom(accentColor: number): void {
     this.floorGraphics.clear();
-    this.floorGraphics.fillStyle(0x121820, 1);
+    this.floorGraphics.fillStyle(0x090e14, 1);
+    this.floorGraphics.fillRect(
+      ROOM_RECT.left - 8,
+      ROOM_RECT.top - 8,
+      ROOM_RECT.width + 16,
+      ROOM_RECT.height + 16,
+    );
+    this.floorGraphics.fillStyle(0x121a22, 1);
     this.floorGraphics.fillRect(ROOM_RECT.left, ROOM_RECT.top, ROOM_RECT.width, ROOM_RECT.height);
-    this.floorGraphics.lineStyle(2, accentColor, 0.45);
+    this.floorGraphics.lineStyle(1, 0x293640, 0.42);
 
     for (let x = ROOM_RECT.left + 40; x < ROOM_RECT.right; x += 40) {
       this.floorGraphics.lineBetween(x, ROOM_RECT.top, x, ROOM_RECT.bottom);
@@ -205,12 +212,71 @@ export class RoomController {
       this.floorGraphics.lineBetween(ROOM_RECT.left, y, ROOM_RECT.right, y);
     }
 
-    this.floorGraphics.lineStyle(4, accentColor, 1);
+    for (let x = ROOM_RECT.left + 20; x < ROOM_RECT.right; x += 160) {
+      for (let y = ROOM_RECT.top + 20; y < ROOM_RECT.bottom; y += 160) {
+        this.floorGraphics.fillStyle(0x60717e, 0.28);
+        this.floorGraphics.fillCircle(x, y, 2);
+        this.floorGraphics.fillCircle(x + 120, y + 120, 2);
+      }
+    }
+
+    this.floorGraphics.lineStyle(4, accentColor, 0.9);
     this.floorGraphics.strokeRect(
       ROOM_RECT.left + 2,
       ROOM_RECT.top + 2,
       ROOM_RECT.width - 4,
       ROOM_RECT.height - 4,
+    );
+
+    const corner = 34;
+    this.floorGraphics.lineStyle(6, accentColor, 1);
+    this.floorGraphics.lineBetween(
+      ROOM_RECT.left + 8,
+      ROOM_RECT.top + 8,
+      ROOM_RECT.left + corner,
+      ROOM_RECT.top + 8,
+    );
+    this.floorGraphics.lineBetween(
+      ROOM_RECT.left + 8,
+      ROOM_RECT.top + 8,
+      ROOM_RECT.left + 8,
+      ROOM_RECT.top + corner,
+    );
+    this.floorGraphics.lineBetween(
+      ROOM_RECT.right - 8,
+      ROOM_RECT.top + 8,
+      ROOM_RECT.right - corner,
+      ROOM_RECT.top + 8,
+    );
+    this.floorGraphics.lineBetween(
+      ROOM_RECT.right - 8,
+      ROOM_RECT.top + 8,
+      ROOM_RECT.right - 8,
+      ROOM_RECT.top + corner,
+    );
+    this.floorGraphics.lineBetween(
+      ROOM_RECT.left + 8,
+      ROOM_RECT.bottom - 8,
+      ROOM_RECT.left + corner,
+      ROOM_RECT.bottom - 8,
+    );
+    this.floorGraphics.lineBetween(
+      ROOM_RECT.left + 8,
+      ROOM_RECT.bottom - 8,
+      ROOM_RECT.left + 8,
+      ROOM_RECT.bottom - corner,
+    );
+    this.floorGraphics.lineBetween(
+      ROOM_RECT.right - 8,
+      ROOM_RECT.bottom - 8,
+      ROOM_RECT.right - corner,
+      ROOM_RECT.bottom - 8,
+    );
+    this.floorGraphics.lineBetween(
+      ROOM_RECT.right - 8,
+      ROOM_RECT.bottom - 8,
+      ROOM_RECT.right - 8,
+      ROOM_RECT.bottom - corner,
     );
   }
 
@@ -222,7 +288,8 @@ export class RoomController {
   }
 
   private addWall(x: number, y: number, width: number, height: number): void {
-    const wall = this.scene.add.rectangle(x, y, width, height, 0x303843, 1);
+    const wall = this.scene.add.rectangle(x, y, width, height, 0x26323c, 1);
+    wall.setStrokeStyle(2, 0x5f707d, 0.85);
     wall.setDepth(DEPTH.floor + 1);
     this.scene.physics.add.existing(wall, true);
     this.walls.add(wall);

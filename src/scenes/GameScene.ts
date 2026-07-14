@@ -1,5 +1,6 @@
 ﻿import Phaser from 'phaser';
 import { BeamAttack } from '../entities/BeamAttack';
+import { Bomb } from '../entities/Bomb';
 import { Bullet } from '../entities/Bullet';
 import { Door } from '../entities/Door';
 import { ItemPickup } from '../entities/ItemPickup';
@@ -45,6 +46,7 @@ export class GameScene extends Phaser.Scene {
   private debugKey?: Phaser.Input.Keyboard.Key;
   private localeKey?: Phaser.Input.Keyboard.Key;
   private bombKey?: Phaser.Input.Keyboard.Key;
+  private pauseKey?: Phaser.Input.Keyboard.Key;
   private debugVisible = false;
   private nextDoorAt = 0;
   private nextBombAt = 0;
@@ -62,6 +64,7 @@ export class GameScene extends Phaser.Scene {
   private beams!: Phaser.Physics.Arcade.Group;
   private items!: Phaser.Physics.Arcade.Group;
   private rewards!: Phaser.Physics.Arcade.Group;
+  private plantedBombs!: Phaser.GameObjects.Group;
   private hud!: Hud;
 
   constructor() {
@@ -97,6 +100,8 @@ export class GameScene extends Phaser.Scene {
     this.beams = this.physics.add.group();
     this.items = this.physics.add.group();
     this.rewards = this.physics.add.group();
+    this.plantedBombs = this.add.group();
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.clearPlantedBombs());
 
     this.player = new Player(this, 480, 320, this.runState.stats);
     this.controls = this.createControls();
@@ -121,6 +126,12 @@ export class GameScene extends Phaser.Scene {
     this.setupPhysics();
     this.setupPlayerEvents();
     this.hud.showMessage(t('messages.floor', { floor: 1 }));
+    this.cameras.main.fadeIn(220, 5, 9, 14);
+    this.time.delayedCall(1500, () => {
+      if (!this.gameOverStarted) {
+        this.hud.showMessage(t('messages.objective'), 2600);
+      }
+    });
   }
 
   update(time: number): void {
@@ -133,6 +144,12 @@ export class GameScene extends Phaser.Scene {
       this.hud.setDebugVisible(this.debugVisible);
       this.physics.world.drawDebug = this.debugVisible;
       this.physics.world.debugGraphic?.setVisible(this.debugVisible);
+    }
+
+    if (this.pauseKey && Phaser.Input.Keyboard.JustDown(this.pauseKey)) {
+      this.scene.pause();
+      this.scene.launch('PauseScene');
+      return;
     }
 
     if (this.localeKey && Phaser.Input.Keyboard.JustDown(this.localeKey)) {
@@ -169,10 +186,17 @@ export class GameScene extends Phaser.Scene {
     this.roomController.update();
     this.updateBossHud();
     this.updateItemHint();
-    this.hud.update(this.runState, this.dungeon, this.enemies.countActive(true), {
-      x: this.player.x,
-      y: this.player.y,
-    });
+    this.hud.update(
+      this.runState,
+      this.dungeon,
+      this.enemies.countActive(true),
+      {
+        x: this.player.x,
+        y: this.player.y,
+      },
+      this.playerBullets.countActive(true) + this.enemyBullets.countActive(true),
+      Math.round(this.game.loop.actualFps),
+    );
   }
 
   private createControls(): PlayerControls {
@@ -185,6 +209,7 @@ export class GameScene extends Phaser.Scene {
     this.debugKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F3);
     this.localeKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.L);
     this.bombKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+    this.pauseKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
 
     return {
       up: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
@@ -352,6 +377,7 @@ export class GameScene extends Phaser.Scene {
   private setupPlayerEvents(): void {
     this.player.on('player-died', () => {
       this.gameOverStarted = true;
+      this.clearPlantedBombs();
       this.player.setActive(false);
       this.player.setVisible(false);
       const body = this.player.body as Phaser.Physics.Arcade.Body | undefined;
@@ -499,12 +525,14 @@ export class GameScene extends Phaser.Scene {
     this.enemyBullets.clear(true, true);
     this.beams.clear(true, true);
     this.rewards.clear(true, true);
+    this.clearPlantedBombs();
 
     const spawnPosition = this.roomController.getSpawnPositionForEntry(door.direction);
     this.player.setPosition(spawnPosition.x, spawnPosition.y);
     (this.player.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
 
     this.roomController.enterCurrentRoom();
+    this.cameras.main.fadeIn(moved.type === 'boss' ? 320 : 150, 6, 9, 14);
 
     const roomEnteredMessage =
       moved.type === 'reward'
@@ -688,12 +716,11 @@ export class GameScene extends Phaser.Scene {
 
     this.runState.inventory = updatedInventory;
     this.nextBombAt = this.time.now + BOMB_TUNING.cooldownMs;
-    this.detonateBomb();
+    const bomb = new Bomb(this, this.player.x, this.player.y, (x, y) => this.detonateBomb(x, y));
+    this.plantedBombs.add(bomb);
   }
 
-  private detonateBomb(): void {
-    const originX = this.player.x;
-    const originY = this.player.y;
+  private detonateBomb(originX: number, originY: number): void {
     const radiusSq = BOMB_TUNING.radius * BOMB_TUNING.radius;
     const withinRadius = (x: number, y: number): boolean => {
       const dx = x - originX;
@@ -745,6 +772,10 @@ export class GameScene extends Phaser.Scene {
     this.effects.hitStop(FEEDBACK_TUNING.hitStop.enemyDeathMs);
     this.cameras.main.flash(140, 255, 176, 90, false);
     this.audio.play('bombUse');
+  }
+
+  private clearPlantedBombs(): void {
+    this.plantedBombs?.clear(true, true);
   }
 
   private dropRoomClearReward(room: RoomNode): void {
@@ -826,10 +857,12 @@ export class GameScene extends Phaser.Scene {
     this.items.clear(true, true);
     this.rewards.clear(true, true);
     this.beams.clear(true, true);
+    this.clearPlantedBombs();
 
     this.dungeon.generateFloor(this.runState.floor);
     this.player.hasChargeBeam = this.runState.unlockedAbilityIds.includes('charge-beam');
     this.roomController.enterCurrentRoom();
+    this.cameras.main.fadeIn(260, 5, 9, 14);
     this.hud.showMessage(t('messages.floor', { floor: this.runState.floor }), 1800);
   }
 

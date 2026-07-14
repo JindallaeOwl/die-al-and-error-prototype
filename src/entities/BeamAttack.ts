@@ -7,6 +7,7 @@ export class BeamAttack extends Phaser.GameObjects.Rectangle {
 
   private readonly bornAt: number;
   private readonly damagedAt = new WeakMap<BaseEnemy, number>();
+  private core?: Phaser.GameObjects.Rectangle;
 
   constructor(
     scene: Phaser.Scene,
@@ -31,6 +32,10 @@ export class BeamAttack extends Phaser.GameObjects.Rectangle {
     this.setDepth(DEPTH.effect);
     this.setStrokeStyle(4, 0xf7f3e8, 0.72);
 
+    this.core = scene.add
+      .rectangle(centerX, centerY, horizontal ? range : 8, horizontal ? 8 : range, 0xfff4ff, 0.68)
+      .setDepth(DEPTH.effect + 1);
+
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setAllowGravity(false);
     body.setImmovable(true);
@@ -51,5 +56,11 @@ export class BeamAttack extends Phaser.GameObjects.Rectangle {
 
     this.damagedAt.set(enemy, time);
     return true;
+  }
+
+  override destroy(fromScene?: boolean): void {
+    this.core?.destroy(fromScene);
+    this.core = undefined;
+    super.destroy(fromScene);
   }
 }

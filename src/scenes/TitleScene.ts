@@ -3,10 +3,27 @@ import { TextureKeys } from '../config/assets';
 import { DEPTH, GAME_HEIGHT, GAME_WIDTH, RENDER_SCALE } from '../config/gameConfig';
 import { getLocale, koreanFontStack, t, toggleLocale } from '../i18n';
 import { AudioSystem } from '../systems/AudioSystem';
+import {
+  getGameSettings,
+  nextEffectsVolume,
+  nextRenderQuality,
+  nextScreenShake,
+  updateGameSettings,
+} from '../systems/GameSettings';
 import { applyRenderScale } from '../utils/render';
 
 type MenuMode = 'main' | 'settings';
-type MenuAction = 'start' | 'settings' | 'quit' | 'language' | 'sound' | 'back';
+type MenuAction =
+  | 'start'
+  | 'settings'
+  | 'quit'
+  | 'language'
+  | 'sound'
+  | 'volume'
+  | 'shake'
+  | 'quality'
+  | 'fullscreen'
+  | 'back';
 
 interface MenuItem {
   label: string;
@@ -36,6 +53,7 @@ export class TitleScene extends Phaser.Scene {
   create(): void {
     applyRenderScale(this);
     this.audio = new AudioSystem();
+    this.soundEnabled = getGameSettings().soundEnabled;
     this.input.once('pointerdown', () => this.audio?.unlock());
     this.input.keyboard?.once('keydown', () => this.audio?.unlock());
 
@@ -46,6 +64,10 @@ export class TitleScene extends Phaser.Scene {
       GAME_HEIGHT,
       TextureKeys.floorTile,
     );
+    this.add
+      .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH - 80, GAME_HEIGHT - 64, 0x060a10, 0.28)
+      .setStrokeStyle(3, 0x33434f, 0.75)
+      .setDepth(DEPTH.floor + 1);
     this.createOrbitDecoration();
     this.createTitle();
     this.createControls();
@@ -161,7 +183,7 @@ export class TitleScene extends Phaser.Scene {
     this.mode = mode;
     this.selectedIndex = 0;
     this.menuContainer?.destroy(true);
-    this.menuContainer = this.add.container(GAME_WIDTH / 2, mode === 'main' ? 350 : 326);
+    this.menuContainer = this.add.container(GAME_WIDTH / 2, mode === 'main' ? 350 : 270);
     this.menuContainer.setDepth(DEPTH.ui);
     this.menuTexts = [];
     this.menuItems = this.buildMenuItems(mode);
@@ -171,9 +193,9 @@ export class TitleScene extends Phaser.Scene {
 
     this.menuItems.forEach((item, index) => {
       const text = this.add
-        .text(0, index * 54, item.label, {
+        .text(0, index * (mode === 'main' ? 54 : 42), item.label, {
           fontFamily: koreanFontStack(),
-          fontSize: mode === 'main' ? '30px' : '24px',
+          fontSize: mode === 'main' ? '30px' : '20px',
           fontStyle: 'bold',
           color: '#f7f3e8',
           stroke: '#0d1117',
@@ -181,6 +203,7 @@ export class TitleScene extends Phaser.Scene {
           resolution: RENDER_SCALE,
         })
         .setOrigin(0.5)
+        .setPadding(24, 9, 24, 9)
         .setInteractive({ useHandCursor: true });
 
       text.on('pointerover', () => this.selectIndex(index));
@@ -201,15 +224,29 @@ export class TitleScene extends Phaser.Scene {
       ];
     }
 
+    const settings = getGameSettings();
     return [
       {
         label: `${t('settings.language')}: ${getLocale() === 'ko' ? t('messages.localeKo') : t('messages.localeEn')}`,
         action: 'language',
       },
       {
-        label: `${t('settings.sound')}: ${this.soundEnabled ? t('settings.soundOn') : t('settings.soundOff')}`,
+        label: `${t('settings.sound')}: ${settings.soundEnabled ? t('settings.soundOn') : t('settings.soundOff')}`,
         action: 'sound',
       },
+      {
+        label: `${t('settings.volume')}: ${Math.round(settings.effectsVolume * 100)}%`,
+        action: 'volume',
+      },
+      {
+        label: `${t('settings.screenShake')}: ${Math.round(settings.screenShake * 100)}%`,
+        action: 'shake',
+      },
+      {
+        label: `${t('settings.renderQuality')}: ${t(`settings.${settings.renderQuality}`)}`,
+        action: 'quality',
+      },
+      { label: t('settings.fullscreen'), action: 'fullscreen' },
       { label: t('menu.back'), action: 'back' },
     ];
   }
@@ -259,8 +296,39 @@ export class TitleScene extends Phaser.Scene {
     }
 
     if (selected.action === 'sound') {
-      this.soundEnabled = !this.soundEnabled;
+      this.soundEnabled = !getGameSettings().soundEnabled;
+      updateGameSettings({ soundEnabled: this.soundEnabled });
       this.renderMenu('settings');
+      return;
+    }
+
+    if (selected.action === 'volume') {
+      updateGameSettings({ effectsVolume: nextEffectsVolume(getGameSettings().effectsVolume) });
+      this.renderMenu('settings');
+      return;
+    }
+
+    if (selected.action === 'shake') {
+      updateGameSettings({ screenShake: nextScreenShake(getGameSettings().screenShake) });
+      this.renderMenu('settings');
+      return;
+    }
+
+    if (selected.action === 'quality') {
+      updateGameSettings({
+        renderQuality: nextRenderQuality(getGameSettings().renderQuality),
+      });
+      this.renderMenu('settings');
+      this.hintText?.setText(t('settings.nextLaunch'));
+      return;
+    }
+
+    if (selected.action === 'fullscreen') {
+      if (this.scale.isFullscreen) {
+        this.scale.stopFullscreen();
+      } else {
+        void this.scale.startFullscreen();
+      }
       return;
     }
 
@@ -278,6 +346,7 @@ export class TitleScene extends Phaser.Scene {
         `${selected ? '> ' : '  '}${this.menuItems[index].label}${selected ? ' <' : '  '}`,
       );
       text.setColor(selected ? '#ffe39b' : '#f7f3e8');
+      text.setBackgroundColor(selected ? '#17313b' : '#00000000');
       text.setScale(selected ? 1.08 : 1);
       text.setAlpha(selected ? 1 : 0.72);
     });

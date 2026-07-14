@@ -27,6 +27,14 @@ export class GameOverScene extends Phaser.Scene {
       TextureKeys.floorTile,
     );
     this.cameras.main.setBackgroundColor('#11151d');
+    this.add
+      .rectangle(GAME_WIDTH / 2, 310, 600, 300, 0x070a10, 0.84)
+      .setStrokeStyle(3, 0x7a3342, 0.9)
+      .setDepth(1);
+
+    this.add
+      .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x16070b, 0.24)
+      .setDepth(0);
 
     this.add
       .text(GAME_WIDTH / 2, 210, t('gameOver.title'), {
@@ -37,7 +45,8 @@ export class GameOverScene extends Phaser.Scene {
         strokeThickness: 8,
         resolution: RENDER_SCALE,
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(2);
 
     this.add
       .text(
@@ -57,7 +66,8 @@ export class GameOverScene extends Phaser.Scene {
           resolution: RENDER_SCALE,
         },
       )
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(2);
 
     this.add
       .text(GAME_WIDTH / 2, 390, t('title.pressEnter'), {
@@ -68,7 +78,8 @@ export class GameOverScene extends Phaser.Scene {
         strokeThickness: 5,
         resolution: RENDER_SCALE,
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(2);
 
     if (this.input.keyboard) {
       this.restartKeys = [

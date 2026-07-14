@@ -4,6 +4,7 @@ import { BaseEnemy } from './BaseEnemy';
 
 export class ShooterEnemy extends BaseEnemy {
   private nextShotAt = 0;
+  private fireAt = 0;
 
   updateAI(time: number, player: Player, enemyBullets: Phaser.Physics.Arcade.Group): void {
     const body = this.body as Phaser.Physics.Arcade.Body;
@@ -26,14 +27,24 @@ export class ShooterEnemy extends BaseEnemy {
 
     this.constrainToRoom();
 
-    if (time >= this.nextShotAt) {
-      this.nextShotAt = time + (this.definition.fireCooldownMs ?? 1400);
+    if (this.fireAt > 0 && time >= this.fireAt) {
+      this.fireAt = 0;
+      this.clearTint();
+      this.setScale(1);
       this.fireAtPlayer(
         player,
         enemyBullets,
         (this.definition.bulletSpeed ?? 220) * (1 + (this.floorScale - 1) * 0.35),
         this.definition.bulletDamage ?? 1,
       );
+      return;
+    }
+
+    if (this.fireAt === 0 && time >= this.nextShotAt) {
+      this.nextShotAt = time + (this.definition.fireCooldownMs ?? 1400);
+      this.fireAt = time + 240;
+      this.setTint(0xfff0ad);
+      this.setScale(1.12);
     }
   }
 }

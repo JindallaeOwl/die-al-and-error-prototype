@@ -1,6 +1,14 @@
 import Phaser from 'phaser';
-import { DEPTH, FEEDBACK_TUNING, GAME_HEIGHT, GAME_WIDTH, RENDER_SCALE } from '../config/gameConfig';
+import {
+  DEPTH,
+  FEEDBACK_TUNING,
+  GAME_HEIGHT,
+  GAME_WIDTH,
+  RENDER_SCALE,
+} from '../config/gameConfig';
 import { koreanFontStack, t } from '../i18n';
+
+import { getGameSettings } from './GameSettings';
 
 type ShakeKind = keyof typeof FEEDBACK_TUNING.cameraShake;
 
@@ -21,7 +29,11 @@ export class EffectsSystem {
 
   shake(kind: ShakeKind): void {
     const shake = FEEDBACK_TUNING.cameraShake[kind];
-    this.scene.cameras.main.shake(shake.durationMs, shake.intensity);
+    const intensity = shake.intensity * getGameSettings().screenShake;
+
+    if (intensity > 0) {
+      this.scene.cameras.main.shake(shake.durationMs, intensity);
+    }
   }
 
   muzzleFlash(x: number, y: number, direction: { x: number; y: number }): void {

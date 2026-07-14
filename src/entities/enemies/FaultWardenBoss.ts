@@ -12,6 +12,10 @@ export class FaultWardenBoss extends BaseEnemy {
   private isPhaseTwo = false;
   private phaseTransitionUntil = 0;
   private phaseTwoVolleyCount = 0;
+  private dashWindupUntil = 0;
+  private volleyAt = 0;
+  private dashTelegraph?: Phaser.GameObjects.Graphics;
+  private volleyTelegraph?: Phaser.GameObjects.Arc;
 
   override takeDamage(amount: number, sourceX: number, sourceY: number): boolean {
     const defeated = super.takeDamage(amount, sourceX, sourceY);
@@ -35,6 +39,19 @@ export class FaultWardenBoss extends BaseEnemy {
       return;
     }
 
+    if (this.dashWindupUntil > 0) {
+      body.setVelocity(0, 0);
+
+      if (time < this.dashWindupUntil) {
+        return;
+      }
+
+      this.dashWindupUntil = 0;
+      this.dashTelegraph?.destroy();
+      this.dashTelegraph = undefined;
+      this.dashUntil = time + BOSS_TUNING.dashDurationMs;
+    }
+
     if (time < this.dashUntil) {
       body.setVelocity(
         this.dashDirection.x * BOSS_TUNING.dashSpeed,
@@ -50,15 +67,37 @@ export class FaultWardenBoss extends BaseEnemy {
       drift.y * this.definition.speed * 0.55,
     );
 
-    if (time >= this.nextShotAt) {
+    if (this.volleyAt > 0) {
+      this.volleyTelegraph?.setPosition(this.x, this.y);
+
+      if (time >= this.volleyAt) {
+        this.volleyAt = 0;
+        this.volleyTelegraph?.destroy();
+        this.volleyTelegraph = undefined;
+        this.fireBurst(player, enemyBullets);
+      }
+    } else if (time >= this.nextShotAt) {
       this.nextShotAt = time + this.getFireCooldownMs();
-      this.fireBurst(player, enemyBullets);
+      this.volleyAt = time + 180;
+      this.volleyTelegraph = this.scene.add
+        .circle(this.x, this.y, 40, 0xff7aee, 0.12)
+        .setStrokeStyle(4, 0xffb6f4, 0.9)
+        .setDepth(this.depth - 1);
     }
 
     if (time >= this.nextDashAt) {
       this.nextDashAt = time + this.getDashCooldownMs();
-      this.dashUntil = time + BOSS_TUNING.dashDurationMs;
       this.dashDirection = normalizeVector(player.x - this.x, player.y - this.y);
+      this.dashWindupUntil = time + 320;
+      this.dashTelegraph?.destroy();
+      this.dashTelegraph = this.scene.add.graphics().setDepth(this.depth - 1);
+      this.dashTelegraph.lineStyle(8, 0xca72ff, 0.28);
+      this.dashTelegraph.lineBetween(
+        this.x,
+        this.y,
+        this.x + this.dashDirection.x * 220,
+        this.y + this.dashDirection.y * 220,
+      );
     }
 
     this.constrainToRoom();
@@ -87,6 +126,7 @@ export class FaultWardenBoss extends BaseEnemy {
     this.nextShotAt = this.phaseTransitionUntil;
     this.nextDashAt = this.phaseTransitionUntil + 250;
     this.dashUntil = 0;
+    this.clearTelegraphs();
     this.setPersistentTint(BOSS_TUNING.phaseTwoTint);
 
     const body = this.body as Phaser.Physics.Arcade.Body;
@@ -162,5 +202,19 @@ export class FaultWardenBoss extends BaseEnemy {
       this.isPhaseTwo ? BOSS_TUNING.phaseTwoBulletSpeed : BOSS_TUNING.bulletSpeed,
       this.definition.bulletDamage ?? BOSS_TUNING.bulletDamage,
     );
+  }
+
+  override destroy(fromScene?: boolean): void {
+    this.clearTelegraphs();
+    super.destroy(fromScene);
+  }
+
+  private clearTelegraphs(): void {
+    this.dashWindupUntil = 0;
+    this.volleyAt = 0;
+    this.dashTelegraph?.destroy();
+    this.volleyTelegraph?.destroy();
+    this.dashTelegraph = undefined;
+    this.volleyTelegraph = undefined;
   }
 }

@@ -1,6 +1,8 @@
 node_modules/
 dist/
 .agents/
+.netlify/
+.vercel/
 .env
 .env.*
 npm-debug.log*

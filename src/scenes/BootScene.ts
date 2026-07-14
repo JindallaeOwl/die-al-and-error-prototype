@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { createPlaceholderTextures } from '../systems/AssetFactory';
+import { createPlaceholderAnimations, createPlaceholderTextures } from '../systems/AssetFactory';
 import { applyRenderScale } from '../utils/render';
 
 export class BootScene extends Phaser.Scene {
@@ -10,6 +10,7 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     applyRenderScale(this);
     createPlaceholderTextures(this);
+    createPlaceholderAnimations(this);
     this.scene.start('TitleScene');
   }
 }

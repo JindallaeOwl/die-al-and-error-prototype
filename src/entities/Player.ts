@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { TextureKeys } from '../config/assets';
+import { AnimationKeys, TextureKeys } from '../config/assets';
 import {
   BEAM_TUNING,
   COMBAT_TUNING,
@@ -32,9 +32,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private beamChargeStartedAt: number | null = null;
   private beamChargeDirection: { x: number; y: number } | null = null;
   private nextBeamChargePulseAt = 0;
+  private lastFacingX = 1;
 
   constructor(scene: Phaser.Scene, x: number, y: number, stats: PlayerStats) {
-    super(scene, x, y, TextureKeys.player);
+    super(scene, x, y, TextureKeys.playerIdle);
     this.stats = stats;
     scene.add.existing(this);
     scene.physics.add.existing(this);
@@ -98,6 +99,28 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const body = this.body as Phaser.Physics.Arcade.Body;
 
     body.setVelocity(direction.x * this.stats.moveSpeed, direction.y * this.stats.moveSpeed);
+    this.updateMovementVisual(inputX, inputY);
+  }
+
+  private updateMovementVisual(inputX: number, inputY: number): void {
+    const moving = inputX !== 0 || inputY !== 0;
+
+    if (inputX !== 0) {
+      this.lastFacingX = inputX;
+    }
+
+    this.setFlipX(this.lastFacingX < 0);
+
+    if (moving) {
+      this.play(AnimationKeys.playerWalk, true);
+      return;
+    }
+
+    this.anims.stop();
+
+    if (this.texture.key !== TextureKeys.playerIdle) {
+      this.setTexture(TextureKeys.playerIdle);
+    }
   }
 
   private updateAttack(
@@ -213,8 +236,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    this.setTexture(TextureKeys.playerHit);
-
     this.scene.tweens.killTweensOf(this);
     this.scene.tweens.add({
       targets: this,
@@ -224,7 +245,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       repeat: 5,
       onComplete: () => {
         this.alpha = 1;
-        this.setTexture(TextureKeys.player);
       },
     });
   }

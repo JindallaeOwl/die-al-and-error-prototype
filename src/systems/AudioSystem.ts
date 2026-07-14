@@ -1,5 +1,7 @@
 ﻿import { FEEDBACK_TUNING } from '../config/gameConfig';
 
+import { getGameSettings } from './GameSettings';
+
 export type SoundCue =
   | 'shoot'
   | 'hit'
@@ -33,7 +35,7 @@ export class AudioSystem {
   private unlocked = false;
 
   unlock(): void {
-    if (!FEEDBACK_TUNING.audio.enabled) {
+    if (!FEEDBACK_TUNING.audio.enabled || !getGameSettings().soundEnabled) {
       return;
     }
 
@@ -53,7 +55,9 @@ export class AudioSystem {
   }
 
   play(cue: SoundCue): void {
-    if (!FEEDBACK_TUNING.audio.enabled) {
+    const gameSettings = getGameSettings();
+
+    if (!FEEDBACK_TUNING.audio.enabled || !gameSettings.soundEnabled) {
       return;
     }
 
@@ -78,7 +82,10 @@ export class AudioSystem {
       );
 
       gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(FEEDBACK_TUNING.audio.masterVolume, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(
+        FEEDBACK_TUNING.audio.masterVolume * gameSettings.effectsVolume,
+        now + 0.01,
+      );
       gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
       oscillator.connect(gain);
