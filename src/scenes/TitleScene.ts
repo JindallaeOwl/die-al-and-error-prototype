@@ -96,7 +96,7 @@ export class TitleScene extends Phaser.Scene {
       const mote = this.add.image(
         Math.cos(angle) * 165,
         Math.sin(angle) * 66,
-        i % 2 === 0 ? TextureKeys.enemyBullet : TextureKeys.playerBullet,
+        i % 2 === 0 ? TextureKeys.enemyBullet : TextureKeys.playerSeed,
       );
       mote.setAlpha(0.36);
       orbit.add(mote);

@@ -9,6 +9,8 @@ export function createPlaceholderTextures(scene: Phaser.Scene): void {
   createPlayerFrameTexture(scene, TextureKeys.playerWalkA, 3, -2, -1, false);
   createPlayerFrameTexture(scene, TextureKeys.playerWalkMid, 0, 0, 0, false);
   createPlayerFrameTexture(scene, TextureKeys.playerWalkB, -2, 3, -1, false);
+  createPlayerCosmeticTextures(scene);
+  createSeedTexture(scene);
   createBulletTexture(scene, TextureKeys.playerBullet, 14, 0xe8ffff, 0x58e8ed, 0x104954);
   createBulletTexture(scene, TextureKeys.enemyBullet, 16, 0xfff0b8, 0xff8b3d, 0x681f1c);
   createChaserTexture(scene);
@@ -27,6 +29,40 @@ export function createPlaceholderTextures(scene: Phaser.Scene): void {
   createFloorTile(scene);
   createWallTexture(scene);
   createObstacleTexture(scene);
+}
+
+function createPlayerCosmeticTextures(scene: Phaser.Scene): void {
+  const eyes = scene.add.graphics();
+  eyes.fillStyle(0xeaffff, 1);
+  eyes.fillCircle(5, 5, 4);
+  eyes.fillCircle(15, 5, 4);
+  eyes.fillStyle(0x08222a, 1);
+  eyes.fillCircle(5, 6, 2);
+  eyes.fillCircle(15, 6, 2);
+  eyes.generateTexture(TextureKeys.playerExtraEyes, 20, 10);
+  eyes.destroy();
+
+  const toothpick = scene.add.graphics();
+  toothpick.lineStyle(3, 0xf6d59a, 1);
+  toothpick.lineBetween(3, 17, 13, 2);
+  toothpick.fillStyle(0xfff0bd, 1);
+  toothpick.fillTriangle(12, 1, 15, 0, 13, 4);
+  toothpick.generateTexture(TextureKeys.playerToothpick, 16, 19);
+  toothpick.destroy();
+}
+
+function createSeedTexture(scene: Phaser.Scene): void {
+  const graphics = scene.add.graphics();
+  graphics.fillStyle(0x07110a, 0.35);
+  graphics.fillEllipse(9, 10, 15, 9);
+  graphics.fillStyle(0x79cf52, 1);
+  graphics.lineStyle(2, 0x214f28, 1);
+  graphics.fillEllipse(8, 8, 13, 8);
+  graphics.strokeEllipse(8, 8, 13, 8);
+  graphics.fillStyle(0xc7f28c, 1);
+  graphics.fillEllipse(6, 6, 4, 2);
+  graphics.generateTexture(TextureKeys.playerSeed, 18, 16);
+  graphics.destroy();
 }
 
 export function createPlaceholderAnimations(scene: Phaser.Scene): void {
@@ -447,6 +483,28 @@ function drawItemSymbol(
       graphics.fillPath();
       graphics.lineStyle(2, tint, 1);
       graphics.lineBetween(9, 16, 23, 16);
+      break;
+    }
+    case 'quad-shot': {
+      graphics.fillStyle(color, 1);
+      graphics.fillCircle(11, 11, 3);
+      graphics.fillCircle(21, 11, 3);
+      graphics.fillCircle(11, 21, 3);
+      graphics.fillCircle(21, 21, 3);
+      break;
+    }
+    case 'mega-seed': {
+      graphics.fillStyle(color, 1);
+      graphics.fillEllipse(16, 16, 18, 12);
+      graphics.lineStyle(2, tint, 1);
+      graphics.lineBetween(11, 11, 21, 21);
+      break;
+    }
+    case 'toothpick': {
+      graphics.lineStyle(4, color, 1);
+      graphics.lineBetween(9, 24, 23, 8);
+      graphics.fillStyle(color, 1);
+      graphics.fillTriangle(21, 7, 26, 5, 24, 10);
       break;
     }
     default: {

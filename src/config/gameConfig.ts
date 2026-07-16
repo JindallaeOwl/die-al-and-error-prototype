@@ -46,6 +46,19 @@ export interface PlayerStats {
   fireRate: number;
   luck: number;
   projectileSpeed: number;
+  damageMultiplier: number;
+  fireRateMultiplier: number;
+  projectileSpeedMultiplier: number;
+}
+
+export interface PlayerAttackProfile {
+  seedCount: number;
+  spreadStepDegrees: number;
+  overflowPenetration: boolean;
+  seedScale: number;
+  forceRedSeeds: boolean;
+  extraForeheadEyeCount: number;
+  hasToothpickCosmetic: boolean;
 }
 
 export const PLAYER_BASE_STATS: PlayerStats = {
@@ -57,6 +70,19 @@ export const PLAYER_BASE_STATS: PlayerStats = {
   fireRate: 2.8,
   luck: 0,
   projectileSpeed: 500,
+  damageMultiplier: 1,
+  fireRateMultiplier: 1,
+  projectileSpeedMultiplier: 1,
+};
+
+export const PLAYER_BASE_ATTACK_PROFILE: PlayerAttackProfile = {
+  seedCount: 1,
+  spreadStepDegrees: 12,
+  overflowPenetration: false,
+  seedScale: 1,
+  forceRedSeeds: false,
+  extraForeheadEyeCount: 0,
+  hasToothpickCosmetic: false,
 };
 
 export const COMBAT_TUNING = {

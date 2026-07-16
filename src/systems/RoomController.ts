@@ -4,7 +4,7 @@ import { ItemPickup } from '../entities/ItemPickup';
 import { Obstacle } from '../entities/Obstacle';
 import { createEnemy } from '../entities/enemies/EnemyFactory';
 import type { BaseEnemy } from '../entities/enemies/BaseEnemy';
-import { DEPTH, ROOM_RECT, WALL_THICKNESS } from '../config/gameConfig';
+import { DEPTH, OBSTACLE_TUNING, ROOM_RECT, WALL_THICKNESS } from '../config/gameConfig';
 import { PASSIVE_ITEMS, TEST_BEAM_ITEM_ID } from '../data/items';
 import { getRoomTemplate } from '../data/rooms';
 import type { ItemSystem } from './ItemSystem';
@@ -84,6 +84,8 @@ export class RoomController {
     if (room.type === 'treasure') {
       this.spawnTreasure(room);
     }
+
+    this.spawnObstacles(room);
   }
 
   update(): void {
@@ -148,10 +150,29 @@ export class RoomController {
         enemy.once('boss-phase-two', this.onBossPhaseTwo);
       }
     }
+  }
 
-    for (const obstaclePosition of template.obstacles ?? []) {
-      this.obstacles.add(new Obstacle(this.scene, obstaclePosition.x, obstaclePosition.y));
+  private spawnObstacles(room: RoomNode): void {
+    const positions = getRoomTemplate(room.templateId).obstacles ?? [];
+
+    if (!room.obstacleHealth) {
+      room.obstacleHealth = positions.map(() => OBSTACLE_TUNING.maxHealth);
     }
+
+    positions.forEach((position, index) => {
+      const health = room.obstacleHealth?.[index] ?? OBSTACLE_TUNING.maxHealth;
+
+      if (health <= 0) {
+        return;
+      }
+
+      const obstacle = new Obstacle(this.scene, position.x, position.y, health, (remaining) => {
+        if (room.obstacleHealth) {
+          room.obstacleHealth[index] = remaining;
+        }
+      });
+      this.obstacles.add(obstacle);
+    });
   }
 
   private spawnReward(room: RoomNode): void {

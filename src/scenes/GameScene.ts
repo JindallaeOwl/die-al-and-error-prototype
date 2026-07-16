@@ -28,6 +28,7 @@ import { ItemSystem } from '../systems/ItemSystem';
 import { RewardSystem } from '../systems/RewardSystem';
 import { RoomController } from '../systems/RoomController';
 import { createInitialRunState, type RunState } from '../systems/RunState';
+import { getEffectiveDamage } from '../systems/PlayerStatSystem';
 import { Hud } from '../ui/Hud';
 import { applyRenderScale } from '../utils/render';
 import { clamp } from '../utils/math';
@@ -102,7 +103,7 @@ export class GameScene extends Phaser.Scene {
     this.plantedBombs = this.add.group();
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.clearPlantedBombs());
 
-    this.player = new Player(this, 480, 320, this.runState.stats);
+    this.player = new Player(this, 480, 320, this.runState.stats, this.runState.attackProfile);
     this.controls = this.createControls();
 
     this.roomController = new RoomController({
@@ -292,7 +293,13 @@ export class GameScene extends Phaser.Scene {
       const bullet = bulletObject as Bullet;
       const enemy = enemyObject as BaseEnemy;
 
-      if (!bullet.active || !enemy.active || !bullet.body || !enemy.body) {
+      if (
+        !bullet.active ||
+        !enemy.active ||
+        !bullet.body ||
+        !enemy.body ||
+        bullet.hasHitTarget(enemy)
+      ) {
         return;
       }
 
@@ -301,13 +308,20 @@ export class GameScene extends Phaser.Scene {
       const enemyX = enemy.x;
       const enemyY = enemy.y;
 
-      if (!bullet.consume()) {
-        return;
-      }
-
-      const defeated = enemy.takeDamage(bullet.damage, bulletX, bulletY);
+      bullet.markTargetHit(enemy);
+      const { defeated, overflowDamage } = enemy.takeProjectileDamage(
+        bullet.damage,
+        bulletX,
+        bulletY,
+      );
+      const continues = bullet.overflowPenetration && defeated && overflowDamage > 0;
       this.effects.impact(bulletX, bulletY, defeated ? 0xffd166 : 0xf7f3e8);
-      bullet.queueDestroy();
+
+      if (continues) {
+        bullet.retainOverflowDamage(overflowDamage);
+      } else if (bullet.consume()) {
+        bullet.queueDestroy();
+      }
 
       if (defeated) {
         this.effects.hitStop(FEEDBACK_TUNING.hitStop.enemyDeathMs);
@@ -375,24 +389,15 @@ export class GameScene extends Phaser.Scene {
 
   private setupPlayerEvents(): void {
     this.player.on('player-died', () => {
-      this.gameOverStarted = true;
-      this.clearPlantedBombs();
-      this.player.setActive(false);
-      this.player.setVisible(false);
-      const body = this.player.body as Phaser.Physics.Arcade.Body | undefined;
-
-      if (body) {
-        body.enable = false;
-        body.stop();
+      if (this.gameOverStarted) {
+        return;
       }
 
-      this.effects.shake('playerHurt');
-      this.time.delayedCall(320, () => {
-        this.scene.start('GameOverScene', {
-          clearedRooms: this.runState.clearedRooms,
-          itemCount: this.runState.collectedItemIds.length,
-          score: this.runState.score,
-        });
+      this.gameOverStarted = true;
+      this.scene.start('GameOverScene', {
+        clearedRooms: this.runState.clearedRooms,
+        itemCount: this.runState.collectedItemIds.length,
+        score: this.runState.score,
       });
     });
 
@@ -402,8 +407,8 @@ export class GameScene extends Phaser.Scene {
         this.player.x,
         this.player.y,
         direction,
-        Math.max(this.runState.stats.range, BEAM_TUNING.range),
-        BEAM_TUNING.damage + this.runState.stats.damage * 0.8,
+        BEAM_TUNING.range,
+        BEAM_TUNING.damage + getEffectiveDamage(this.runState.stats) * 0.8,
       );
       this.beams.add(beam);
       this.effects.beamFire(this.player.x, this.player.y);
@@ -531,6 +536,7 @@ export class GameScene extends Phaser.Scene {
     (this.player.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
 
     this.roomController.enterCurrentRoom();
+    this.restorePendingRoomReward(moved);
     this.cameras.main.fadeIn(moved.type === 'boss' ? 320 : 150, 6, 9, 14);
 
     const roomEnteredMessage =
@@ -585,6 +591,10 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.runState.stats = this.itemSystem.applyItem(this.runState.stats, pickup.item);
+    this.runState.attackProfile = this.itemSystem.applyAttackProfile(
+      this.runState.attackProfile,
+      pickup.item,
+    );
     this.runState.collectedItemIds.push(pickup.item.id);
 
     if (
@@ -596,6 +606,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.player.setStats(this.runState.stats);
+    this.player.setAttackProfile(this.runState.attackProfile);
     const currentRoom = this.dungeon.getCurrentRoom();
 
     if (currentRoom.type === 'reward') {
@@ -647,6 +658,7 @@ export class GameScene extends Phaser.Scene {
       this.hud.showMessage(this.formatChestResult(result), 1600);
       this.effects.pickup(pickup.x, pickup.y);
       this.audio.play('pickup');
+      this.clearPendingRewardForPickup(pickup);
       pickup.destroy();
       return;
     }
@@ -666,6 +678,7 @@ export class GameScene extends Phaser.Scene {
     );
     this.effects.pickup(pickup.x, pickup.y);
     this.audio.play('pickup');
+    this.clearPendingRewardForPickup(pickup);
     pickup.destroy();
   }
 
@@ -784,14 +797,36 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    const pickup = new RewardPickup(
-      this,
-      480 + Phaser.Math.Between(-60, 60),
-      320 + Phaser.Math.Between(-40, 40),
-      reward,
-    );
+    const x = 480 + Phaser.Math.Between(-60, 60);
+    const y = 320 + Phaser.Math.Between(-40, 40);
+    room.pendingReward = { reward, x, y };
+    this.spawnPendingRoomReward(room);
+  }
+
+  private restorePendingRoomReward(room: RoomNode): void {
+    if (room.pendingReward) {
+      this.spawnPendingRoomReward(room);
+    }
+  }
+
+  private spawnPendingRoomReward(room: RoomNode): void {
+    const pending = room.pendingReward;
+
+    if (!pending) {
+      return;
+    }
+
+    const pickup = new RewardPickup(this, pending.x, pending.y, pending.reward);
     pickup.setData('sourceRoomId', room.id);
     this.rewards.add(pickup);
+  }
+
+  private clearPendingRewardForPickup(pickup: RewardPickup): void {
+    const sourceRoomId = pickup.getData('sourceRoomId') as string | undefined;
+
+    if (sourceRoomId) {
+      this.dungeon.clearPendingReward(sourceRoomId);
+    }
   }
 
   private handlePlayerDamaged(): void {

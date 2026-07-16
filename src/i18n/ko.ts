@@ -117,7 +117,8 @@ export const ko: TranslationTree = {
     },
     hotPebble: {
       name: '뜨거운 조약돌',
-      description: '사거리, 탄환 속도, 공격력이 함께 오릅니다 (사거리 +85, 탄속 +72, 공격 +0.15).',
+      description:
+        '사거리, 씨앗 속도, 공격력이 함께 오릅니다 (사거리 +85, 씨앗 속도 +72, 공격 +0.15).',
     },
     pocketBattery: {
       name: '주머니 전지',
@@ -125,7 +126,7 @@ export const ko: TranslationTree = {
     },
     steadyPin: {
       name: '고정 핀',
-      description: '연사 속도와 탄환 속도가 함께 오릅니다 (연사 +0.35, 탄속 +40).',
+      description: '공격 속도와 씨앗 속도가 함께 오릅니다 (공속 +0.35, 씨앗 속도 +40).',
     },
     moonDial: {
       name: '달 시계',
@@ -137,7 +138,20 @@ export const ko: TranslationTree = {
     },
     prismLance: {
       name: '프리즘 창',
-      description: '방향키를 길게 눌러 관통 빔을 쏘는 특수 공격을 얻습니다.',
+      description: '씨앗 공격을 차징 관통 빔으로 바꿉니다. 공격력과 공격 속도는 빔에도 적용됩니다.',
+    },
+    quadShot: {
+      name: '쿼드샷',
+      description: '씨앗 4개를 부채꼴로 발사합니다 (공격 속도 배율 ×0.42).',
+    },
+    megaSeed: {
+      name: '메가씨드',
+      description:
+        '거대한 씨앗이 처치 후 남은 피해로 관통합니다 (공격 +4, 공격력 ×2, 공격 속도 ×0.42).',
+    },
+    toothpick: {
+      name: '이쑤시개',
+      description: '공격이 빨라지고 씨앗이 붉어집니다 (공격 속도 +0.7, 씨앗 속도 ×1.16).',
     },
   },
 };

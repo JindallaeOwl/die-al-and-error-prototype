@@ -12,19 +12,24 @@ interface BulletLaunchConfig {
   speed: number;
   damage: number;
   lifeMs: number;
+  overflowPenetration?: boolean;
+  scale?: number;
+  tint?: number;
 }
 
 export class Bullet extends Phaser.Physics.Arcade.Sprite {
   owner: BulletOwner = 'player';
   damage = 1;
+  overflowPenetration = false;
 
   private bornAt = 0;
   private lifeMs = 1000;
   private consumed = false;
   private destroyQueued = false;
+  private hitTargets = new Set<object>();
 
   constructor(scene: Phaser.Scene) {
-    super(scene, 0, 0, TextureKeys.playerBullet);
+    super(scene, 0, 0, TextureKeys.playerSeed);
   }
 
   static spawn(
@@ -43,11 +48,18 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
   launch(config: BulletLaunchConfig): void {
     this.owner = config.owner;
     this.damage = config.damage;
+    this.overflowPenetration = config.overflowPenetration ?? false;
     this.lifeMs = config.lifeMs;
     this.bornAt = this.scene.time.now;
     this.consumed = false;
     this.destroyQueued = false;
-    this.setTexture(config.owner === 'player' ? TextureKeys.playerBullet : TextureKeys.enemyBullet);
+    this.hitTargets.clear();
+    this.clearTint();
+    this.setScale(config.scale ?? 1);
+    this.setTexture(config.owner === 'player' ? TextureKeys.playerSeed : TextureKeys.enemyBullet);
+    if (config.tint !== undefined) {
+      this.setTint(config.tint);
+    }
     this.setPosition(config.x, config.y);
     this.setActive(true);
     this.setVisible(true);
@@ -55,10 +67,31 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
 
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setAllowGravity(false);
-    body.setCircle(config.owner === 'player' ? 5 : 6);
+    const playerRadius = Math.round(5 * (config.scale ?? 1));
+    body.setCircle(config.owner === 'player' ? playerRadius : 6);
     body.enable = true;
     body.checkCollision.none = false;
     body.setVelocity(config.direction.x * config.speed, config.direction.y * config.speed);
+    this.setRotation(Math.atan2(config.direction.y, config.direction.x));
+  }
+
+  hasHitTarget(target: object): boolean {
+    return this.hitTargets.has(target);
+  }
+
+  markTargetHit(target: object): void {
+    this.hitTargets.add(target);
+  }
+
+  retainOverflowDamage(damage: number): void {
+    this.damage = damage;
+    const body = this.body as Phaser.Physics.Arcade.Body | undefined;
+
+    if (body) {
+      const direction = body.velocity.clone().normalize();
+      this.x += direction.x * 8;
+      this.y += direction.y * 8;
+    }
   }
 
   consume(): boolean {

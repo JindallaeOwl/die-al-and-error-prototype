@@ -118,7 +118,7 @@ export const en: TranslationTree = {
     hotPebble: {
       name: 'Hot Pebble',
       description:
-        'Range, projectile speed, and damage all increase (+85 range, +72 speed, +0.15 damage).',
+        'Range, seed speed, and damage all increase (+85 range, +72 seed speed, +0.15 damage).',
     },
     pocketBattery: {
       name: 'Pocket Battery',
@@ -126,7 +126,7 @@ export const en: TranslationTree = {
     },
     steadyPin: {
       name: 'Steady Pin',
-      description: 'Fire rate and projectile speed both increase (+0.35 rate, +40 speed).',
+      description: 'Attack speed and seed speed both increase (+0.35 rate, +40 seed speed).',
     },
     moonDial: {
       name: 'Moon Dial',
@@ -138,7 +138,21 @@ export const en: TranslationTree = {
     },
     prismLance: {
       name: 'Prism Lance',
-      description: 'Unlocks a charged piercing beam — hold a direction to charge and release.',
+      description:
+        'Replaces seed attacks with a charged piercing beam. Damage and attack speed still apply.',
+    },
+    quadShot: {
+      name: 'Quad Shot',
+      description: 'Fires four seeds in a fan (attack speed multiplier ×0.42).',
+    },
+    megaSeed: {
+      name: 'Mega Seed',
+      description:
+        'A huge seed carries excess killing damage through enemies (+4 damage, ×2 damage, ×0.42 attack speed).',
+    },
+    toothpick: {
+      name: 'Toothpick',
+      description: 'Attacks faster and turns seeds red (+0.7 attack speed, ×1.16 seed speed).',
     },
   },
 };

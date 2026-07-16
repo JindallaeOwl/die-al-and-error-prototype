@@ -3,6 +3,14 @@ import { DEPTH, GAME_WIDTH, RENDER_SCALE, type PlayerStats } from '../config/gam
 import { koreanFontStack, t } from '../i18n';
 import type { DungeonManager } from '../systems/DungeonManager';
 import type { RunState } from '../systems/RunState';
+import { getEffectiveDamage, getEffectiveFireRate } from '../systems/PlayerStatSystem';
+
+const HUD_EDGE_MARGIN = 6;
+const STATS_PANEL_WIDTH = 470;
+const STATS_PANEL_HEIGHT = 68;
+const MINIMAP_PANEL_WIDTH = 170;
+const MINIMAP_PANEL_HEIGHT = 68;
+const PANEL_TOP = 4;
 
 export class Hud {
   private readonly scene: Phaser.Scene;
@@ -21,17 +29,33 @@ export class Hud {
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
 
-    this.createPanel(132, 66, 244, 122, 0.62);
-    this.createPanel(GAME_WIDTH - 68, 55, 128, 94);
+    this.createPanel(
+      HUD_EDGE_MARGIN + STATS_PANEL_WIDTH / 2,
+      PANEL_TOP + STATS_PANEL_HEIGHT / 2,
+      STATS_PANEL_WIDTH,
+      STATS_PANEL_HEIGHT,
+      0.62,
+    );
+    this.createPanel(
+      GAME_WIDTH - HUD_EDGE_MARGIN - MINIMAP_PANEL_WIDTH / 2,
+      PANEL_TOP + MINIMAP_PANEL_HEIGHT / 2,
+      MINIMAP_PANEL_WIDTH,
+      MINIMAP_PANEL_HEIGHT,
+    );
     this.messagePanel = this.createPanel(GAME_WIDTH / 2, 594, 680, 54).setVisible(false);
 
-    this.healthText = this.createText(14, 10, 18);
-    this.inventoryText = this.createText(14, 35, 13);
-    this.statsText = this.createText(14, 55, 12);
-    this.roomText = this.createText(14, 103, 12);
+    const statsTextX = HUD_EDGE_MARGIN + 8;
+    this.healthText = this.createText(statsTextX, PANEL_TOP + 3, 16);
+    this.inventoryText = this.createText(statsTextX + 130, PANEL_TOP + 5, 13);
+    this.statsText = this.createText(statsTextX, PANEL_TOP + 27, 12);
+    this.roomText = this.createText(statsTextX, PANEL_TOP + 47, 12);
     this.messageText = this.createText(GAME_WIDTH / 2, 584, 16).setOrigin(0.5);
     this.itemHintText = this.createText(GAME_WIDTH / 2, 606, 13).setOrigin(0.5);
-    this.debugText = this.createText(18, 140, 13).setVisible(false);
+    this.debugText = this.createText(
+      statsTextX,
+      PANEL_TOP + STATS_PANEL_HEIGHT + 12,
+      13,
+    ).setVisible(false);
     this.minimap = scene.add.graphics();
     this.minimap.setDepth(DEPTH.ui);
   }
@@ -66,6 +90,8 @@ export class Hud {
     fps: number,
   ): void {
     const stats = runState.stats;
+    const effectiveDamage = getEffectiveDamage(stats);
+    const effectiveFireRate = getEffectiveFireRate(stats);
     this.healthText.setText(
       `${t('hud.hp')} ${formatStat(stats.health)} / ${formatStat(stats.maxHealth)}`,
     );
@@ -76,9 +102,9 @@ export class Hud {
     );
     this.statsText.setText(
       [
-        `${t('hud.damage')} ${stats.damage.toFixed(1)}  ${t('hud.range')} ${Math.round(
+        `${t('hud.damage')} ${effectiveDamage.toFixed(1)}  ${t('hud.range')} ${Math.round(
           stats.range,
-        )}  ${t('hud.fireRate')} ${stats.fireRate.toFixed(1)}`,
+        )}  ${t('hud.fireRate')} ${effectiveFireRate.toFixed(1)}`,
         `${t('hud.luck')} ${stats.luck.toFixed(1)}  ${t('hud.speed')} ${Math.round(
           stats.moveSpeed,
         )}`,
@@ -119,12 +145,14 @@ export class Hud {
   private drawMinimap(dungeon: DungeonManager): void {
     const rooms = dungeon.getRooms();
     const current = dungeon.getCurrentRoom();
-    const size = 12;
-    const gap = 3;
-    const originX = GAME_WIDTH - 124;
-    const originY = 18;
+    const size = 10;
+    const gap = 2;
     const minX = Math.min(...rooms.map((room) => room.coord.x));
+    const maxX = Math.max(...rooms.map((room) => room.coord.x));
     const minY = Math.min(...rooms.map((room) => room.coord.y));
+    const mapWidth = (maxX - minX) * (size + gap) + size;
+    const originX = GAME_WIDTH - HUD_EDGE_MARGIN - 10 - mapWidth;
+    const originY = PANEL_TOP + 9;
 
     this.minimap.clear();
 

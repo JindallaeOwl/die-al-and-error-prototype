@@ -6,10 +6,18 @@ import {
   DEPTH,
   FEEDBACK_TUNING,
   ROOM_RECT,
+  PLAYER_BASE_ATTACK_PROFILE,
+  type PlayerAttackProfile,
   type PlayerStats,
 } from '../config/gameConfig';
 import { Bullet } from './Bullet';
 import { clamp, normalizeVector } from '../utils/math';
+import {
+  getEffectiveBeamChargeMs,
+  getEffectiveDamage,
+  getEffectiveFireRate,
+  getEffectiveProjectileSpeed,
+} from '../systems/PlayerStatSystem';
 
 export interface PlayerControls {
   up: Phaser.Input.Keyboard.Key;
@@ -25,6 +33,9 @@ export interface PlayerControls {
 export class Player extends Phaser.Physics.Arcade.Sprite {
   stats: PlayerStats;
   hasChargeBeam = false;
+  private attackProfile: PlayerAttackProfile;
+  private readonly extraEyes: Phaser.GameObjects.Image;
+  private readonly toothpick: Phaser.GameObjects.Image;
 
   private nextShotAt = 0;
   private invulnerableUntil = 0;
@@ -34,9 +45,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private nextBeamChargePulseAt = 0;
   private lastFacingX = 1;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, stats: PlayerStats) {
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    stats: PlayerStats,
+    attackProfile: PlayerAttackProfile = PLAYER_BASE_ATTACK_PROFILE,
+  ) {
     super(scene, x, y, TextureKeys.playerIdle);
     this.stats = stats;
+    this.attackProfile = { ...attackProfile };
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.setDepth(DEPTH.actor);
@@ -46,10 +64,28 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     body.setCircle(15);
     body.setCollideWorldBounds(false);
     body.setMaxVelocity(420, 420);
+
+    this.extraEyes = scene.add
+      .image(x, y - 10, TextureKeys.playerExtraEyes)
+      .setDepth(DEPTH.actor + 1);
+    this.toothpick = scene.add
+      .image(x + 8, y - 22, TextureKeys.playerToothpick)
+      .setDepth(DEPTH.actor + 1);
+    this.syncCosmetics();
   }
 
   setStats(stats: PlayerStats): void {
     this.stats = stats;
+  }
+
+  setAttackProfile(profile: PlayerAttackProfile): void {
+    this.attackProfile = { ...profile };
+    this.syncCosmetics();
+  }
+
+  setCombatVisible(visible: boolean): void {
+    this.setVisible(visible);
+    this.syncCosmetics();
   }
 
   update(time: number, controls: PlayerControls, bulletGroup: Phaser.Physics.Arcade.Group): void {
@@ -60,6 +96,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.updateMovement(controls);
     this.updateAttack(time, controls, bulletGroup);
     this.constrainToRoom();
+    this.syncCosmetics();
   }
 
   damage(amount: number, sourceX: number, sourceY: number): boolean {
@@ -147,28 +184,47 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    this.nextShotAt = time + 1000 / this.stats.fireRate;
+    const fireRate = getEffectiveFireRate(this.stats);
+    const projectileSpeed = getEffectiveProjectileSpeed(this.stats);
+    const damage = getEffectiveDamage(this.stats);
+    const seedCount = this.attackProfile.seedCount;
+    const centerIndex = (seedCount - 1) / 2;
+    this.nextShotAt = time + 1000 / fireRate;
 
-    const bulletX = this.x + direction.x * 22;
-    const bulletY = this.y + direction.y * 22;
+    for (let index = 0; index < seedCount; index += 1) {
+      const angleOffset = Phaser.Math.DegToRad(
+        (index - centerIndex) * this.attackProfile.spreadStepDegrees,
+      );
+      const angle = Math.atan2(direction.y, direction.x) + angleOffset;
+      const seedDirection = { x: Math.cos(angle), y: Math.sin(angle) };
+      const lateralOffset = (index - centerIndex) * 4;
+      const seedX = this.x + seedDirection.x * 22 - direction.y * lateralOffset;
+      const seedY = this.y + seedDirection.y * 22 + direction.x * lateralOffset;
 
-    Bullet.spawn(this.scene, bulletGroup, {
-      x: bulletX,
-      y: bulletY,
-      direction,
-      owner: 'player',
-      speed: this.stats.projectileSpeed,
-      damage: this.stats.damage,
-      lifeMs: (this.stats.range / this.stats.projectileSpeed) * 1000,
-    });
-    this.emit('player-shot', { x: bulletX, y: bulletY, direction });
+      Bullet.spawn(this.scene, bulletGroup, {
+        x: seedX,
+        y: seedY,
+        direction: seedDirection,
+        owner: 'player',
+        speed: projectileSpeed,
+        damage,
+        lifeMs: (this.stats.range / projectileSpeed) * 1000,
+        overflowPenetration: this.attackProfile.overflowPenetration,
+        scale: this.attackProfile.seedScale,
+        tint: this.attackProfile.forceRedSeeds ? 0xff4d4d : undefined,
+      });
+    }
+
+    const muzzleX = this.x + direction.x * 22;
+    const muzzleY = this.y + direction.y * 22;
+    this.emit('player-shot', { x: muzzleX, y: muzzleY, direction });
   }
 
   private updateBeamCharge(time: number, controls: PlayerControls): void {
     const direction = this.getFireDirection(controls);
 
     if (direction) {
-      if (!this.beamChargeStartedAt) {
+      if (this.beamChargeStartedAt === null) {
         this.beamChargeStartedAt = time;
         this.beamChargeDirection = direction;
         this.nextBeamChargePulseAt = 0;
@@ -177,7 +233,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.beamChargeDirection = direction;
       }
 
-      const chargeProgress = Math.min(1, (time - this.beamChargeStartedAt) / BEAM_TUNING.chargeMs);
+      const requiredChargeMs = getEffectiveBeamChargeMs(this.stats);
+      const chargeProgress = Math.min(1, (time - this.beamChargeStartedAt) / requiredChargeMs);
       this.setTint(chargeProgress >= 1 ? 0xff7af2 : 0x8beeff);
 
       if (time >= this.nextBeamChargePulseAt) {
@@ -188,13 +245,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    if (!this.beamChargeStartedAt || !this.beamChargeDirection) {
+    if (this.beamChargeStartedAt === null || !this.beamChargeDirection) {
       this.clearTint();
       return;
     }
 
     const chargeMs = time - this.beamChargeStartedAt;
-    const canFire = chargeMs >= BEAM_TUNING.chargeMs && time >= this.beamCooldownUntil;
+    const canFire =
+      chargeMs >= getEffectiveBeamChargeMs(this.stats) && time >= this.beamCooldownUntil;
 
     if (canFire) {
       this.beamCooldownUntil = time + BEAM_TUNING.cooldownMs;
@@ -229,6 +287,26 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private constrainToRoom(): void {
     this.x = clamp(this.x, ROOM_RECT.left + 18, ROOM_RECT.right - 18);
     this.y = clamp(this.y, ROOM_RECT.top + 18, ROOM_RECT.bottom - 18);
+  }
+
+  private syncCosmetics(): void {
+    const visible = this.visible && this.active;
+    this.extraEyes
+      .setPosition(this.x, this.y - 10)
+      .setFlipX(this.flipX)
+      .setAlpha(this.alpha)
+      .setVisible(visible && this.attackProfile.extraForeheadEyeCount > 0);
+    this.toothpick
+      .setPosition(this.x + (this.flipX ? -8 : 8), this.y - 22)
+      .setFlipX(this.flipX)
+      .setAlpha(this.alpha)
+      .setVisible(visible && this.attackProfile.hasToothpickCosmetic);
+  }
+
+  override destroy(fromScene?: boolean): void {
+    this.extraEyes.destroy();
+    this.toothpick.destroy();
+    super.destroy(fromScene);
   }
 
   playHitFeedback(): void {

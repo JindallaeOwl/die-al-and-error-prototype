@@ -80,6 +80,20 @@ export abstract class BaseEnemy extends Phaser.Physics.Arcade.Sprite {
     return false;
   }
 
+  takeProjectileDamage(
+    amount: number,
+    sourceX: number,
+    sourceY: number,
+  ): { defeated: boolean; overflowDamage: number } {
+    const healthBeforeHit = Math.max(0, this.hp);
+    const defeated = this.takeDamage(amount, sourceX, sourceY);
+
+    return {
+      defeated,
+      overflowDamage: defeated ? Math.max(0, amount - healthBeforeHit) : 0,
+    };
+  }
+
   getHealthRatio(): number {
     return Phaser.Math.Clamp(this.hp / (this.definition.maxHealth * this.floorScale), 0, 1);
   }

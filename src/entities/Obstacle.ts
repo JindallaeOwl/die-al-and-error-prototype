@@ -3,11 +3,20 @@ import { TextureKeys } from '../config/assets';
 import { DEPTH, OBSTACLE_TUNING } from '../config/gameConfig';
 
 export class Obstacle extends Phaser.Physics.Arcade.Sprite {
-  private hp = OBSTACLE_TUNING.maxHealth;
+  private hp: number;
   private destroyQueued = false;
+  private readonly onHealthChanged?: (remainingHealth: number) => void;
 
-  constructor(scene: Phaser.Scene, x: number, y: number) {
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    initialHealth = OBSTACLE_TUNING.maxHealth,
+    onHealthChanged?: (remainingHealth: number) => void,
+  ) {
     super(scene, x, y, TextureKeys.obstacleCrate);
+    this.hp = initialHealth;
+    this.onHealthChanged = onHealthChanged;
     scene.add.existing(this);
     scene.physics.add.existing(this, true);
     this.setDepth(DEPTH.item);
@@ -19,6 +28,7 @@ export class Obstacle extends Phaser.Physics.Arcade.Sprite {
     }
 
     this.hp -= amount;
+    this.onHealthChanged?.(Math.max(0, this.hp));
 
     if (this.hp <= 0) {
       return this.destroyObstacle();
@@ -44,6 +54,8 @@ export class Obstacle extends Phaser.Physics.Arcade.Sprite {
     }
 
     this.destroyQueued = true;
+    this.hp = 0;
+    this.onHealthChanged?.(0);
     this.setActive(false);
     this.setVisible(false);
 

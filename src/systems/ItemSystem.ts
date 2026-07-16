@@ -1,5 +1,5 @@
 import { PASSIVE_ITEMS, type PassiveItemDefinition } from '../data/items';
-import type { PlayerStats } from '../config/gameConfig';
+import type { PlayerAttackProfile, PlayerStats } from '../config/gameConfig';
 import { clamp } from '../utils/math';
 import { randomOf } from '../utils/random';
 
@@ -23,11 +23,40 @@ export class ItemSystem {
     updated.fireRate += modifiers.fireRate ?? 0;
     updated.luck += modifiers.luck ?? 0;
     updated.projectileSpeed += modifiers.projectileSpeed ?? 0;
+    updated.damageMultiplier *= modifiers.damageMultiplier ?? 1;
+    updated.fireRateMultiplier *= modifiers.fireRateMultiplier ?? 1;
+    updated.projectileSpeedMultiplier *= modifiers.projectileSpeedMultiplier ?? 1;
 
     const healAmount = modifiers.heal ?? 0;
     updated.health = clamp(updated.health + healAmount, 0, updated.maxHealth);
 
     return updated;
+  }
+
+  applyAttackProfile(
+    profile: PlayerAttackProfile,
+    item: PassiveItemDefinition,
+  ): PlayerAttackProfile {
+    const modifiers = item.attackModifiers;
+
+    if (!modifiers) {
+      return { ...profile };
+    }
+
+    return {
+      seedCount: clamp(profile.seedCount + (modifiers.seedCountAdd ?? 0), 1, 12),
+      spreadStepDegrees: modifiers.spreadStepDegrees ?? profile.spreadStepDegrees,
+      overflowPenetration: profile.overflowPenetration || (modifiers.overflowPenetration ?? false),
+      seedScale: clamp(profile.seedScale * (modifiers.seedScaleMultiplier ?? 1), 0.6, 2.4),
+      forceRedSeeds: profile.forceRedSeeds || (modifiers.forceRedSeeds ?? false),
+      extraForeheadEyeCount: clamp(
+        profile.extraForeheadEyeCount + (modifiers.extraForeheadEyeCountAdd ?? 0),
+        0,
+        6,
+      ),
+      hasToothpickCosmetic:
+        profile.hasToothpickCosmetic || (modifiers.hasToothpickCosmetic ?? false),
+    };
   }
 
   private pickItem(

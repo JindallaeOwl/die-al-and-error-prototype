@@ -1,4 +1,9 @@
-import { PLAYER_BASE_STATS, type PlayerStats } from '../config/gameConfig';
+import {
+  PLAYER_BASE_ATTACK_PROFILE,
+  PLAYER_BASE_STATS,
+  type PlayerAttackProfile,
+  type PlayerStats,
+} from '../config/gameConfig';
 import type { ConsumableType } from '../data/rewards';
 
 export type InventoryState = Record<ConsumableType, number>;
@@ -11,6 +16,7 @@ export interface RunState {
   unlockedAbilityIds: string[];
   inventory: InventoryState;
   stats: PlayerStats;
+  attackProfile: PlayerAttackProfile;
 }
 
 export function createInitialRunState(): RunState {
@@ -26,5 +32,6 @@ export function createInitialRunState(): RunState {
       coins: 0,
     },
     stats: { ...PLAYER_BASE_STATS },
+    attackProfile: { ...PLAYER_BASE_ATTACK_PROFILE },
   };
 }

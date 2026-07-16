@@ -4,17 +4,52 @@ export type StatModifier = Partial<Omit<PlayerStats, 'health'>> & {
   heal?: number;
 };
 
+export interface AttackProfileModifier {
+  seedCountAdd?: number;
+  spreadStepDegrees?: number;
+  overflowPenetration?: boolean;
+  seedScaleMultiplier?: number;
+  forceRedSeeds?: boolean;
+  extraForeheadEyeCountAdd?: number;
+  hasToothpickCosmetic?: boolean;
+}
+
 export interface PassiveItemDefinition {
   id: string;
   nameKey: string;
   descriptionKey: string;
   tint: number;
   modifiers: StatModifier;
+  attackModifiers?: AttackProfileModifier;
   abilityId?: 'charge-beam';
   treasureOnly?: boolean;
 }
 
 export const PASSIVE_ITEMS: PassiveItemDefinition[] = [
+  {
+    id: 'quad-shot',
+    nameKey: 'items.quadShot.name',
+    descriptionKey: 'items.quadShot.description',
+    tint: 0xb28cff,
+    modifiers: { fireRateMultiplier: 0.42 },
+    attackModifiers: { seedCountAdd: 3, spreadStepDegrees: 12, extraForeheadEyeCountAdd: 2 },
+  },
+  {
+    id: 'mega-seed',
+    nameKey: 'items.megaSeed.name',
+    descriptionKey: 'items.megaSeed.description',
+    tint: 0x74c94f,
+    modifiers: { damage: 4, damageMultiplier: 2, fireRateMultiplier: 0.42 },
+    attackModifiers: { overflowPenetration: true, seedScaleMultiplier: 1.65 },
+  },
+  {
+    id: 'toothpick',
+    nameKey: 'items.toothpick.name',
+    descriptionKey: 'items.toothpick.description',
+    tint: 0xff645e,
+    modifiers: { fireRate: 0.7, projectileSpeedMultiplier: 1.16 },
+    attackModifiers: { forceRedSeeds: true, hasToothpickCosmetic: true },
+  },
   {
     id: 'pulse-relay',
     nameKey: 'items.pulseRelay.name',

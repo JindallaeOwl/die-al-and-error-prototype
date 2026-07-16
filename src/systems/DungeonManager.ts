@@ -8,6 +8,13 @@ import {
 } from '../data/rooms';
 import { DIRECTIONS, OPPOSITE_DIRECTION, type Direction, moveCoord } from '../utils/directions';
 import { randomOf, shuffled } from '../utils/random';
+import type { RewardDrop } from './RewardSystem';
+
+export interface PendingRoomReward {
+  reward: RewardDrop;
+  x: number;
+  y: number;
+}
 
 export interface GridCoord {
   x: number;
@@ -27,6 +34,8 @@ export interface RoomNode {
   treasureUnlocked: boolean;
   treasureClaimed: boolean;
   beamItemClaimed: boolean;
+  obstacleHealth?: number[];
+  pendingReward?: PendingRoomReward;
 }
 
 export class DungeonManager {
@@ -149,6 +158,14 @@ export class DungeonManager {
 
   markCurrentBeamItemClaimed(): void {
     this.getCurrentRoom().beamItemClaimed = true;
+  }
+
+  clearPendingReward(roomId: string): void {
+    const room = this.rooms.get(roomId);
+
+    if (room) {
+      room.pendingReward = undefined;
+    }
   }
 
   unlockRoom(roomId: string): void {
