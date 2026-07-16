@@ -1,5 +1,5 @@
 import {
-  BOSS_ROOM_TEMPLATE,
+  BOSS_ROOM_TEMPLATES,
   COMBAT_ROOM_TEMPLATES,
   REWARD_ROOM_TEMPLATE,
   START_ROOM_TEMPLATE,
@@ -300,7 +300,7 @@ export class DungeonManager {
     const bossNode = this.createRoom(
       moveCoord(baseNode.coord, direction),
       'boss',
-      BOSS_ROOM_TEMPLATE.id,
+      BOSS_ROOM_TEMPLATES[(this.floor - 1) % BOSS_ROOM_TEMPLATES.length].id,
     );
     this.connectRooms(baseNode, bossNode, direction);
   }

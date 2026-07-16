@@ -1,12 +1,13 @@
 import { TextureKeys } from '../config/assets';
-import { BOSS_TUNING } from '../config/gameConfig';
+import { BOSS_TUNING, ROOT_KERNEL_TUNING } from '../config/gameConfig';
 
-export type EnemyId = 'chaser' | 'shooter' | 'dasher' | 'faultWarden';
+export type EnemyId = 'chaser' | 'shooter' | 'dasher' | 'faultWarden' | 'rootKernel';
 
 export interface EnemyDefinition {
   id: EnemyId;
   kind?: 'normal' | 'boss';
   displayName: string;
+  displayNameKey?: string;
   textureKey: string;
   maxHealth: number;
   speed: number;
@@ -21,6 +22,9 @@ export interface EnemyDefinition {
   dashDurationMs?: number;
   dashSpeed?: number;
   wanderSpeed?: number;
+  bossBarColor?: number;
+  bossPhaseTwoBarColor?: number;
+  phaseTwoMessageKey?: string;
 }
 
 export const ENEMY_DEFINITIONS: Record<EnemyId, EnemyDefinition> = {
@@ -69,6 +73,7 @@ export const ENEMY_DEFINITIONS: Record<EnemyId, EnemyDefinition> = {
     id: 'faultWarden',
     kind: 'boss',
     displayName: 'Fault Warden',
+    displayNameKey: 'bosses.faultWarden',
     textureKey: TextureKeys.enemyBoss,
     maxHealth: BOSS_TUNING.maxHealth,
     speed: BOSS_TUNING.speed,
@@ -81,5 +86,24 @@ export const ENEMY_DEFINITIONS: Record<EnemyId, EnemyDefinition> = {
     dashCooldownMs: BOSS_TUNING.dashCooldownMs,
     dashDurationMs: BOSS_TUNING.dashDurationMs,
     dashSpeed: BOSS_TUNING.dashSpeed,
+    bossBarColor: 0xd84f66,
+    bossPhaseTwoBarColor: BOSS_TUNING.phaseTwoTint,
+    phaseTwoMessageKey: 'messages.bossPhaseTwo',
+  },
+  rootKernel: {
+    id: 'rootKernel',
+    kind: 'boss',
+    displayName: 'ROOT KERNEL',
+    displayNameKey: 'bosses.rootKernel',
+    textureKey: TextureKeys.enemyRootKernel,
+    maxHealth: ROOT_KERNEL_TUNING.maxHealth,
+    speed: ROOT_KERNEL_TUNING.speed,
+    contactDamage: ROOT_KERNEL_TUNING.contactDamage,
+    bodyRadius: ROOT_KERNEL_TUNING.bodyRadius,
+    score: ROOT_KERNEL_TUNING.score,
+    bulletDamage: ROOT_KERNEL_TUNING.bulletDamage,
+    bossBarColor: ROOT_KERNEL_TUNING.bossBarColor,
+    bossPhaseTwoBarColor: ROOT_KERNEL_TUNING.bossBarPhaseTwoColor,
+    phaseTwoMessageKey: 'messages.rootKernelPhaseTwo',
   },
 };

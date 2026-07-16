@@ -32,6 +32,10 @@ export const ko: TranslationTree = {
     fullscreen: '전체화면',
     titleScreen: '타이틀로 돌아가기',
   },
+  bosses: {
+    faultWarden: 'Fault Warden',
+    rootKernel: '루트 커널',
+  },
   gameOver: {
     title: '런 종료',
     summary: '방 {rooms}   아이템 {items}   점수 {score}',
@@ -70,6 +74,7 @@ export const ko: TranslationTree = {
     treasureRoom: '보물방',
     bossRoom: '보스방',
     bossPhaseTwo: 'Fault Warden: 2페이즈',
+    rootKernelPhaseTwo: 'ROOT KERNEL: 루트 권한 폭주',
     treasureUnlocked: '보물방 개방',
     keyNeeded: '열쇠가 필요합니다',
     noBombs: '폭탄이 없습니다',

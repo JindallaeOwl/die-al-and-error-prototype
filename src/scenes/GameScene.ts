@@ -11,7 +11,6 @@ import type { BaseEnemy } from '../entities/enemies/BaseEnemy';
 import {
   BEAM_TUNING,
   BOMB_TUNING,
-  BOSS_TUNING,
   COMBAT_TUNING,
   FEEDBACK_TUNING,
   GAME_HEIGHT,
@@ -115,7 +114,7 @@ export class GameScene extends Phaser.Scene {
       runState: this.runState,
       onRoomCleared: (room) => this.handleRoomCleared(room),
       onEnemyDefeated: (score) => this.handleEnemyDefeated(score),
-      onBossPhaseTwo: () => this.handleBossPhaseTwo(),
+      onBossPhaseTwo: (boss) => this.handleBossPhaseTwo(boss),
     });
 
     this.hud = new Hud(this);
@@ -691,12 +690,12 @@ export class GameScene extends Phaser.Scene {
     this.runState.score += score;
   }
 
-  private handleBossPhaseTwo(): void {
+  private handleBossPhaseTwo(boss: BaseEnemy): void {
     if (this.gameOverStarted) {
       return;
     }
 
-    this.hud.showMessage(t('messages.bossPhaseTwo'), 1700);
+    this.hud.showMessage(t(boss.getPhaseTwoMessageKey()), 1700);
     this.effects.shake('bossPhaseTwo');
     this.cameras.main.flash(160, 255, 88, 125, false);
     this.audio.play('bossPhaseTwo');
@@ -920,7 +919,7 @@ export class GameScene extends Phaser.Scene {
     const isPhaseTwo = phaseAwareBoss.isInPhaseTwo?.() ?? false;
 
     this.bossHealthFill.displayWidth = 316 * boss.getHealthRatio();
-    this.bossHealthFill.setFillStyle(isPhaseTwo ? BOSS_TUNING.phaseTwoTint : 0xd84f66, 1);
+    this.bossHealthFill.setFillStyle(boss.getBossBarColor(isPhaseTwo), 1);
     this.bossHealthText.setText(boss.getDisplayName());
     this.bossHealthText.setColor(isPhaseTwo ? '#ffb3c1' : '#ffe39b');
   }

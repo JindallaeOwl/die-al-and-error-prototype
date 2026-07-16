@@ -3,6 +3,7 @@ import { Door } from '../entities/Door';
 import { ItemPickup } from '../entities/ItemPickup';
 import { Obstacle } from '../entities/Obstacle';
 import { createEnemy } from '../entities/enemies/EnemyFactory';
+import type { BaseEnemy } from '../entities/enemies/BaseEnemy';
 import { DEPTH, ROOM_RECT, WALL_THICKNESS } from '../config/gameConfig';
 import { PASSIVE_ITEMS, TEST_BEAM_ITEM_ID } from '../data/items';
 import { getRoomTemplate } from '../data/rooms';
@@ -21,7 +22,7 @@ interface RoomControllerConfig {
   runState: RunState;
   onRoomCleared: (room: RoomNode) => void;
   onEnemyDefeated: (score: number) => void;
-  onBossPhaseTwo?: () => void;
+  onBossPhaseTwo?: (boss: BaseEnemy) => void;
 }
 
 export class RoomController {
@@ -37,7 +38,7 @@ export class RoomController {
   private readonly runState: RunState;
   private readonly onRoomCleared: (room: RoomNode) => void;
   private readonly onEnemyDefeated: (score: number) => void;
-  private readonly onBossPhaseTwo?: () => void;
+  private readonly onBossPhaseTwo?: (boss: BaseEnemy) => void;
   private readonly doorSprites = new Map<Direction, Door>();
   private readonly floorGraphics: Phaser.GameObjects.Graphics;
 
@@ -121,7 +122,8 @@ export class RoomController {
   private spawnCombatRoom(room: RoomNode): void {
     const template = getRoomTemplate(room.templateId);
     const spawnSet = [...randomOf(template.spawnSets)];
-    const extraEnemies = Math.min(4, Math.floor((this.runState.floor - 1) * 0.8));
+    const extraEnemies =
+      room.type === 'combat' ? Math.min(4, Math.floor((this.runState.floor - 1) * 0.8)) : 0;
 
     for (let i = 0; i < extraEnemies; i += 1) {
       spawnSet.push({

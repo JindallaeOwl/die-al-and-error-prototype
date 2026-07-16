@@ -4,6 +4,7 @@ import type { EnemyDefinition } from '../../data/enemies';
 import { Bullet } from '../Bullet';
 import type { Player } from '../Player';
 import { normalizeVector } from '../../utils/math';
+import { t } from '../../i18n';
 
 export abstract class BaseEnemy extends Phaser.Physics.Arcade.Sprite {
   readonly definition: EnemyDefinition;
@@ -84,7 +85,21 @@ export abstract class BaseEnemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   getDisplayName(): string {
-    return this.definition.displayName;
+    return this.definition.displayNameKey
+      ? t(this.definition.displayNameKey)
+      : this.definition.displayName;
+  }
+
+  getBossBarColor(isPhaseTwo = false): number {
+    if (isPhaseTwo) {
+      return this.definition.bossPhaseTwoBarColor ?? this.definition.bossBarColor ?? 0xd84f66;
+    }
+
+    return this.definition.bossBarColor ?? 0xd84f66;
+  }
+
+  getPhaseTwoMessageKey(): string {
+    return this.definition.phaseTwoMessageKey ?? 'messages.bossPhaseTwo';
   }
 
   canDealContactDamage(time: number): boolean {

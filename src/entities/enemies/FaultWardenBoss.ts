@@ -104,7 +104,8 @@ export class FaultWardenBoss extends BaseEnemy {
   }
 
   override getDisplayName(): string {
-    return this.isPhaseTwo ? `${this.definition.displayName} II` : this.definition.displayName;
+    const displayName = super.getDisplayName();
+    return this.isPhaseTwo ? `${displayName} II` : displayName;
   }
 
   isInPhaseTwo(): boolean {

@@ -15,6 +15,7 @@ export function createPlaceholderTextures(scene: Phaser.Scene): void {
   createShooterTexture(scene);
   createDasherTexture(scene);
   createBossTexture(scene);
+  createRootKernelTexture(scene);
   createDoorTexture(scene, TextureKeys.doorHorizontal, 86, 24);
   createDoorTexture(scene, TextureKeys.doorVertical, 24, 86);
   createPassiveItemIcons(scene);
@@ -270,6 +271,56 @@ function createBossTexture(scene: Phaser.Scene): void {
   graphics.lineBetween(8, 58, 16, 58);
   graphics.lineBetween(60, 58, 68, 58);
   graphics.generateTexture(TextureKeys.enemyBoss, 76, 76);
+  graphics.destroy();
+}
+
+function createRootKernelTexture(scene: Phaser.Scene): void {
+  const graphics = scene.add.graphics();
+
+  graphics.fillStyle(0x05090e, 0.48);
+  graphics.fillEllipse(40, 73, 62, 9);
+
+  graphics.lineStyle(6, 0x173c2a, 1);
+  graphics.lineBetween(14, 31, 3, 22);
+  graphics.lineBetween(66, 30, 77, 17);
+  graphics.lineBetween(17, 61, 5, 72);
+  graphics.lineBetween(64, 59, 77, 70);
+  graphics.lineStyle(2, 0x65d58a, 0.9);
+  graphics.lineBetween(14, 31, 3, 22);
+  graphics.lineBetween(66, 30, 77, 17);
+  graphics.lineBetween(17, 61, 5, 72);
+  graphics.lineBetween(64, 59, 77, 70);
+
+  graphics.fillStyle(0x315d3d, 1);
+  graphics.fillRect(14, 15, 48, 48);
+  graphics.fillRect(9, 25, 60, 28);
+  graphics.fillRect(20, 10, 31, 58);
+  graphics.fillStyle(0x48794d, 1);
+  graphics.fillRect(15, 18, 12, 11);
+  graphics.fillRect(52, 25, 13, 17);
+  graphics.fillRect(23, 54, 15, 11);
+  graphics.lineStyle(3, 0x142b20, 1);
+  graphics.strokeRect(14, 15, 48, 48);
+  graphics.strokeRect(9, 25, 60, 28);
+
+  graphics.fillStyle(0x0b1714, 1);
+  graphics.fillRect(25, 25, 31, 30);
+  graphics.fillStyle(0x2cc9bd, 1);
+  graphics.fillRect(29, 29, 23, 22);
+  graphics.fillStyle(0xa6fff0, 1);
+  graphics.fillRect(33, 32, 8, 6);
+  graphics.fillStyle(0x116b68, 1);
+  graphics.fillRect(43, 40, 7, 9);
+
+  graphics.fillStyle(0xb5df70, 1);
+  graphics.fillRect(18, 34, 4, 8);
+  graphics.fillRect(58, 45, 5, 5);
+  graphics.fillRect(37, 14, 7, 4);
+  graphics.fillStyle(0x17291f, 1);
+  graphics.fillRect(19, 56, 6, 5);
+  graphics.fillRect(55, 18, 5, 7);
+
+  graphics.generateTexture(TextureKeys.enemyRootKernel, 80, 80);
   graphics.destroy();
 }
 

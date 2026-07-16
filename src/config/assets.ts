@@ -11,6 +11,7 @@ export const TextureKeys = {
   enemyShooter: 'enemy-shooter',
   enemyDasher: 'enemy-dasher',
   enemyBoss: 'enemy-boss',
+  enemyRootKernel: 'enemy-root-kernel',
   doorHorizontal: 'door-horizontal',
   doorVertical: 'door-vertical',
   keyPickup: 'key-pickup',

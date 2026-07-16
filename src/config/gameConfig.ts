@@ -142,6 +142,36 @@ export const BOSS_TUNING = {
   phaseTwoRadialCount: 8,
 };
 
+export const ROOT_KERNEL_TUNING = {
+  maxHealth: 30,
+  speed: 58,
+  contactDamage: 1,
+  bodyRadius: 32,
+  score: 220,
+  bulletDamage: 1,
+  crossBulletSpeed: 235,
+  curtainBulletSpeed: 285,
+  ringBulletSpeed: 220,
+  crossCooldownMs: 1900,
+  curtainCooldownMs: 3200,
+  crossTelegraphMs: 650,
+  curtainTelegraphMs: 800,
+  ringTelegraphMs: 750,
+  attackRecoveryMs: 300,
+  preferredMinDistance: 210,
+  preferredMaxDistance: 260,
+  crossLaneSpacing: 18,
+  curtainLaneCount: 7,
+  phaseTwoThreshold: 0.5,
+  phaseTwoTransitionLockMs: 700,
+  phaseTwoCrossCooldownMs: 1450,
+  phaseTwoCurtainCooldownMs: 2500,
+  phaseTwoTint: 0xff6b55,
+  bossBarColor: 0x63c978,
+  bossBarPhaseTwoColor: 0xff6b55,
+  ringBulletCount: 12,
+};
+
 export const BOMB_TUNING = {
   damage: 5,
   radius: 230,

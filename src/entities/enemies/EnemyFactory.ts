@@ -3,6 +3,7 @@ import { ENEMY_DEFINITIONS, type EnemyId } from '../../data/enemies';
 import { ChaserEnemy } from './ChaserEnemy';
 import { DasherEnemy } from './DasherEnemy';
 import { FaultWardenBoss } from './FaultWardenBoss';
+import { RootKernelBoss } from './RootKernelBoss';
 import { ShooterEnemy } from './ShooterEnemy';
 import type { BaseEnemy } from './BaseEnemy';
 
@@ -15,14 +16,25 @@ export function createEnemy(
   floor: number,
 ): BaseEnemy {
   const definition = ENEMY_DEFINITIONS[enemyId];
-  const enemy =
-    enemyId === 'chaser'
-      ? new ChaserEnemy(scene, x, y, definition, floor)
-      : enemyId === 'shooter'
-        ? new ShooterEnemy(scene, x, y, definition, floor)
-        : enemyId === 'faultWarden'
-          ? new FaultWardenBoss(scene, x, y, definition, floor)
-          : new DasherEnemy(scene, x, y, definition, floor);
+  let enemy: BaseEnemy;
+
+  switch (enemyId) {
+    case 'chaser':
+      enemy = new ChaserEnemy(scene, x, y, definition, floor);
+      break;
+    case 'shooter':
+      enemy = new ShooterEnemy(scene, x, y, definition, floor);
+      break;
+    case 'dasher':
+      enemy = new DasherEnemy(scene, x, y, definition, floor);
+      break;
+    case 'faultWarden':
+      enemy = new FaultWardenBoss(scene, x, y, definition, floor);
+      break;
+    case 'rootKernel':
+      enemy = new RootKernelBoss(scene, x, y, definition, floor);
+      break;
+  }
 
   group.add(enemy);
   return enemy;

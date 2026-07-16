@@ -32,6 +32,10 @@ export const en: TranslationTree = {
     fullscreen: 'Fullscreen',
     titleScreen: 'Return to title',
   },
+  bosses: {
+    faultWarden: 'Fault Warden',
+    rootKernel: 'ROOT KERNEL',
+  },
   gameOver: {
     title: 'RUN ENDED',
     summary: 'Rooms {rooms}   Items {items}   Score {score}',
@@ -70,6 +74,7 @@ export const en: TranslationTree = {
     treasureRoom: 'Treasure room',
     bossRoom: 'Boss room',
     bossPhaseTwo: 'Fault Warden: Phase II',
+    rootKernelPhaseTwo: 'ROOT KERNEL: ROOT ACCESS OVERRIDE',
     treasureUnlocked: 'Treasure room unlocked',
     keyNeeded: 'A key is needed',
     noBombs: 'No bombs left',

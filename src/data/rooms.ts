@@ -42,12 +42,20 @@ export const TREASURE_ROOM_TEMPLATE: RoomTemplate = {
   spawnSets: [[]],
 };
 
-export const BOSS_ROOM_TEMPLATE: RoomTemplate = {
-  id: 'error-sanctum',
-  roomType: 'boss',
-  accentColor: 0xd84f66,
-  spawnSets: [[{ enemyId: 'faultWarden', x: 480, y: 260 }]],
-};
+export const BOSS_ROOM_TEMPLATES: RoomTemplate[] = [
+  {
+    id: 'error-sanctum',
+    roomType: 'boss',
+    accentColor: 0xd84f66,
+    spawnSets: [[{ enemyId: 'faultWarden', x: 480, y: 260 }]],
+  },
+  {
+    id: 'root-cellar',
+    roomType: 'boss',
+    accentColor: 0x4f9f71,
+    spawnSets: [[{ enemyId: 'rootKernel', x: 480, y: 260 }]],
+  },
+];
 
 export const COMBAT_ROOM_TEMPLATES: RoomTemplate[] = [
   {
@@ -150,8 +158,10 @@ export function getRoomTemplate(templateId: string): RoomTemplate {
     return TREASURE_ROOM_TEMPLATE;
   }
 
-  if (templateId === BOSS_ROOM_TEMPLATE.id) {
-    return BOSS_ROOM_TEMPLATE;
+  const bossTemplate = BOSS_ROOM_TEMPLATES.find((candidate) => candidate.id === templateId);
+
+  if (bossTemplate) {
+    return bossTemplate;
   }
 
   const template = COMBAT_ROOM_TEMPLATES.find((candidate) => candidate.id === templateId);
