@@ -38,6 +38,7 @@ import { BossHud } from '../ui/BossHud';
 import { Hud } from '../ui/Hud';
 import { applyRenderScale } from '../utils/render';
 import { clamp } from '../utils/math';
+import { isGameOverRestartCode } from '../utils/gameOverInput';
 
 interface GameOverData {
   clearedRooms: number;
@@ -71,6 +72,15 @@ export class GameScene extends Phaser.Scene {
   private gameOverTitle!: HTMLElement;
   private gameOverSummary!: HTMLElement;
   private gameOverRestartButton!: HTMLButtonElement;
+  private readonly handleGameOverKeyDown = (event: KeyboardEvent): void => {
+    if (!this.gameOverStarted || !isGameOverRestartCode(event.code)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    this.restartAfterGameOver();
+  };
   private floorTransitionStarted = false;
   private playerDamageFeedbackQueued = false;
   private removeRuntimeErrorListener?: () => void;
@@ -428,6 +438,10 @@ export class GameScene extends Phaser.Scene {
     this.gameOverRestartButton = restartButton;
     this.gameOverOverlay.hidden = true;
     this.gameOverRestartButton.onclick = () => this.restartAfterGameOver();
+    document.addEventListener('keydown', this.handleGameOverKeyDown, true);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      document.removeEventListener('keydown', this.handleGameOverKeyDown, true);
+    });
   }
 
   private showGameOverOverlay(data: GameOverData): void {

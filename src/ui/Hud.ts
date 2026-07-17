@@ -6,12 +6,14 @@ import type { DungeonManager } from '../systems/DungeonManager';
 import type { RunState } from '../systems/RunState';
 import { getEffectiveDamage, getEffectiveFireRate } from '../systems/PlayerStatSystem';
 
-const HUD_EDGE_MARGIN = 0;
+// ENVELOP fills wide browser windows by cropping a little from the top and
+// bottom. Keep the corner HUD inside a safe area so it remains fully visible.
+const HUD_EDGE_MARGIN = 4;
 const STATS_PANEL_WIDTH = 122;
 const STATS_PANEL_HEIGHT = 62;
 const MINIMAP_PANEL_WIDTH = 64;
 const MINIMAP_PANEL_HEIGHT = 48;
-const PANEL_TOP = 0;
+const PANEL_TOP = 20;
 
 export class Hud {
   private readonly scene: Phaser.Scene;
