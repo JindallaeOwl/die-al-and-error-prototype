@@ -15,6 +15,8 @@
   - `RPG_Coin_Gold_Currency_Money_GP.png`
 - 제작자 표기: 필수는 아니지만 감사의 뜻으로 기록
 
+- Health HUD source: `RPG_Stat_HP_Health_Heart.png` → `hud-heart.png`
+
 ## BoldPixels
 
 - 저작자 표시: BoldPixels by YukiPixels

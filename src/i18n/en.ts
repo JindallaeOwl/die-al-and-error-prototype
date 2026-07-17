@@ -124,7 +124,7 @@ export const en: TranslationTree = {
     },
     pocketBattery: {
       name: 'Pocket Battery',
-      description: 'Max health increases and current health is refilled (+2 max HP, +2 heal).',
+      description: 'Adds one maximum heart and restores one full heart.',
     },
     steadyPin: {
       name: 'Steady Pin',

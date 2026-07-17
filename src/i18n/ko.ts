@@ -124,7 +124,7 @@ export const ko: TranslationTree = {
     },
     pocketBattery: {
       name: '주머니 전지',
-      description: '최대 체력이 늘고 체력을 즉시 채웁니다 (최대체력 +2, 회복 +2).',
+      description: '최대 하트가 1개 늘고 하트 1개를 회복합니다.',
     },
     steadyPin: {
       name: '고정 핀',

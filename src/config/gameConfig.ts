@@ -71,9 +71,13 @@ export interface PlayerAttackProfile {
   hasToothpickCosmetic: boolean;
 }
 
+export const PLAYER_HEALTH_UNITS_PER_HEART = 2;
+export const PLAYER_STARTING_HEARTS = 3;
+export const PLAYER_DAMAGE_PER_HIT = 1;
+
 export const PLAYER_BASE_STATS: PlayerStats = {
-  health: 6,
-  maxHealth: 6,
+  health: PLAYER_STARTING_HEARTS * PLAYER_HEALTH_UNITS_PER_HEART,
+  maxHealth: PLAYER_STARTING_HEARTS * PLAYER_HEALTH_UNITS_PER_HEART,
   moveSpeed: 130,
   damage: 1,
   range: 220,
@@ -154,10 +158,10 @@ export const FEEDBACK_TUNING = {
 export const BOSS_TUNING = {
   maxHealth: 26,
   speed: 42,
-  contactDamage: 1,
+  contactDamage: PLAYER_DAMAGE_PER_HIT,
   bodyRadius: 28,
   score: 180,
-  bulletDamage: 1,
+  bulletDamage: PLAYER_DAMAGE_PER_HIT,
   bulletSpeed: 125,
   fireCooldownMs: 1180,
   burstCount: 5,
@@ -177,10 +181,10 @@ export const BOSS_TUNING = {
 export const ROOT_KERNEL_TUNING = {
   maxHealth: 30,
   speed: 32,
-  contactDamage: 1,
+  contactDamage: PLAYER_DAMAGE_PER_HIT,
   bodyRadius: 28,
   score: 220,
-  bulletDamage: 1,
+  bulletDamage: PLAYER_DAMAGE_PER_HIT,
   crossBulletSpeed: 120,
   curtainBulletSpeed: 145,
   ringBulletSpeed: 112,

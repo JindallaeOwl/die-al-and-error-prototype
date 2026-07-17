@@ -5,19 +5,25 @@ import { gameFontStack, t } from '../i18n';
 import type { DungeonManager } from '../systems/DungeonManager';
 import type { RunState } from '../systems/RunState';
 import { getEffectiveDamage, getEffectiveFireRate } from '../systems/PlayerStatSystem';
+import { getHeartFillUnits } from '../utils/healthHearts';
 
 // ENVELOP fills wide browser windows by cropping a little from the top and
 // bottom. Keep the corner HUD inside a safe area so it remains fully visible.
 const HUD_EDGE_MARGIN = 4;
 const STATS_PANEL_WIDTH = 122;
-const STATS_PANEL_HEIGHT = 62;
+const STATS_PANEL_HEIGHT = 66;
 const MINIMAP_PANEL_WIDTH = 64;
 const MINIMAP_PANEL_HEIGHT = 48;
 const PANEL_TOP = 20;
 
+interface HealthHeartImages {
+  empty: Phaser.GameObjects.Image;
+  fill: Phaser.GameObjects.Image;
+}
+
 export class Hud {
   private readonly scene: Phaser.Scene;
-  private readonly healthText: Phaser.GameObjects.Text;
+  private readonly healthHearts: HealthHeartImages[] = [];
   private readonly keyCountText: Phaser.GameObjects.Text;
   private readonly bombCountText: Phaser.GameObjects.Text;
   private readonly coinCountText: Phaser.GameObjects.Text;
@@ -50,33 +56,32 @@ export class Hud {
     this.messagePanel = this.createPanel(GAME_WIDTH / 2, 255, 340, 26).setVisible(false);
 
     const statsTextX = HUD_EDGE_MARGIN + 4;
-    this.healthText = this.createText(statsTextX, PANEL_TOP + 2, 9);
     this.createInventoryIcon(
       statsTextX,
-      PANEL_TOP + 15,
+      PANEL_TOP + 18,
       TextureKeys.hudKey,
       TextureKeys.keyPickup,
       0x8bd3ff,
     );
     this.createInventoryIcon(
       statsTextX + 39,
-      PANEL_TOP + 15,
+      PANEL_TOP + 18,
       TextureKeys.hudBomb,
       TextureKeys.bombPickup,
       0xff8f70,
     );
     this.createInventoryIcon(
       statsTextX + 78,
-      PANEL_TOP + 15,
+      PANEL_TOP + 18,
       TextureKeys.hudCoin,
       TextureKeys.coinPickup,
       0xffd166,
     );
-    this.keyCountText = this.createText(statsTextX + 19, PANEL_TOP + 19, 7);
-    this.bombCountText = this.createText(statsTextX + 58, PANEL_TOP + 19, 7);
-    this.coinCountText = this.createText(statsTextX + 97, PANEL_TOP + 19, 7);
-    this.statsText = this.createText(statsTextX, PANEL_TOP + 34, 6);
-    this.roomText = this.createText(statsTextX, PANEL_TOP + 51, 6);
+    this.keyCountText = this.createText(statsTextX + 19, PANEL_TOP + 22, 7);
+    this.bombCountText = this.createText(statsTextX + 58, PANEL_TOP + 22, 7);
+    this.coinCountText = this.createText(statsTextX + 97, PANEL_TOP + 22, 7);
+    this.statsText = this.createText(statsTextX, PANEL_TOP + 37, 6);
+    this.roomText = this.createText(statsTextX, PANEL_TOP + 54, 6);
     this.messageText = this.createText(GAME_WIDTH / 2, 250, 8).setOrigin(0.5);
     this.itemHintText = this.createText(GAME_WIDTH / 2, 261, 6).setOrigin(0.5);
     this.debugText = this.createText(statsTextX, PANEL_TOP + STATS_PANEL_HEIGHT + 6, 6).setVisible(
@@ -118,9 +123,7 @@ export class Hud {
     const stats = runState.stats;
     const effectiveDamage = getEffectiveDamage(stats);
     const effectiveFireRate = getEffectiveFireRate(stats);
-    this.healthText.setText(
-      `${t('hud.hp')} ${formatStat(stats.health)} / ${formatStat(stats.maxHealth)}`,
-    );
+    this.updateHealthHearts(stats.health, stats.maxHealth);
     this.keyCountText.setText(`${runState.inventory.keys}`);
     this.bombCountText.setText(`${runState.inventory.bombs}`);
     this.coinCountText.setText(`${runState.inventory.coins}`);
@@ -218,6 +221,42 @@ export class Hud {
       .setDepth(DEPTH.ui);
   }
 
+  private updateHealthHearts(health: number, maxHealth: number): void {
+    const fillUnits = getHeartFillUnits(health, maxHealth);
+
+    while (this.healthHearts.length < fillUnits.length) {
+      const index = this.healthHearts.length;
+      const x = HUD_EDGE_MARGIN + 4 + index * 18;
+      const y = PANEL_TOP + 1;
+      const empty = this.scene.add
+        .image(x, y, TextureKeys.hudHeart)
+        .setOrigin(0)
+        .setDisplaySize(16, 16)
+        .setTint(0x4b2730)
+        .setDepth(DEPTH.ui);
+      const fill = this.scene.add
+        .image(x, y, TextureKeys.hudHeart)
+        .setOrigin(0)
+        .setDisplaySize(16, 16)
+        .setTint(0xff5d72)
+        .setDepth(DEPTH.ui + 1);
+      this.healthHearts.push({ empty, fill });
+    }
+
+    this.healthHearts.forEach((heart, index) => {
+      const units = fillUnits[index];
+      const visible = units !== undefined;
+      heart.empty.setVisible(visible);
+      heart.fill.setVisible(visible && units > 0);
+
+      if (units === 1) {
+        heart.fill.setCrop(0, 0, 8, 16);
+      } else if (units === 2) {
+        heart.fill.setCrop(0, 0, 16, 16);
+      }
+    });
+  }
+
   private createInventoryIcon(
     x: number,
     y: number,
@@ -249,8 +288,4 @@ export class Hud {
       .setStrokeStyle(1, 0x40525f, 0.82)
       .setDepth(DEPTH.ui - 1);
   }
-}
-
-function formatStat(value: number): string {
-  return Number.isInteger(value) ? `${value}` : value.toFixed(1);
 }

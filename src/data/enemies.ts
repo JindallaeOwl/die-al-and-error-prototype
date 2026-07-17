@@ -1,5 +1,5 @@
 import { TextureKeys } from '../config/assets';
-import { BOSS_TUNING, ROOT_KERNEL_TUNING } from '../config/gameConfig';
+import { BOSS_TUNING, PLAYER_DAMAGE_PER_HIT, ROOT_KERNEL_TUNING } from '../config/gameConfig';
 
 export type EnemyId = 'chaser' | 'shooter' | 'dasher' | 'faultWarden' | 'rootKernel';
 
@@ -35,7 +35,7 @@ export const ENEMY_DEFINITIONS: Record<EnemyId, EnemyDefinition> = {
     textureKey: TextureKeys.enemyChaser,
     maxHealth: 2.2,
     speed: 66,
-    contactDamage: 1,
+    contactDamage: PLAYER_DAMAGE_PER_HIT,
     bodyRadius: 11,
     score: 10,
   },
@@ -46,10 +46,10 @@ export const ENEMY_DEFINITIONS: Record<EnemyId, EnemyDefinition> = {
     textureKey: TextureKeys.enemyShooter,
     maxHealth: 2.8,
     speed: 42,
-    contactDamage: 1,
+    contactDamage: PLAYER_DAMAGE_PER_HIT,
     bodyRadius: 11,
     score: 18,
-    bulletDamage: 1,
+    bulletDamage: PLAYER_DAMAGE_PER_HIT,
     bulletSpeed: 120,
     fireCooldownMs: 1350,
     keepAwayDistance: 132,
@@ -61,7 +61,7 @@ export const ENEMY_DEFINITIONS: Record<EnemyId, EnemyDefinition> = {
     textureKey: TextureKeys.enemyDasher,
     maxHealth: 3.5,
     speed: 44,
-    contactDamage: 1,
+    contactDamage: PLAYER_DAMAGE_PER_HIT,
     bodyRadius: 12,
     score: 24,
     dashCooldownMs: 1550,

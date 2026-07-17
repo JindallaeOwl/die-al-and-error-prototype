@@ -36,8 +36,9 @@ describe('pixel art baseline', () => {
     });
   });
 
-  it('registers the three 16-pixel inventory HUD icons', () => {
+  it('registers the four 16-pixel HUD icons', () => {
     expect(HUD_ICON_ASSETS).toEqual([
+      { key: TextureKeys.hudHeart, path: 'assets/icons/nikoichu/hud-heart.png' },
       { key: TextureKeys.hudKey, path: 'assets/icons/nikoichu/hud-key.png' },
       { key: TextureKeys.hudBomb, path: 'assets/icons/nikoichu/hud-bomb.png' },
       { key: TextureKeys.hudCoin, path: 'assets/icons/nikoichu/hud-coin.png' },
