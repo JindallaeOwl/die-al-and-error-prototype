@@ -37,6 +37,9 @@ export class Hud {
   private readonly minimap: Phaser.GameObjects.Graphics;
   private messageUntil = 0;
   private debugVisible = false;
+  private lastHealth = Number.NaN;
+  private lastMaxHealth = Number.NaN;
+  private lastMinimapSignature = '';
 
   constructor(scene: Phaser.Scene, registerUiObject: UiObjectRegistrar) {
     this.scene = scene;
@@ -106,11 +109,15 @@ export class Hud {
   }
 
   showItemHint(text: string): void {
-    this.itemHintText.setText(text);
+    if (this.itemHintText.text !== text) {
+      this.itemHintText.setText(text);
+    }
   }
 
   clearItemHint(): void {
-    this.itemHintText.setText('');
+    if (this.itemHintText.text.length > 0) {
+      this.itemHintText.setText('');
+    }
   }
 
   update(
@@ -124,7 +131,11 @@ export class Hud {
     const stats = runState.stats;
     const effectiveDamage = getEffectiveDamage(stats);
     const effectiveFireRate = getEffectiveFireRate(stats);
-    this.updateHealthHearts(stats.health, stats.maxHealth);
+    if (stats.health !== this.lastHealth || stats.maxHealth !== this.lastMaxHealth) {
+      this.updateHealthHearts(stats.health, stats.maxHealth);
+      this.lastHealth = stats.health;
+      this.lastMaxHealth = stats.maxHealth;
+    }
     this.keyCountText.setText(`${runState.inventory.keys}`);
     this.bombCountText.setText(`${runState.inventory.bombs}`);
     this.coinCountText.setText(`${runState.inventory.coins}`);
@@ -144,8 +155,9 @@ export class Hud {
       }  ${t('hud.left')} ${dungeon.getCombatRoomsRemaining() + dungeon.getBossRoomsRemaining()}`,
     );
 
-    if (this.scene.time.now > this.messageUntil) {
+    if (this.messageUntil > 0 && this.scene.time.now > this.messageUntil) {
       this.messageText.setText('');
+      this.messageUntil = 0;
     }
 
     this.drawMinimap(dungeon);
@@ -172,6 +184,20 @@ export class Hud {
   private drawMinimap(dungeon: DungeonManager): void {
     const rooms = dungeon.getRooms();
     const current = dungeon.getCurrentRoom();
+    const signature = `${current.id}|${rooms
+      .map(
+        (room) =>
+          `${room.id}:${room.coord.x},${room.coord.y}:${room.type}:${Number(
+            room.discovered,
+          )}:${Number(room.cleared)}`,
+      )
+      .join('|')}`;
+
+    if (signature === this.lastMinimapSignature) {
+      return;
+    }
+
+    this.lastMinimapSignature = signature;
     const size = 6;
     const gap = 2;
     const minX = Math.min(...rooms.map((room) => room.coord.x));

@@ -32,6 +32,7 @@ export class UiCameraSystem {
       'UiCamera',
     );
     this.camera.setZoom(RENDER_SCALE);
+    this.camera.setRoundPixels(true);
     this.camera.centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
 
     scene.events.on(Phaser.Scenes.Events.ADDED_TO_SCENE, this.hideNewObjectFromUi, this);
