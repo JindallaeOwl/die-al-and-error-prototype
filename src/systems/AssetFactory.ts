@@ -151,22 +151,6 @@ function createPlayerFrameTexture(
   graphics.destroy();
 }
 
-function createCircleTexture(
-  scene: Phaser.Scene,
-  key: string,
-  radius: number,
-  fill: number,
-  stroke: number,
-): void {
-  const graphics = scene.add.graphics();
-  graphics.fillStyle(fill, 1);
-  graphics.fillCircle(radius, radius, radius - 1);
-  graphics.lineStyle(2, stroke, 1);
-  graphics.strokeCircle(radius, radius, radius - 2);
-  graphics.generateTexture(key, radius * 2, radius * 2);
-  graphics.destroy();
-}
-
 function createBulletTexture(
   scene: Phaser.Scene,
   key: string,
@@ -255,50 +239,6 @@ function createDasherTexture(scene: Phaser.Scene): void {
   graphics.lineBetween(10, 31, 16, 27);
   graphics.lineBetween(32, 31, 26, 27);
   graphics.generateTexture(TextureKeys.enemyDasher, 42, 42);
-  graphics.destroy();
-}
-
-function createDiamondTexture(
-  scene: Phaser.Scene,
-  key: string,
-  size: number,
-  fill: number,
-  stroke: number,
-): void {
-  const half = size / 2;
-  const graphics = scene.add.graphics();
-  graphics.fillStyle(fill, 1);
-  graphics.lineStyle(3, stroke, 1);
-  graphics.beginPath();
-  graphics.moveTo(half, 2);
-  graphics.lineTo(size - 2, half);
-  graphics.lineTo(half, size - 2);
-  graphics.lineTo(2, half);
-  graphics.closePath();
-  graphics.fillPath();
-  graphics.strokePath();
-  graphics.generateTexture(key, size, size);
-  graphics.destroy();
-}
-
-function createTriangleTexture(
-  scene: Phaser.Scene,
-  key: string,
-  size: number,
-  fill: number,
-  stroke: number,
-): void {
-  const graphics = scene.add.graphics();
-  graphics.fillStyle(fill, 1);
-  graphics.lineStyle(3, stroke, 1);
-  graphics.beginPath();
-  graphics.moveTo(size / 2, 3);
-  graphics.lineTo(size - 4, size - 4);
-  graphics.lineTo(4, size - 4);
-  graphics.closePath();
-  graphics.fillPath();
-  graphics.strokePath();
-  graphics.generateTexture(key, size, size);
   graphics.destroy();
 }
 

@@ -7,7 +7,7 @@ import {
   type RoomType,
 } from '../data/rooms';
 import { DIRECTIONS, OPPOSITE_DIRECTION, type Direction, moveCoord } from '../utils/directions';
-import { randomOf, shuffled } from '../utils/random';
+import { randomOf, shuffled, type RandomSource } from '../utils/random';
 import type { RewardDrop } from './RewardSystem';
 
 export interface PendingRoomReward {
@@ -43,6 +43,8 @@ export class DungeonManager {
   private currentKey = '0,0';
 
   floor = 1;
+
+  constructor(private readonly random: RandomSource = Math.random) {}
 
   generateFloor(floor: number): void {
     this.floor = floor;
@@ -225,12 +227,14 @@ export class DungeonManager {
   }
 
   private findAnyNodeWithFreeExit(): RoomNode | null {
-    const candidates = shuffled(this.getRooms()).filter((room) => this.pickFreeDirection(room));
-    return candidates.length > 0 ? randomOf(candidates) : null;
+    const candidates = shuffled(this.getRooms(), this.random).filter((room) =>
+      this.pickFreeDirection(room),
+    );
+    return candidates.length > 0 ? randomOf(candidates, this.random) : null;
   }
 
   private pickFreeDirection(node: RoomNode): Direction | null {
-    for (const direction of shuffled(DIRECTIONS)) {
+    for (const direction of shuffled(DIRECTIONS, this.random)) {
       const nextCoord = moveCoord(node.coord, direction);
 
       if (!this.rooms.has(this.keyFor(nextCoord))) {
@@ -243,11 +247,11 @@ export class DungeonManager {
 
   private addExtraConnections(): void {
     for (const room of this.getRooms()) {
-      if (Math.random() > 0.22) {
+      if (this.random() > 0.22) {
         continue;
       }
 
-      const direction = randomOf(DIRECTIONS);
+      const direction = randomOf(DIRECTIONS, this.random);
       const neighbor = this.rooms.get(this.keyFor(moveCoord(room.coord, direction)));
 
       if (neighbor) {
@@ -323,7 +327,7 @@ export class DungeonManager {
   }
 
   private pickCombatTemplateId(): string {
-    return randomOf(COMBAT_ROOM_TEMPLATES).id;
+    return randomOf(COMBAT_ROOM_TEMPLATES, this.random).id;
   }
 
   private keyFor(coord: GridCoord): string {

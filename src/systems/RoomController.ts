@@ -11,7 +11,7 @@ import type { ItemSystem } from './ItemSystem';
 import type { DungeonManager, RoomNode } from './DungeonManager';
 import type { RunState } from './RunState';
 import { DIRECTIONS, type Direction } from '../utils/directions';
-import { randomInt, randomOf } from '../utils/random';
+import { randomInt, randomOf, type RandomSource } from '../utils/random';
 
 interface RoomControllerConfig {
   scene: Phaser.Scene;
@@ -23,6 +23,7 @@ interface RoomControllerConfig {
   onRoomCleared: (room: RoomNode) => void;
   onEnemyDefeated: (score: number) => void;
   onBossPhaseTwo?: (boss: BaseEnemy) => void;
+  random?: RandomSource;
 }
 
 export class RoomController {
@@ -39,6 +40,7 @@ export class RoomController {
   private readonly onRoomCleared: (room: RoomNode) => void;
   private readonly onEnemyDefeated: (score: number) => void;
   private readonly onBossPhaseTwo?: (boss: BaseEnemy) => void;
+  private readonly random: RandomSource;
   private readonly doorSprites = new Map<Direction, Door>();
   private readonly floorGraphics: Phaser.GameObjects.Graphics;
 
@@ -52,6 +54,7 @@ export class RoomController {
     this.onRoomCleared = config.onRoomCleared;
     this.onEnemyDefeated = config.onEnemyDefeated;
     this.onBossPhaseTwo = config.onBossPhaseTwo;
+    this.random = config.random ?? Math.random;
 
     this.floorGraphics = this.scene.add.graphics();
     this.floorGraphics.setDepth(DEPTH.floor);
@@ -123,15 +126,15 @@ export class RoomController {
 
   private spawnCombatRoom(room: RoomNode): void {
     const template = getRoomTemplate(room.templateId);
-    const spawnSet = [...randomOf(template.spawnSets)];
+    const spawnSet = [...randomOf(template.spawnSets, this.random)];
     const extraEnemies =
       room.type === 'combat' ? Math.min(4, Math.floor((this.runState.floor - 1) * 0.8)) : 0;
 
     for (let i = 0; i < extraEnemies; i += 1) {
       spawnSet.push({
-        enemyId: randomOf(['chaser', 'shooter', 'dasher'] as const),
-        x: randomInt(190, 770),
-        y: randomInt(160, 480),
+        enemyId: randomOf(['chaser', 'shooter', 'dasher'] as const, this.random),
+        x: randomInt(190, 770, this.random),
+        y: randomInt(160, 480, this.random),
       });
     }
 

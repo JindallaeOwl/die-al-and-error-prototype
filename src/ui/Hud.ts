@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { DEPTH, GAME_WIDTH, RENDER_SCALE, type PlayerStats } from '../config/gameConfig';
+import { DEPTH, GAME_WIDTH, RENDER_SCALE } from '../config/gameConfig';
 import { koreanFontStack, t } from '../i18n';
 import type { DungeonManager } from '../systems/DungeonManager';
 import type { RunState } from '../systems/RunState';

@@ -7,7 +7,7 @@ import {
   type RewardKind,
 } from '../data/rewards';
 import type { InventoryState } from './RunState';
-import { randomInt } from '../utils/random';
+import { randomInt, type RandomSource } from '../utils/random';
 
 export interface RewardDrop {
   kind: RewardKind;
@@ -21,21 +21,23 @@ export type ChestResult =
   | { type: 'consumable'; consumable: ConsumableType; amount: number };
 
 export class RewardSystem {
+  constructor(private readonly random: RandomSource = Math.random) {}
+
   rollRoomClearReward(stats: PlayerStats): RewardDrop | null {
     const chance = Math.min(
       REWARD_DROP_TUNING.maxRoomClearChance,
       REWARD_DROP_TUNING.baseRoomClearChance + stats.luck * REWARD_DROP_TUNING.luckChanceBonus,
     );
 
-    if (Math.random() > chance) {
+    if (this.random() > chance) {
       return null;
     }
 
-    const reward = pickWeightedReward(ROOM_CLEAR_REWARDS);
+    const reward = pickWeightedReward(ROOM_CLEAR_REWARDS, this.random);
 
     return {
       kind: reward.kind,
-      amount: randomInt(reward.amountMin, reward.amountMax),
+      amount: randomInt(reward.amountMin, reward.amountMax, this.random),
       labelKey: reward.labelKey,
       tint: reward.tint,
     };
@@ -47,18 +49,19 @@ export class RewardSystem {
       REWARD_DROP_TUNING.chestHealChance + stats.luck * REWARD_DROP_TUNING.chestLuckBonus,
     );
 
-    if (Math.random() < healChance) {
+    if (this.random() < healChance) {
       return { type: 'heal', amount: 1 };
     }
 
     const consumable = pickWeightedReward(
       ROOM_CLEAR_REWARDS.filter((reward) => reward.kind !== 'chest'),
+      this.random,
     ).kind as ConsumableType;
 
     return {
       type: 'consumable',
       consumable,
-      amount: consumable === 'coins' ? randomInt(4, 10) : randomInt(1, 2),
+      amount: consumable === 'coins' ? randomInt(4, 10, this.random) : randomInt(1, 2, this.random),
     };
   }
 
@@ -67,9 +70,9 @@ export class RewardSystem {
   }
 }
 
-function pickWeightedReward(rewards: RewardDefinition[]): RewardDefinition {
+function pickWeightedReward(rewards: RewardDefinition[], random: RandomSource): RewardDefinition {
   const totalWeight = rewards.reduce((sum, reward) => sum + reward.weight, 0);
-  let roll = Math.random() * totalWeight;
+  let roll = random() * totalWeight;
 
   for (const reward of rewards) {
     roll -= reward.weight;

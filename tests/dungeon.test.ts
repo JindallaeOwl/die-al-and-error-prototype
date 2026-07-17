@@ -1,0 +1,68 @@
+import { describe, expect, it } from 'vitest';
+import { DungeonManager } from '../src/systems/DungeonManager';
+
+describe('DungeonManager', () => {
+  it('generates a connected first floor with its required room types', () => {
+    const dungeon = new DungeonManager(() => 0);
+    dungeon.generateFloor(1);
+
+    const rooms = dungeon.getRooms();
+    const start = dungeon.getCurrentRoom();
+
+    expect(start.type).toBe('start');
+    expect(start.exits.length).toBeGreaterThanOrEqual(2);
+    expect(rooms.filter((room) => room.type === 'combat')).toHaveLength(3);
+    expect(rooms.filter((room) => room.type === 'boss')).toHaveLength(1);
+    expect(rooms.some((room) => room.type === 'reward')).toBe(true);
+    expect(rooms.some((room) => room.type === 'treasure')).toBe(true);
+    expect(getReachableRoomIds(dungeon)).toEqual(new Set(rooms.map((room) => room.id)));
+  });
+
+  it('alternates boss templates by floor', () => {
+    const dungeon = new DungeonManager(() => 0);
+
+    dungeon.generateFloor(1);
+    expect(dungeon.getRooms().find((room) => room.type === 'boss')?.templateId).toBe(
+      'error-sanctum',
+    );
+
+    dungeon.generateFloor(2);
+    expect(dungeon.getRooms().find((room) => room.type === 'boss')?.templateId).toBe('root-cellar');
+  });
+});
+
+function getReachableRoomIds(dungeon: DungeonManager): Set<string> {
+  const rooms = dungeon.getRooms();
+  const byId = new Map(rooms.map((room) => [room.id, room]));
+  const visited = new Set<string>();
+  const pending = [dungeon.getCurrentRoom().id];
+
+  while (pending.length > 0) {
+    const id = pending.pop()!;
+
+    if (visited.has(id)) {
+      continue;
+    }
+
+    visited.add(id);
+    const room = byId.get(id)!;
+
+    for (const direction of room.exits) {
+      const delta =
+        direction === 'north'
+          ? [0, -1]
+          : direction === 'south'
+            ? [0, 1]
+            : direction === 'east'
+              ? [1, 0]
+              : [-1, 0];
+      const neighborId = `${room.coord.x + delta[0]},${room.coord.y + delta[1]}`;
+
+      if (!visited.has(neighborId)) {
+        pending.push(neighborId);
+      }
+    }
+  }
+
+  return visited;
+}

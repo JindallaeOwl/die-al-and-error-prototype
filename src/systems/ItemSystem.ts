@@ -1,9 +1,11 @@
 import { PASSIVE_ITEMS, type PassiveItemDefinition } from '../data/items';
 import type { PlayerAttackProfile, PlayerStats } from '../config/gameConfig';
 import { clamp } from '../utils/math';
-import { randomOf } from '../utils/random';
+import { randomOf, type RandomSource } from '../utils/random';
 
 export class ItemSystem {
+  constructor(private readonly random: RandomSource = Math.random) {}
+
   pickRewardItem(collectedItemIds: readonly string[]): PassiveItemDefinition {
     return this.pickItem(collectedItemIds, { includeTreasureOnly: false });
   }
@@ -65,6 +67,6 @@ export class ItemSystem {
   ): PassiveItemDefinition {
     const pool = PASSIVE_ITEMS.filter((item) => options.includeTreasureOnly || !item.treasureOnly);
     const unseenItems = pool.filter((item) => !collectedItemIds.includes(item.id));
-    return randomOf(unseenItems.length > 0 ? unseenItems : pool);
+    return randomOf(unseenItems.length > 0 ? unseenItems : pool, this.random);
   }
 }
