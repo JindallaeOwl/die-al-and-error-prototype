@@ -4,6 +4,7 @@ import type { EnemyDefinition } from '../../data/enemies';
 import { Bullet } from '../Bullet';
 import type { Player } from '../Player';
 import { normalizeVector } from '../../utils/math';
+import { getCenteredCircleBodyOffset } from '../../utils/collisionBody';
 import { t } from '../../i18n';
 
 export abstract class BaseEnemy extends Phaser.Physics.Arcade.Sprite {
@@ -42,8 +43,9 @@ export abstract class BaseEnemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     const body = this.body as Phaser.Physics.Arcade.Body;
+    const bodyOffset = getCenteredCircleBodyOffset(this.width, this.height, definition.bodyRadius);
     body.setAllowGravity(false);
-    body.setCircle(definition.bodyRadius);
+    body.setCircle(definition.bodyRadius, bodyOffset.x, bodyOffset.y);
     body.setCollideWorldBounds(false);
   }
 
