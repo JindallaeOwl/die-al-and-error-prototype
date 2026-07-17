@@ -39,6 +39,7 @@ export const en: TranslationTree = {
   gameOver: {
     title: 'RUN ENDED',
     summary: 'Rooms {rooms}   Items {items}   Score {score}',
+    restart: 'Restart (Enter / Space)',
   },
   hud: {
     hp: 'HP',

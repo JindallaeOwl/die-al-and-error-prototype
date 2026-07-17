@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { AnimationKeys, itemIconKey, TextureKeys } from '../config/assets';
+import { AnimationKeys, itemIconKey, PLAYER_DIRECTION_ROWS, TextureKeys } from '../config/assets';
 import { PASSIVE_ITEMS } from '../data/items';
 
 export function createPlaceholderTextures(scene: Phaser.Scene): void {
@@ -67,6 +67,8 @@ function createSeedTexture(scene: Phaser.Scene): void {
 }
 
 export function createPlaceholderAnimations(scene: Phaser.Scene): void {
+  createYellowPlayerAnimations(scene);
+
   if (scene.anims.exists(AnimationKeys.playerWalk)) {
     return;
   }
@@ -82,6 +84,65 @@ export function createPlaceholderAnimations(scene: Phaser.Scene): void {
     frameRate: 9,
     repeat: -1,
   });
+}
+
+function createYellowPlayerAnimations(scene: Phaser.Scene): void {
+  if (!scene.textures.exists(TextureKeys.playerYellowIdle)) {
+    return;
+  }
+
+  const { down, side, up } = PLAYER_DIRECTION_ROWS;
+  const animationDefinitions = [
+    [AnimationKeys.playerIdleDown, TextureKeys.playerYellowIdle, down * 2, down * 2 + 1, 3, -1],
+    [AnimationKeys.playerIdleUp, TextureKeys.playerYellowIdle, up * 2, up * 2 + 1, 3, -1],
+    [AnimationKeys.playerIdleSide, TextureKeys.playerYellowIdle, side * 2, side * 2 + 1, 3, -1],
+    [AnimationKeys.playerWalkDown, TextureKeys.playerYellowWalk, down * 4, down * 4 + 3, 9, -1],
+    [AnimationKeys.playerWalkUp, TextureKeys.playerYellowWalk, up * 4, up * 4 + 3, 9, -1],
+    [AnimationKeys.playerWalkSide, TextureKeys.playerYellowWalk, side * 4, side * 4 + 3, 9, -1],
+    [AnimationKeys.playerHurtDown, TextureKeys.playerYellowHurt, down * 2, down * 2 + 1, 8, 0],
+    [AnimationKeys.playerHurtUp, TextureKeys.playerYellowHurt, up * 2, up * 2 + 1, 8, 0],
+    [AnimationKeys.playerHurtSide, TextureKeys.playerYellowHurt, side * 2, side * 2 + 1, 8, 0],
+    [AnimationKeys.playerDeathDown, TextureKeys.playerYellowDeath, down * 3, down * 3 + 2, 6, 0],
+    [AnimationKeys.playerDeathUp, TextureKeys.playerYellowDeath, up * 3, up * 3 + 2, 6, 0],
+    [AnimationKeys.playerDeathSide, TextureKeys.playerYellowDeath, side * 3, side * 3 + 2, 6, 0],
+    [
+      AnimationKeys.playerShadowDeathDown,
+      TextureKeys.playerYellowShadowDeath,
+      down * 3,
+      down * 3 + 2,
+      6,
+      0,
+    ],
+    [
+      AnimationKeys.playerShadowDeathUp,
+      TextureKeys.playerYellowShadowDeath,
+      up * 3,
+      up * 3 + 2,
+      6,
+      0,
+    ],
+    [
+      AnimationKeys.playerShadowDeathSide,
+      TextureKeys.playerYellowShadowDeath,
+      side * 3,
+      side * 3 + 2,
+      6,
+      0,
+    ],
+  ] as const;
+
+  for (const [key, texture, start, end, frameRate, repeat] of animationDefinitions) {
+    if (scene.anims.exists(key)) {
+      continue;
+    }
+
+    scene.anims.create({
+      key,
+      frames: scene.anims.generateFrameNumbers(texture, { start, end }),
+      frameRate,
+      repeat,
+    });
+  }
 }
 
 function createPlayerFrameTexture(

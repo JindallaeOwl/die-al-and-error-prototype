@@ -39,6 +39,12 @@ import { Hud } from '../ui/Hud';
 import { applyRenderScale } from '../utils/render';
 import { clamp } from '../utils/math';
 
+interface GameOverData {
+  clearedRooms: number;
+  itemCount: number;
+  score: number;
+}
+
 export class GameScene extends Phaser.Scene {
   private runState!: RunState;
   private dungeon!: DungeonManager;
@@ -61,6 +67,10 @@ export class GameScene extends Phaser.Scene {
   private debugVisible = false;
   private nextDoorAt = 0;
   private gameOverStarted = false;
+  private gameOverOverlay!: HTMLElement;
+  private gameOverTitle!: HTMLElement;
+  private gameOverSummary!: HTMLElement;
+  private gameOverRestartButton!: HTMLButtonElement;
   private floorTransitionStarted = false;
   private playerDamageFeedbackQueued = false;
   private removeRuntimeErrorListener?: () => void;
@@ -93,6 +103,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#0d1117');
     applyRenderScale(this);
     this.physics.world.setBounds(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    this.physics.world.resume();
 
     this.runState = createInitialRunState();
     this.dungeon = new DungeonManager();
@@ -157,6 +168,7 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.hud = new Hud(this);
+    this.prepareGameOverOverlay();
     this.combatCollisions = new CombatCollisionSystem({
       scene: this,
       player: this.player,
@@ -335,26 +347,36 @@ export class GameScene extends Phaser.Scene {
         return;
       }
 
-      this.gameOverStarted = true;
       const gameOverData = {
         clearedRooms: this.runState.clearedRooms,
         itemCount: this.runState.collectedItemIds.length,
         score: this.runState.score,
       };
-      this.player.setActive(false);
-      this.player.setCombatVisible(false);
-      const body = this.player.body as Phaser.Physics.Arcade.Body | undefined;
+      this.gameOverStarted = true;
 
-      if (body) {
-        body.enable = false;
-        body.stop();
+      // Display the browser overlay before touching the physics world. It is
+      // independent of Phaser's render loop, so later cleanup cannot prevent
+      // the game-over screen from appearing.
+      this.showGameOverOverlay(gameOverData);
+
+      try {
+        const body = this.player.body as Phaser.Physics.Arcade.Body | undefined;
+
+        if (body) {
+          body.stop();
+          body.enable = false;
+        }
+
+        this.physics.world.pause();
+      } catch (error) {
+        console.error('Player death physics cleanup failed.', error);
       }
 
-      // Scene changes during an Arcade Physics callback can interrupt the
-      // current world step. Defer it to the safe end of this Scene frame.
-      this.events.once(Phaser.Scenes.Events.POST_UPDATE, () => {
-        this.scene.start('GameOverScene', gameOverData);
-      });
+      try {
+        this.player.playDeathAnimation();
+      } catch (error) {
+        console.error('Player death animation failed.', error);
+      }
     });
 
     this.player.on('beam-fired', (direction: { x: number; y: number }) => {
@@ -387,6 +409,47 @@ export class GameScene extends Phaser.Scene {
     this.player.on('beam-charge-pulse', (event: { ready: boolean }) => {
       this.effects.beamChargePulse(this.player.x, this.player.y, event.ready);
     });
+  }
+
+  private prepareGameOverOverlay(): void {
+    const overlay = document.querySelector<HTMLElement>('#game-over-overlay');
+    const title = document.querySelector<HTMLElement>('#game-over-title');
+    const summary = document.querySelector<HTMLElement>('#game-over-summary');
+    const restartButton = document.querySelector<HTMLButtonElement>('#game-over-restart');
+
+    if (!overlay || !title || !summary || !restartButton) {
+      throw new Error('Game-over overlay elements are missing.');
+    }
+
+    this.gameOverOverlay = overlay;
+    this.gameOverTitle = title;
+    this.gameOverSummary = summary;
+    this.gameOverRestartButton = restartButton;
+    this.gameOverOverlay.hidden = true;
+    this.gameOverRestartButton.onclick = () => this.restartAfterGameOver();
+  }
+
+  private showGameOverOverlay(data: GameOverData): void {
+    this.gameOverTitle.textContent = t('gameOver.title');
+    this.gameOverSummary.textContent = t('gameOver.summary', {
+      rooms: data.clearedRooms,
+      items: data.itemCount,
+      score: data.score,
+    });
+    this.gameOverRestartButton.textContent = t('gameOver.restart');
+    this.gameOverOverlay.hidden = false;
+    this.gameOverRestartButton.focus();
+  }
+
+  private restartAfterGameOver(): void {
+    if (!this.gameOverStarted) {
+      return;
+    }
+
+    // A full reload rebuilds Phaser, the Scene Manager, and the physics world.
+    // Keep the overlay visible until navigation starts so a failed queued Scene
+    // restart can never leave the player on a frozen game frame again.
+    window.location.reload();
   }
 
   private setupAudioUnlock(): void {

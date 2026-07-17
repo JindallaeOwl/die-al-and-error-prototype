@@ -39,6 +39,7 @@ export const ko: TranslationTree = {
   gameOver: {
     title: '런 종료',
     summary: '방 {rooms}   아이템 {items}   점수 {score}',
+    restart: '다시 시작 (Enter / Space)',
   },
   hud: {
     hp: '체력',

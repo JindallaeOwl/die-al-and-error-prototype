@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { HUD_ICON_ASSETS } from '../config/assets';
+import { HUD_ICON_ASSETS, PLAYER_IMAGE_ASSETS, PLAYER_SPRITESHEET_ASSETS } from '../config/assets';
 import { BOLD_PIXELS_FONT_FAMILY } from '../i18n';
 import { createPlaceholderAnimations, createPlaceholderTextures } from '../systems/AssetFactory';
 import { applyRenderScale } from '../utils/render';
@@ -11,6 +11,17 @@ export class BootScene extends Phaser.Scene {
 
   preload(): void {
     for (const asset of HUD_ICON_ASSETS) {
+      this.load.image(asset.key, asset.path);
+    }
+
+    for (const asset of PLAYER_SPRITESHEET_ASSETS) {
+      this.load.spritesheet(asset.key, asset.path, {
+        frameWidth: asset.frameWidth,
+        frameHeight: asset.frameHeight,
+      });
+    }
+
+    for (const asset of PLAYER_IMAGE_ASSETS) {
       this.load.image(asset.key, asset.path);
     }
   }

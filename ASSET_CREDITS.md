@@ -25,3 +25,12 @@
 - 동봉 라이선스: `public/assets/fonts/boldpixels/license.txt`
 - 사용 범위: 영문·숫자·기본 기호 UI와 메인 화면 `GAMZAISSAC` 제목
 - 변경 여부: 원본 폰트를 수정하지 않고 사용
+
+## Top-Down Prototype Character — Yellow
+
+- 제작자: Snoblin
+- 출처: https://snoblin.itch.io/pixel-rpg-free-npc
+- 사용 조건: 상업·비상업 프로젝트 사용 및 수정 가능
+- 제한 사항: 원본 또는 수정한 에셋 파일의 재판매·재배포 금지
+- 사용 파일: Yellow 캐릭터의 `idle.png`, `walk.png`, `hurt.png`, `death.png`와 그림자 PNG
+- 사용 범위: 플레이어 대기·이동·피격·사망 애니메이션

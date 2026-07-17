@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { HUD_ICON_ASSETS, TextureKeys } from '../src/config/assets';
+import {
+  HUD_ICON_ASSETS,
+  PLAYER_DIRECTION_ROWS,
+  PLAYER_IMAGE_ASSETS,
+  PLAYER_SPRITESHEET_ASSETS,
+  TextureKeys,
+} from '../src/config/assets';
 import {
   GAME_HEIGHT,
   GAME_WIDTH,
@@ -8,6 +14,7 @@ import {
 } from '../src/config/gameConfig';
 import { calculateCoverViewport } from '../src/utils/render';
 import { BOLD_PIXELS_FONT_FAMILY, gameFontStack } from '../src/i18n';
+import { resolvePlayerFacing } from '../src/utils/playerFacing';
 
 describe('pixel art baseline', () => {
   it('uses the 480x272 logical canvas and a 16-pixel grid', () => {
@@ -35,6 +42,29 @@ describe('pixel art baseline', () => {
       { key: TextureKeys.hudBomb, path: 'assets/icons/nikoichu/hud-bomb.png' },
       { key: TextureKeys.hudCoin, path: 'assets/icons/nikoichu/hud-coin.png' },
     ]);
+  });
+
+  it('registers the Yellow player as 32-pixel directional spritesheets', () => {
+    expect(PLAYER_SPRITESHEET_ASSETS).toHaveLength(5);
+    expect(
+      PLAYER_SPRITESHEET_ASSETS.every(
+        (asset) => asset.frameWidth === 32 && asset.frameHeight === 32,
+      ),
+    ).toBe(true);
+    expect(PLAYER_IMAGE_ASSETS).toEqual([
+      {
+        key: TextureKeys.playerYellowShadow,
+        path: 'assets/characters/snoblin-yellow/shadow/shadow_static.png',
+      },
+    ]);
+    expect(PLAYER_DIRECTION_ROWS).toEqual({ down: 0, side: 1, up: 2 });
+  });
+
+  it('faces front while idle and maps movement directions correctly', () => {
+    expect(resolvePlayerFacing(0, 0)).toEqual({ facing: 'down', flipX: false });
+    expect(resolvePlayerFacing(0, -1)).toEqual({ facing: 'up', flipX: false });
+    expect(resolvePlayerFacing(-1, 0)).toEqual({ facing: 'side', flipX: true });
+    expect(resolvePlayerFacing(1, 0)).toEqual({ facing: 'side', flipX: false });
   });
 
   it('uses BoldPixels for Latin UI and keeps the Korean fallback fonts', () => {

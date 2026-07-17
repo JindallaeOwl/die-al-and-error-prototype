@@ -12,6 +12,7 @@ import {
 } from '../config/gameConfig';
 import { Bullet } from './Bullet';
 import { clamp, normalizeVector } from '../utils/math';
+import { resolvePlayerFacing, type PlayerFacing } from '../utils/playerFacing';
 import {
   getEffectiveBeamChargeMs,
   getEffectiveDamage,
@@ -30,10 +31,51 @@ export interface PlayerControls {
   fireRight: Phaser.Input.Keyboard.Key;
 }
 
+type PlayerAnimationState = 'idle' | 'walk' | 'hurt' | 'death';
+
+const PLAYER_ANIMATIONS: Record<
+  PlayerAnimationState,
+  Record<PlayerFacing, (typeof AnimationKeys)[keyof typeof AnimationKeys]>
+> = {
+  idle: {
+    down: AnimationKeys.playerIdleDown,
+    up: AnimationKeys.playerIdleUp,
+    side: AnimationKeys.playerIdleSide,
+  },
+  walk: {
+    down: AnimationKeys.playerWalkDown,
+    up: AnimationKeys.playerWalkUp,
+    side: AnimationKeys.playerWalkSide,
+  },
+  hurt: {
+    down: AnimationKeys.playerHurtDown,
+    up: AnimationKeys.playerHurtUp,
+    side: AnimationKeys.playerHurtSide,
+  },
+  death: {
+    down: AnimationKeys.playerDeathDown,
+    up: AnimationKeys.playerDeathUp,
+    side: AnimationKeys.playerDeathSide,
+  },
+};
+
+const PLAYER_SHADOW_DEATH_ANIMATIONS: Record<
+  PlayerFacing,
+  (typeof AnimationKeys)[keyof typeof AnimationKeys]
+> = {
+  down: AnimationKeys.playerShadowDeathDown,
+  up: AnimationKeys.playerShadowDeathUp,
+  side: AnimationKeys.playerShadowDeathSide,
+};
+
+const EXTERNAL_PLAYER_SCALE = 2;
+
 export class Player extends Phaser.Physics.Arcade.Sprite {
   stats: PlayerStats;
   hasChargeBeam = false;
   private attackProfile: PlayerAttackProfile;
+  private readonly usesExternalAssets: boolean;
+  private readonly shadow: Phaser.GameObjects.Sprite;
   private readonly extraEyes: Phaser.GameObjects.Image;
   private readonly toothpick: Phaser.GameObjects.Image;
 
@@ -43,7 +85,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private beamChargeStartedAt: number | null = null;
   private beamChargeDirection: { x: number; y: number } | null = null;
   private nextBeamChargePulseAt = 0;
-  private lastFacingX = 1;
+  private hurtAnimationUntil = 0;
+  private facing: PlayerFacing = 'down';
+  private dead = false;
 
   constructor(
     scene: Phaser.Scene,
@@ -52,27 +96,54 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     stats: PlayerStats,
     attackProfile: PlayerAttackProfile = PLAYER_BASE_ATTACK_PROFILE,
   ) {
-    super(scene, x, y, TextureKeys.playerIdle);
+    super(
+      scene,
+      x,
+      y,
+      scene.textures.exists(TextureKeys.playerYellowIdle)
+        ? TextureKeys.playerYellowIdle
+        : TextureKeys.playerIdle,
+    );
     this.stats = stats;
     this.attackProfile = { ...attackProfile };
+    this.usesExternalAssets = scene.textures.exists(TextureKeys.playerYellowIdle);
     scene.add.existing(this);
     scene.physics.add.existing(this);
-    this.setDepth(DEPTH.actor).setScale(0.6);
+    this.setDepth(DEPTH.actor).setScale(this.usesExternalAssets ? EXTERNAL_PLAYER_SCALE : 0.6);
 
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setAllowGravity(false);
-    body.setCircle(10);
+    if (this.usesExternalAssets) {
+      // The 2x visual scale makes the character readable while this smaller
+      // source-pixel body keeps the gameplay collision radius unchanged.
+      body.setCircle(4, 12, 17);
+    } else {
+      body.setCircle(10);
+    }
     body.setCollideWorldBounds(false);
     body.setMaxVelocity(220, 220);
 
+    this.shadow = scene.add
+      .sprite(x, y, TextureKeys.playerYellowShadow)
+      .setScale(this.usesExternalAssets ? EXTERNAL_PLAYER_SCALE : 1)
+      .setDepth(DEPTH.actor - 1)
+      .setVisible(this.usesExternalAssets);
+
+    const cosmeticScale = this.usesExternalAssets ? 0.5 : 0.6;
+
     this.extraEyes = scene.add
-      .image(x, y - 7, TextureKeys.playerExtraEyes)
-      .setScale(0.6)
+      .image(x, y - (this.usesExternalAssets ? 8 : 7), TextureKeys.playerExtraEyes)
+      .setScale(cosmeticScale)
       .setDepth(DEPTH.actor + 1);
     this.toothpick = scene.add
-      .image(x + 5, y - 15, TextureKeys.playerToothpick)
-      .setScale(0.6)
+      .image(
+        x + (this.usesExternalAssets ? 6 : 5),
+        y - (this.usesExternalAssets ? 14 : 15),
+        TextureKeys.playerToothpick,
+      )
+      .setScale(cosmeticScale)
       .setDepth(DEPTH.actor + 1);
+    this.playDirectionalAnimation('idle');
     this.syncCosmetics();
   }
 
@@ -87,15 +158,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   setCombatVisible(visible: boolean): void {
     this.setVisible(visible);
+    this.shadow.setVisible(visible && this.usesExternalAssets);
     this.syncCosmetics();
   }
 
   update(time: number, controls: PlayerControls, bulletGroup: Phaser.Physics.Arcade.Group): void {
-    if (!this.active) {
+    if (!this.active || this.dead) {
       return;
     }
 
-    this.updateMovement(controls);
+    this.updateMovement(time, controls);
     this.updateAttack(time, controls, bulletGroup);
     this.constrainToRoom();
     this.syncCosmetics();
@@ -113,6 +185,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     this.invulnerableUntil = now + COMBAT_TUNING.playerIFrameMs;
+    this.hurtAnimationUntil = now + 250;
     this.stats.health = clamp(this.stats.health - amount, 0, this.stats.maxHealth);
 
     const hitVector = normalizeVector(this.x - sourceX, this.y - sourceY);
@@ -123,6 +196,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     );
 
     this.emit('health-changed', this.stats);
+    this.playDirectionalAnimation('hurt');
 
     if (this.stats.health <= 0) {
       this.emit('player-died');
@@ -131,24 +205,31 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return true;
   }
 
-  private updateMovement(controls: PlayerControls): void {
+  private updateMovement(time: number, controls: PlayerControls): void {
     const inputX = Number(controls.right.isDown) - Number(controls.left.isDown);
     const inputY = Number(controls.down.isDown) - Number(controls.up.isDown);
     const direction = normalizeVector(inputX, inputY);
     const body = this.body as Phaser.Physics.Arcade.Body;
 
     body.setVelocity(direction.x * this.stats.moveSpeed, direction.y * this.stats.moveSpeed);
-    this.updateMovementVisual(inputX, inputY);
+    this.updateMovementVisual(time, inputX, inputY);
   }
 
-  private updateMovementVisual(inputX: number, inputY: number): void {
+  private updateMovementVisual(time: number, inputX: number, inputY: number): void {
     const moving = inputX !== 0 || inputY !== 0;
+    const facingVisual = resolvePlayerFacing(inputX, inputY);
+    this.facing = facingVisual.facing;
+    this.setFlipX(facingVisual.flipX);
 
-    if (inputX !== 0) {
-      this.lastFacingX = inputX;
+    if (this.usesExternalAssets) {
+      if (time < this.hurtAnimationUntil) {
+        this.playDirectionalAnimation('hurt');
+      } else {
+        this.playDirectionalAnimation(moving ? 'walk' : 'idle');
+      }
+
+      return;
     }
-
-    this.setFlipX(this.lastFacingX < 0);
 
     if (moving) {
       this.play(AnimationKeys.playerWalk, true);
@@ -293,19 +374,61 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   private syncCosmetics(): void {
     const visible = this.visible && this.active;
+    const eyeYOffset = this.usesExternalAssets ? 8 : 7;
+    const toothpickOffsetX = this.usesExternalAssets ? 6 : 5;
+    const toothpickOffsetY = this.usesExternalAssets ? 14 : 15;
+    this.shadow
+      .setPosition(this.x, this.y)
+      .setFlipX(this.flipX)
+      .setAlpha(this.alpha)
+      .setVisible(visible && this.usesExternalAssets);
     this.extraEyes
-      .setPosition(this.x, this.y - 7)
+      .setPosition(this.x, this.y - eyeYOffset)
       .setFlipX(this.flipX)
       .setAlpha(this.alpha)
-      .setVisible(visible && this.attackProfile.extraForeheadEyeCount > 0);
+      .setVisible(!this.dead && visible && this.attackProfile.extraForeheadEyeCount > 0);
     this.toothpick
-      .setPosition(this.x + (this.flipX ? -5 : 5), this.y - 15)
+      .setPosition(
+        this.x + (this.flipX ? -toothpickOffsetX : toothpickOffsetX),
+        this.y - toothpickOffsetY,
+      )
       .setFlipX(this.flipX)
       .setAlpha(this.alpha)
-      .setVisible(visible && this.attackProfile.hasToothpickCosmetic);
+      .setVisible(!this.dead && visible && this.attackProfile.hasToothpickCosmetic);
+  }
+
+  private playDirectionalAnimation(state: PlayerAnimationState): void {
+    if (!this.usesExternalAssets) {
+      return;
+    }
+
+    const animationKey = PLAYER_ANIMATIONS[state][this.facing];
+
+    if (this.scene.anims.exists(animationKey)) {
+      this.play(animationKey, true);
+    }
+  }
+
+  playDeathAnimation(): void {
+    this.dead = true;
+    this.scene.tweens.killTweensOf(this);
+    this.setAlpha(1);
+    this.playDirectionalAnimation('death');
+
+    if (this.usesExternalAssets) {
+      const shadowAnimationKey = PLAYER_SHADOW_DEATH_ANIMATIONS[this.facing];
+
+      if (this.scene.anims.exists(shadowAnimationKey)) {
+        this.shadow.play(shadowAnimationKey, true);
+      }
+    }
+
+    this.extraEyes.setVisible(false);
+    this.toothpick.setVisible(false);
   }
 
   override destroy(fromScene?: boolean): void {
+    this.shadow.destroy();
     this.extraEyes.destroy();
     this.toothpick.destroy();
     super.destroy(fromScene);

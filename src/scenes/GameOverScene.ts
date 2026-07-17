@@ -70,7 +70,7 @@ export class GameOverScene extends Phaser.Scene {
       .setDepth(2);
 
     this.add
-      .text(GAME_WIDTH / 2, 184, t('title.pressEnter'), {
+      .text(GAME_WIDTH / 2, 184, t('gameOver.restart'), {
         fontFamily: gameFontStack(),
         fontSize: '9px',
         color: '#ffe39b',
