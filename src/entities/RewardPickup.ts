@@ -7,7 +7,7 @@ export class RewardPickup extends Phaser.Physics.Arcade.Sprite {
   readonly reward: RewardDrop;
 
   constructor(scene: Phaser.Scene, x: number, y: number, reward: RewardDrop) {
-    super(scene, x, y, textureForReward(reward.kind));
+    super(scene, x, y, textureForReward(reward));
     this.reward = reward;
     scene.add.existing(this);
     scene.physics.add.existing(this);
@@ -31,7 +31,9 @@ export class RewardPickup extends Phaser.Physics.Arcade.Sprite {
   }
 }
 
-function textureForReward(kind: RewardDrop['kind']): string {
+function textureForReward(reward: RewardDrop): string {
+  const { kind } = reward;
+
   if (kind === 'keys') {
     return TextureKeys.keyPickup;
   }
@@ -41,7 +43,7 @@ function textureForReward(kind: RewardDrop['kind']): string {
   }
 
   if (kind === 'coins') {
-    return TextureKeys.coinPickup;
+    return reward.appearance === 'five-coin' ? TextureKeys.fiveCoinPickup : TextureKeys.coinPickup;
   }
 
   return TextureKeys.chestPickup;

@@ -88,6 +88,9 @@ export class CombatCollisionSystem {
     this.scene.physics.add.overlap(this.beams, this.enemies, (beamObject, enemyObject) => {
       this.handleBeamEnemy(beamObject as BeamAttack, enemyObject as BaseEnemy);
     });
+    this.scene.physics.add.overlap(this.beams, this.obstacles, (beamObject, obstacleObject) => {
+      this.handleBeamObstacle(beamObject as BeamAttack, obstacleObject as Obstacle);
+    });
   }
 
   update(): void {
@@ -212,6 +215,28 @@ export class CombatCollisionSystem {
     const defeated = enemy.takeDamage(beam.damage, this.player.x, this.player.y);
     this.effects.beamImpact(enemyX, enemyY);
     this.handleEnemyDamageFeedback(enemy, enemyX, enemyY, defeated, 'beam');
+  }
+
+  private handleBeamObstacle(beam: BeamAttack, obstacle: Obstacle): void {
+    if (
+      !beam.active ||
+      !obstacle.active ||
+      !obstacle.body ||
+      !beam.canDamage(obstacle, this.scene.time.now)
+    ) {
+      return;
+    }
+
+    const x = obstacle.x;
+    const y = obstacle.y;
+    const destroyed = obstacle.takeDamage(beam.damage);
+    this.effects.beamImpact(x, y);
+
+    if (destroyed) {
+      this.effects.obstacleBreak(x, y);
+    }
+
+    this.audio.play('hit');
   }
 
   private handleEnemyDamageFeedback(

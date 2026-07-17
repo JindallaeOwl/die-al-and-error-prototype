@@ -30,6 +30,7 @@ interface RoomControllerConfig {
   runState: RunState;
   onRoomCleared: (room: RoomNode) => void;
   onEnemyDefeated: (score: number) => void;
+  onObstacleDestroyed?: (x: number, y: number) => void;
   onBossPhaseTwo?: (boss: BaseEnemy) => void;
   random?: RandomSource;
 }
@@ -47,6 +48,7 @@ export class RoomController {
   private readonly runState: RunState;
   private readonly onRoomCleared: (room: RoomNode) => void;
   private readonly onEnemyDefeated: (score: number) => void;
+  private readonly onObstacleDestroyed?: (x: number, y: number) => void;
   private readonly onBossPhaseTwo?: (boss: BaseEnemy) => void;
   private readonly random: RandomSource;
   private readonly doorSprites = new Map<Direction, Door>();
@@ -61,6 +63,7 @@ export class RoomController {
     this.runState = config.runState;
     this.onRoomCleared = config.onRoomCleared;
     this.onEnemyDefeated = config.onEnemyDefeated;
+    this.onObstacleDestroyed = config.onObstacleDestroyed;
     this.onBossPhaseTwo = config.onBossPhaseTwo;
     this.random = config.random ?? Math.random;
 
@@ -177,11 +180,18 @@ export class RoomController {
         return;
       }
 
-      const obstacle = new Obstacle(this.scene, position.x, position.y, health, (remaining) => {
-        if (room.obstacleHealth) {
-          room.obstacleHealth[index] = remaining;
-        }
-      });
+      const obstacle = new Obstacle(
+        this.scene,
+        position.x,
+        position.y,
+        health,
+        (remaining) => {
+          if (room.obstacleHealth) {
+            room.obstacleHealth[index] = remaining;
+          }
+        },
+        this.onObstacleDestroyed,
+      );
       this.obstacles.add(obstacle);
     });
   }

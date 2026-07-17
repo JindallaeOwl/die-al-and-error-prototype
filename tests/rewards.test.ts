@@ -19,6 +19,38 @@ describe('RewardSystem', () => {
     });
   });
 
+  it('usually drops one coin when a destroyed crate passes its drop roll', () => {
+    const rolls = [0.1, 0.9];
+    const system = new RewardSystem(() => rolls.shift() ?? 0);
+
+    expect(system.rollDestroyedCrateCoinDrop()).toEqual({
+      kind: 'coins',
+      amount: 1,
+      labelKey: 'resources.coins',
+      tint: 0xffffff,
+      appearance: undefined,
+    });
+  });
+
+  it('can drop the rare black five-coin pickup from a destroyed crate', () => {
+    const rolls = [0.1, 0.1];
+    const system = new RewardSystem(() => rolls.shift() ?? 0);
+
+    expect(system.rollDestroyedCrateCoinDrop()).toEqual({
+      kind: 'coins',
+      amount: 5,
+      labelKey: 'resources.coins',
+      tint: 0xffffff,
+      appearance: 'five-coin',
+    });
+  });
+
+  it('can produce no coin when a destroyed crate misses its drop roll', () => {
+    const system = new RewardSystem(() => 0.9);
+
+    expect(system.rollDestroyedCrateCoinDrop()).toBeNull();
+  });
+
   it('adds a consumable pickup to the run inventory', () => {
     const state = createInitialRunState();
     const system = new RewardSystem(() => 0);

@@ -16,6 +16,8 @@ export interface RewardDropTuning {
   maxRoomClearChance: number;
   chestHealChance: number;
   chestLuckBonus: number;
+  crateCoinDropChance: number;
+  crateFiveCoinChance: number;
 }
 
 export const REWARD_DROP_TUNING: RewardDropTuning = {
@@ -24,6 +26,8 @@ export const REWARD_DROP_TUNING: RewardDropTuning = {
   maxRoomClearChance: 0.72,
   chestHealChance: 0.22,
   chestLuckBonus: 0.03,
+  crateCoinDropChance: 0.2,
+  crateFiveCoinChance: 0.15,
 };
 
 export const ROOM_CLEAR_REWARDS: RewardDefinition[] = [

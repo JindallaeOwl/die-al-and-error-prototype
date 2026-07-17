@@ -1,12 +1,11 @@
 import Phaser from 'phaser';
 import { BEAM_TUNING, DEPTH } from '../config/gameConfig';
-import type { BaseEnemy } from './enemies/BaseEnemy';
 
 export class BeamAttack extends Phaser.GameObjects.Rectangle {
   readonly damage: number;
 
   private readonly bornAt: number;
-  private readonly damagedAt = new WeakMap<BaseEnemy, number>();
+  private readonly damagedAt = new WeakMap<object, number>();
   private core?: Phaser.GameObjects.Rectangle;
 
   constructor(
@@ -47,14 +46,14 @@ export class BeamAttack extends Phaser.GameObjects.Rectangle {
     }
   }
 
-  canDamage(enemy: BaseEnemy, time: number): boolean {
-    const lastHitAt = this.damagedAt.get(enemy) ?? -Infinity;
+  canDamage(target: object, time: number): boolean {
+    const lastHitAt = this.damagedAt.get(target) ?? -Infinity;
 
     if (time - lastHitAt < BEAM_TUNING.tickMs) {
       return false;
     }
 
-    this.damagedAt.set(enemy, time);
+    this.damagedAt.set(target, time);
     return true;
   }
 

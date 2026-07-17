@@ -140,6 +140,7 @@ export class GameScene extends Phaser.Scene {
       runState: this.runState,
       onRoomCleared: (room) => this.handleRoomCleared(room),
       onEnemyDefeated: (score) => this.handleEnemyDefeated(score),
+      onObstacleDestroyed: (x, y) => this.handleObstacleDestroyed(x, y),
       onBossPhaseTwo: (boss) => this.handleBossPhaseTwo(boss),
     });
     this.bombSystem = new BombSystem({
@@ -628,6 +629,16 @@ export class GameScene extends Phaser.Scene {
 
   private handleEnemyDefeated(score: number): void {
     this.runState.score += score;
+  }
+
+  private handleObstacleDestroyed(x: number, y: number): void {
+    const reward = this.rewardSystem.rollDestroyedCrateCoinDrop();
+
+    if (!reward) {
+      return;
+    }
+
+    this.rewards.add(new RewardPickup(this, x, y, reward));
   }
 
   private handleBossPhaseTwo(boss: BaseEnemy): void {

@@ -6,6 +6,7 @@ export class Obstacle extends Phaser.Physics.Arcade.Sprite {
   private hp: number;
   private destroyQueued = false;
   private readonly onHealthChanged?: (remainingHealth: number) => void;
+  private readonly onDestroyed?: (x: number, y: number) => void;
 
   constructor(
     scene: Phaser.Scene,
@@ -13,10 +14,12 @@ export class Obstacle extends Phaser.Physics.Arcade.Sprite {
     y: number,
     initialHealth = OBSTACLE_TUNING.maxHealth,
     onHealthChanged?: (remainingHealth: number) => void,
+    onDestroyed?: (x: number, y: number) => void,
   ) {
     super(scene, x, y, TextureKeys.obstacleCrate);
     this.hp = initialHealth;
     this.onHealthChanged = onHealthChanged;
+    this.onDestroyed = onDestroyed;
     scene.add.existing(this);
     scene.physics.add.existing(this, true);
     this.setDepth(DEPTH.item).setScale(0.8);
@@ -64,6 +67,8 @@ export class Obstacle extends Phaser.Physics.Arcade.Sprite {
     if (body) {
       body.enable = false;
     }
+
+    this.onDestroyed?.(this.x, this.y);
 
     this.scene.time.delayedCall(0, () => {
       if (this.scene) {

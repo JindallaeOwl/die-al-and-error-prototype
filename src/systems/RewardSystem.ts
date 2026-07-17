@@ -16,6 +16,7 @@ export interface RewardDrop {
   amount: number;
   labelKey: string;
   tint: number;
+  appearance?: 'five-coin';
 }
 
 export type ChestResult =
@@ -69,6 +70,22 @@ export class RewardSystem {
       type: 'consumable',
       consumable,
       amount: consumable === 'coins' ? randomInt(4, 10, this.random) : randomInt(1, 2, this.random),
+    };
+  }
+
+  rollDestroyedCrateCoinDrop(): RewardDrop | null {
+    if (this.random() >= REWARD_DROP_TUNING.crateCoinDropChance) {
+      return null;
+    }
+
+    const isFiveCoin = this.random() < REWARD_DROP_TUNING.crateFiveCoinChance;
+
+    return {
+      kind: 'coins',
+      amount: isFiveCoin ? 5 : 1,
+      labelKey: 'resources.coins',
+      tint: 0xffffff,
+      appearance: isFiveCoin ? 'five-coin' : undefined,
     };
   }
 

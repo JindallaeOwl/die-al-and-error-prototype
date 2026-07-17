@@ -25,6 +25,7 @@ export function createPlaceholderTextures(scene: Phaser.Scene): void {
   createBombTexture(scene);
   createPlacedBombTexture(scene);
   createCoinTexture(scene);
+  createFiveCoinTexture(scene);
   createChestTexture(scene);
   createFloorExitTexture(scene);
   createFloorTile(scene);
@@ -598,6 +599,24 @@ function createCoinTexture(scene: Phaser.Scene): void {
   graphics.lineStyle(2, 0xffffff, 0.65);
   graphics.lineBetween(16, 8, 16, 24);
   graphics.generateTexture(TextureKeys.coinPickup, 32, 32);
+  graphics.destroy();
+}
+
+function createFiveCoinTexture(scene: Phaser.Scene): void {
+  const graphics = scene.add.graphics();
+  graphics.fillStyle(0x05090e, 0.45);
+  graphics.fillEllipse(16, 29, 25, 5);
+  graphics.fillStyle(0x15191f, 1);
+  graphics.fillCircle(16, 16, 12);
+  graphics.lineStyle(3, 0xaeb7c2, 1);
+  graphics.strokeCircle(16, 16, 10);
+  graphics.fillStyle(0xe7edf5, 1);
+  graphics.fillRect(12, 9, 8, 2);
+  graphics.fillRect(12, 9, 2, 7);
+  graphics.fillRect(12, 14, 7, 2);
+  graphics.fillRect(18, 14, 2, 7);
+  graphics.fillRect(12, 20, 8, 2);
+  graphics.generateTexture(TextureKeys.fiveCoinPickup, 32, 32);
   graphics.destroy();
 }
 
