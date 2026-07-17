@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { BOMB_TUNING, FEEDBACK_TUNING } from '../config/gameConfig';
+import { BOMB_TUNING } from '../config/gameConfig';
 import { Bomb } from '../entities/Bomb';
 import { Bullet } from '../entities/Bullet';
 import { Obstacle } from '../entities/Obstacle';
@@ -113,7 +113,6 @@ export class BombSystem {
 
     this.effects.bombBlast(originX, originY);
     this.effects.shake('bombUse');
-    this.effects.hitStop(FEEDBACK_TUNING.hitStop.enemyDeathMs);
     this.scene.cameras.main.flash(140, 255, 176, 90, false);
     this.audio.play('bombUse');
   }

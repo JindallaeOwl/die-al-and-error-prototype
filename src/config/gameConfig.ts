@@ -123,12 +123,6 @@ export const BEAM_TUNING = {
 };
 
 export const FEEDBACK_TUNING = {
-  hitStop: {
-    bulletHitMs: 42,
-    beamHitMs: 28,
-    enemyDeathMs: 82,
-    playerHurtMs: 95,
-  },
   cameraShake: {
     bulletHit: { durationMs: 42, intensity: 0.0014 },
     beamFire: { durationMs: 90, intensity: 0.0022 },

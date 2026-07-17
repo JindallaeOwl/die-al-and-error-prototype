@@ -19,14 +19,6 @@ export class EffectsSystem {
     this.scene = scene;
   }
 
-  hitStop(durationMs: number): void {
-    if (durationMs <= 0) {
-      return;
-    }
-
-    this.scene.cameras.main.flash(Math.min(durationMs, 55), 255, 255, 255, false);
-  }
-
   shake(kind: ShakeKind): void {
     const shake = FEEDBACK_TUNING.cameraShake[kind];
     const intensity = shake.intensity * getGameSettings().screenShake;

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { COMBAT_TUNING, FEEDBACK_TUNING } from '../config/gameConfig';
+import { COMBAT_TUNING } from '../config/gameConfig';
 import { BeamAttack } from '../entities/BeamAttack';
 import { Bullet } from '../entities/Bullet';
 import { Obstacle } from '../entities/Obstacle';
@@ -265,18 +265,12 @@ export class CombatCollisionSystem {
     attackType: 'bullet' | 'beam',
   ): void {
     if (defeated) {
-      this.effects.hitStop(FEEDBACK_TUNING.hitStop.enemyDeathMs);
       this.effects.shake('enemyDeath');
       this.effects.enemyDeath(enemyX, enemyY, enemy.scoreValue);
       this.audio.play('enemyDeath');
       return;
     }
 
-    this.effects.hitStop(
-      attackType === 'beam'
-        ? FEEDBACK_TUNING.hitStop.beamHitMs
-        : FEEDBACK_TUNING.hitStop.bulletHitMs,
-    );
     this.effects.shake(attackType === 'beam' ? 'beamHit' : 'bulletHit');
     this.audio.play('hit');
   }
