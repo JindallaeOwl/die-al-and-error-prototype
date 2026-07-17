@@ -25,4 +25,12 @@ describe('ItemSystem', () => {
 
     expect(system.pickRewardItem(['quad-shot']).id).toBe('mega-seed');
   });
+
+  it('can select the Prism Lance only from the treasure pool', () => {
+    const pickLast = () => 0.999999;
+    const system = new ItemSystem(pickLast);
+
+    expect(system.pickRewardItem([]).id).not.toBe('prism-lance');
+    expect(system.pickTreasureItem([]).id).toBe('prism-lance');
+  });
 });

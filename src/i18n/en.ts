@@ -83,6 +83,7 @@ export const en: TranslationTree = {
     chestHealed: 'Chest: healed {amount}',
     chestConsumable: 'Chest: +{amount} {resource}',
     itemPickup: '{name}: {description}',
+    secretItemSpawned: 'Secret input detected: Prism Lance spawned',
     clear: 'CLEAR',
     localeKo: 'Korean',
     localeEn: 'English',

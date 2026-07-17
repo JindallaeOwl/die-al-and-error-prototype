@@ -83,6 +83,7 @@ export const ko: TranslationTree = {
     chestHealed: '상자: 체력 {amount} 회복',
     chestConsumable: '상자: +{amount} {resource}',
     itemPickup: '{name}: {description}',
+    secretItemSpawned: '비밀 입력 감지: 프리즘 빔 생성',
     clear: '클리어',
     localeKo: '한국어',
     localeEn: '영어',

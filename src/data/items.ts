@@ -117,4 +117,4 @@ export const PASSIVE_ITEMS: PassiveItemDefinition[] = [
   },
 ];
 
-export const TEST_BEAM_ITEM_ID = 'prism-lance';
+export const PRISM_LANCE_ITEM_ID = 'prism-lance';

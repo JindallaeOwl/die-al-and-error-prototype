@@ -19,7 +19,9 @@ import {
   INVENTORY_TUNING,
   ITEM_PREVIEW_RADIUS,
   RENDER_SCALE,
+  ROOM_RECT,
 } from '../config/gameConfig';
+import { PASSIVE_ITEMS, PRISM_LANCE_ITEM_ID } from '../data/items';
 import { koreanFontStack, t, toggleLocale } from '../i18n';
 import { AudioSystem } from '../systems/AudioSystem';
 import { DungeonManager, type RoomNode } from '../systems/DungeonManager';
@@ -28,6 +30,7 @@ import { addConsumable, spendConsumable } from '../systems/InventorySystem';
 import { ItemSystem } from '../systems/ItemSystem';
 import { RewardSystem } from '../systems/RewardSystem';
 import { RoomController } from '../systems/RoomController';
+import { KONAMI_CODE, SecretCodeTracker } from '../systems/SecretCodeSystem';
 import { createInitialRunState, type RunState } from '../systems/RunState';
 import { getEffectiveDamage } from '../systems/PlayerStatSystem';
 import { Hud } from '../ui/Hud';
@@ -48,6 +51,7 @@ export class GameScene extends Phaser.Scene {
   private localeKey?: Phaser.Input.Keyboard.Key;
   private bombKey?: Phaser.Input.Keyboard.Key;
   private pauseKey?: Phaser.Input.Keyboard.Key;
+  private secretCodeTracker!: SecretCodeTracker;
   private debugVisible = false;
   private nextDoorAt = 0;
   private nextBombAt = 0;
@@ -83,6 +87,7 @@ export class GameScene extends Phaser.Scene {
     this.gameOverStarted = false;
     this.floorTransitionStarted = false;
     this.playerDamageFeedbackQueued = false;
+    this.secretCodeTracker = new SecretCodeTracker(KONAMI_CODE);
 
     this.cameras.main.setBackgroundColor('#0d1117');
     applyRenderScale(this);
@@ -213,6 +218,10 @@ export class GameScene extends Phaser.Scene {
     this.localeKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.L);
     this.bombKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
     this.pauseKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+    keyboard.on('keydown', this.handleSecretCodeKey, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      keyboard.off('keydown', this.handleSecretCodeKey, this);
+    });
 
     return {
       up: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
@@ -224,6 +233,33 @@ export class GameScene extends Phaser.Scene {
       fireLeft: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT),
       fireRight: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT),
     };
+  }
+
+  private handleSecretCodeKey(event: KeyboardEvent): void {
+    if (this.secretCodeTracker.push(event.code)) {
+      this.spawnSecretPrismLance();
+    }
+  }
+
+  private spawnSecretPrismLance(): void {
+    if (this.gameOverStarted) {
+      return;
+    }
+
+    const item = PASSIVE_ITEMS.find((candidate) => candidate.id === PRISM_LANCE_ITEM_ID);
+
+    if (!item) {
+      return;
+    }
+
+    const offsetX = this.player.x > GAME_WIDTH / 2 ? -72 : 72;
+    const x = clamp(this.player.x + offsetX, ROOM_RECT.left + 48, ROOM_RECT.right - 48);
+    const y = clamp(this.player.y, ROOM_RECT.top + 48, ROOM_RECT.bottom - 48);
+    const pickup = new ItemPickup(this, x, y, item, 'secret');
+    this.items.add(pickup);
+    this.effects.pickup(x, y);
+    this.audio.play('pickup');
+    this.hud.showMessage(t('messages.secretItemSpawned'), 1600);
   }
 
   private setupPhysics(): void {
@@ -631,11 +667,9 @@ export class GameScene extends Phaser.Scene {
     this.player.setAttackProfile(this.runState.attackProfile);
     const currentRoom = this.dungeon.getCurrentRoom();
 
-    if (currentRoom.type === 'reward') {
+    if (pickup.source === 'room' && currentRoom.type === 'reward') {
       this.dungeon.markCurrentRewardClaimed();
-    } else if (currentRoom.type === 'treasure' && pickup.item.abilityId) {
-      this.dungeon.markCurrentBeamItemClaimed();
-    } else if (currentRoom.type === 'treasure') {
+    } else if (pickup.source === 'room' && currentRoom.type === 'treasure') {
       this.dungeon.markCurrentTreasureClaimed();
     }
 

@@ -33,7 +33,6 @@ export interface RoomNode {
   rewardItemId?: string;
   treasureUnlocked: boolean;
   treasureClaimed: boolean;
-  beamItemClaimed: boolean;
   obstacleHealth?: number[];
   pendingReward?: PendingRoomReward;
 }
@@ -158,10 +157,6 @@ export class DungeonManager {
     this.getCurrentRoom().treasureClaimed = true;
   }
 
-  markCurrentBeamItemClaimed(): void {
-    this.getCurrentRoom().beamItemClaimed = true;
-  }
-
   clearPendingReward(roomId: string): void {
     const room = this.rooms.get(roomId);
 
@@ -203,7 +198,6 @@ export class DungeonManager {
       rewardClaimed: false,
       treasureUnlocked: type !== 'treasure',
       treasureClaimed: false,
-      beamItemClaimed: false,
     };
 
     this.rooms.set(key, node);

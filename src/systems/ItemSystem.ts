@@ -11,7 +11,7 @@ export class ItemSystem {
   }
 
   pickTreasureItem(collectedItemIds: readonly string[]): PassiveItemDefinition {
-    return this.pickItem(collectedItemIds, { includeTreasureOnly: false });
+    return this.pickItem(collectedItemIds, { includeTreasureOnly: true });
   }
 
   applyItem(stats: PlayerStats, item: PassiveItemDefinition): PlayerStats {

@@ -5,7 +5,7 @@ import { Obstacle } from '../entities/Obstacle';
 import { createEnemy } from '../entities/enemies/EnemyFactory';
 import type { BaseEnemy } from '../entities/enemies/BaseEnemy';
 import { DEPTH, OBSTACLE_TUNING, ROOM_RECT, WALL_THICKNESS } from '../config/gameConfig';
-import { PASSIVE_ITEMS, TEST_BEAM_ITEM_ID } from '../data/items';
+import { PASSIVE_ITEMS } from '../data/items';
 import { getRoomTemplate } from '../data/rooms';
 import type { ItemSystem } from './ItemSystem';
 import type { DungeonManager, RoomNode } from './DungeonManager';
@@ -194,26 +194,18 @@ export class RoomController {
   }
 
   private spawnTreasure(room: RoomNode): void {
-    if (!room.treasureClaimed) {
-      if (!room.rewardItemId) {
-        room.rewardItemId = this.itemSystem.pickTreasureItem(this.runState.collectedItemIds).id;
-      }
-
-      const item = PASSIVE_ITEMS.find((candidate) => candidate.id === room.rewardItemId);
-
-      if (item) {
-        this.items.add(new ItemPickup(this.scene, 480, 320, item));
-      }
+    if (room.treasureClaimed) {
+      return;
     }
 
-    if (!room.beamItemClaimed && !this.runState.unlockedAbilityIds.includes('charge-beam')) {
-      const beamItem = PASSIVE_ITEMS.find((candidate) => candidate.id === TEST_BEAM_ITEM_ID);
+    if (!room.rewardItemId) {
+      room.rewardItemId = this.itemSystem.pickTreasureItem(this.runState.collectedItemIds).id;
+    }
 
-      if (beamItem) {
-        this.items.add(
-          new ItemPickup(this.scene, ROOM_RECT.left + 86, ROOM_RECT.top + 76, beamItem),
-        );
-      }
+    const item = PASSIVE_ITEMS.find((candidate) => candidate.id === room.rewardItemId);
+
+    if (item) {
+      this.items.add(new ItemPickup(this.scene, 480, 320, item));
     }
   }
 
