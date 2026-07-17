@@ -1,0 +1,41 @@
+import { BOMB_TUNING } from '../config/gameConfig';
+import { spendConsumable } from './InventorySystem';
+import type { RunState } from './RunState';
+
+export type BombPlantDecision =
+  { status: 'planted'; nextBombAt: number } | { status: 'no-bombs' | 'cooldown' | 'blocked' };
+
+export function resolveBombPlantAttempt(
+  runState: RunState,
+  now: number,
+  nextBombAt: number,
+  blocked: boolean,
+): BombPlantDecision {
+  if (blocked) {
+    return { status: 'blocked' };
+  }
+
+  if (now < nextBombAt) {
+    return { status: 'cooldown' };
+  }
+
+  const updatedInventory = spendConsumable(runState.inventory, 'bombs', 1);
+
+  if (!updatedInventory) {
+    return { status: 'no-bombs' };
+  }
+
+  runState.inventory = updatedInventory;
+  return { status: 'planted', nextBombAt: now + BOMB_TUNING.cooldownMs };
+}
+
+export function isWithinBombRadius(
+  originX: number,
+  originY: number,
+  targetX: number,
+  targetY: number,
+): boolean {
+  const dx = targetX - originX;
+  const dy = targetY - originY;
+  return dx * dx + dy * dy <= BOMB_TUNING.radius * BOMB_TUNING.radius;
+}

@@ -1,29 +1,18 @@
 import Phaser from 'phaser';
 import { TextureKeys } from '../config/assets';
 import { DEPTH, GAME_HEIGHT, GAME_WIDTH, RENDER_SCALE } from '../config/gameConfig';
-import { getLocale, koreanFontStack, t, toggleLocale } from '../i18n';
+import { koreanFontStack, t } from '../i18n';
 import { AudioSystem } from '../systems/AudioSystem';
+import { getGameSettings } from '../systems/GameSettings';
 import {
-  getGameSettings,
-  nextEffectsVolume,
-  nextRenderQuality,
-  nextScreenShake,
-  updateGameSettings,
-} from '../systems/GameSettings';
+  activateSettingsMenuAction,
+  buildSettingsMenuItems,
+  type SettingsMenuAction,
+} from '../ui/SettingsMenu';
 import { applyRenderScale } from '../utils/render';
 
 type MenuMode = 'main' | 'settings';
-type MenuAction =
-  | 'start'
-  | 'settings'
-  | 'quit'
-  | 'language'
-  | 'sound'
-  | 'volume'
-  | 'shake'
-  | 'quality'
-  | 'fullscreen'
-  | 'back';
+type MenuAction = 'start' | 'settings' | 'quit' | SettingsMenuAction;
 
 interface MenuItem {
   label: string;
@@ -204,31 +193,7 @@ export class TitleScene extends Phaser.Scene {
       ];
     }
 
-    const settings = getGameSettings();
-    return [
-      {
-        label: `${t('settings.language')}: ${getLocale() === 'ko' ? t('messages.localeKo') : t('messages.localeEn')}`,
-        action: 'language',
-      },
-      {
-        label: `${t('settings.sound')}: ${settings.soundEnabled ? t('settings.soundOn') : t('settings.soundOff')}`,
-        action: 'sound',
-      },
-      {
-        label: `${t('settings.volume')}: ${Math.round(settings.effectsVolume * 100)}%`,
-        action: 'volume',
-      },
-      {
-        label: `${t('settings.screenShake')}: ${Math.round(settings.screenShake * 100)}%`,
-        action: 'shake',
-      },
-      {
-        label: `${t('settings.renderQuality')}: ${t(`settings.${settings.renderQuality}`)}`,
-        action: 'quality',
-      },
-      { label: t('settings.fullscreen'), action: 'fullscreen' },
-      { label: t('menu.back'), action: 'back' },
-    ];
+    return buildSettingsMenuItems(true);
   }
 
   private moveSelection(direction: number): void {
@@ -269,41 +234,9 @@ export class TitleScene extends Phaser.Scene {
       return;
     }
 
-    if (selected.action === 'language') {
-      toggleLocale();
-      this.renderMenu('settings');
-      return;
-    }
+    const result = activateSettingsMenuAction(selected.action);
 
-    if (selected.action === 'sound') {
-      this.soundEnabled = !getGameSettings().soundEnabled;
-      updateGameSettings({ soundEnabled: this.soundEnabled });
-      this.renderMenu('settings');
-      return;
-    }
-
-    if (selected.action === 'volume') {
-      updateGameSettings({ effectsVolume: nextEffectsVolume(getGameSettings().effectsVolume) });
-      this.renderMenu('settings');
-      return;
-    }
-
-    if (selected.action === 'shake') {
-      updateGameSettings({ screenShake: nextScreenShake(getGameSettings().screenShake) });
-      this.renderMenu('settings');
-      return;
-    }
-
-    if (selected.action === 'quality') {
-      updateGameSettings({
-        renderQuality: nextRenderQuality(getGameSettings().renderQuality),
-      });
-      this.renderMenu('settings');
-      this.hintText?.setText(t('settings.nextLaunch'));
-      return;
-    }
-
-    if (selected.action === 'fullscreen') {
+    if (result.command === 'fullscreen') {
       if (this.scale.isFullscreen) {
         this.scale.stopFullscreen();
       } else {
@@ -312,8 +245,16 @@ export class TitleScene extends Phaser.Scene {
       return;
     }
 
-    if (selected.action === 'back') {
+    if (result.command === 'back') {
       this.renderMenu('main');
+      return;
+    }
+
+    this.soundEnabled = result.settings?.soundEnabled ?? getGameSettings().soundEnabled;
+    this.renderMenu('settings');
+
+    if (result.showRestartHint) {
+      this.hintText?.setText(t('settings.nextLaunch'));
     }
   }
 

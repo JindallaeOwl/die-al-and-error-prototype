@@ -1,27 +1,15 @@
 import Phaser from 'phaser';
 import { DEPTH, GAME_HEIGHT, GAME_WIDTH, RENDER_SCALE } from '../config/gameConfig';
-import { getLocale, koreanFontStack, t, toggleLocale } from '../i18n';
+import { koreanFontStack, t } from '../i18n';
 import {
-  getGameSettings,
-  nextEffectsVolume,
-  nextRenderQuality,
-  nextScreenShake,
-  updateGameSettings,
-} from '../systems/GameSettings';
+  activateSettingsMenuAction,
+  buildSettingsMenuItems,
+  type SettingsMenuAction,
+} from '../ui/SettingsMenu';
 import { applyRenderScale } from '../utils/render';
 
 type PauseMode = 'main' | 'settings';
-type PauseAction =
-  | 'continue'
-  | 'settings'
-  | 'fullscreen'
-  | 'title'
-  | 'language'
-  | 'sound'
-  | 'volume'
-  | 'shake'
-  | 'quality'
-  | 'back';
+type PauseAction = 'continue' | 'settings' | 'title' | SettingsMenuAction;
 
 interface PauseItem {
   label: string;
@@ -176,36 +164,11 @@ export class PauseScene extends Phaser.Scene {
       ];
     }
 
-    const settings = getGameSettings();
-    return [
-      {
-        label: `${t('settings.language')}: ${getLocale() === 'ko' ? t('messages.localeKo') : t('messages.localeEn')}`,
-        action: 'language',
-      },
-      {
-        label: `${t('settings.sound')}: ${t(settings.soundEnabled ? 'settings.soundOn' : 'settings.soundOff')}`,
-        action: 'sound',
-      },
-      {
-        label: `${t('settings.volume')}: ${Math.round(settings.effectsVolume * 100)}%`,
-        action: 'volume',
-      },
-      {
-        label: `${t('settings.screenShake')}: ${Math.round(settings.screenShake * 100)}%`,
-        action: 'shake',
-      },
-      {
-        label: `${t('settings.renderQuality')}: ${t(`settings.${settings.renderQuality}`)}`,
-        action: 'quality',
-      },
-      { label: t('menu.back'), action: 'back' },
-    ];
+    return buildSettingsMenuItems();
   }
 
   private activateSelection(): void {
     const action = this.items[this.selectedIndex]?.action;
-    const showRestartHint = action === 'quality';
-
     if (action === 'continue') {
       this.resumeGame();
       return;
@@ -216,37 +179,31 @@ export class PauseScene extends Phaser.Scene {
       return;
     }
 
-    if (action === 'fullscreen') {
-      this.toggleFullscreen();
-      return;
-    }
-
     if (action === 'title') {
       this.scene.stop('GameScene');
       this.scene.start('TitleScene');
       return;
     }
 
-    if (action === 'language') {
-      toggleLocale();
-    } else if (action === 'sound') {
-      updateGameSettings({ soundEnabled: !getGameSettings().soundEnabled });
-    } else if (action === 'volume') {
-      updateGameSettings({ effectsVolume: nextEffectsVolume(getGameSettings().effectsVolume) });
-    } else if (action === 'shake') {
-      updateGameSettings({ screenShake: nextScreenShake(getGameSettings().screenShake) });
-    } else if (action === 'quality') {
-      updateGameSettings({
-        renderQuality: nextRenderQuality(getGameSettings().renderQuality),
-      });
-    } else if (action === 'back') {
+    if (!action) {
+      return;
+    }
+
+    const result = activateSettingsMenuAction(action);
+
+    if (result.command === 'fullscreen') {
+      this.toggleFullscreen();
+      return;
+    }
+
+    if (result.command === 'back') {
       this.renderMenu('main');
       return;
     }
 
     this.renderMenu('settings');
 
-    if (showRestartHint) {
+    if (result.showRestartHint) {
       this.hintText?.setText(t('settings.nextLaunch'));
     }
   }

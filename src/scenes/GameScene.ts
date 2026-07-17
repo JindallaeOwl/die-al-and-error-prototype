@@ -1,40 +1,38 @@
 ﻿import Phaser from 'phaser';
 import { BeamAttack } from '../entities/BeamAttack';
-import { Bomb } from '../entities/Bomb';
 import { Bullet } from '../entities/Bullet';
 import { Door } from '../entities/Door';
 import { FloorExit } from '../entities/FloorExit';
 import { ItemPickup } from '../entities/ItemPickup';
-import type { Obstacle } from '../entities/Obstacle';
 import { Player, type PlayerControls } from '../entities/Player';
 import { RewardPickup } from '../entities/RewardPickup';
 import type { BaseEnemy } from '../entities/enemies/BaseEnemy';
 import {
   BEAM_TUNING,
-  BOMB_TUNING,
   COMBAT_TUNING,
-  FEEDBACK_TUNING,
   GAME_HEIGHT,
   GAME_WIDTH,
   ITEM_PREVIEW_RADIUS,
-  RENDER_SCALE,
   ROOM_RECT,
 } from '../config/gameConfig';
 import { PASSIVE_ITEMS, PRISM_LANCE_ITEM_ID } from '../data/items';
-import { koreanFontStack, t, toggleLocale } from '../i18n';
+import { t, toggleLocale } from '../i18n';
 import { AudioSystem } from '../systems/AudioSystem';
+import { BombSystem } from '../systems/BombSystem';
 import { CombatCollisionSystem } from '../systems/CombatCollisionSystem';
 import { DungeonManager, type RoomNode } from '../systems/DungeonManager';
 import { EffectsSystem } from '../systems/EffectsSystem';
-import { spendConsumable } from '../systems/InventorySystem';
 import { ItemSystem } from '../systems/ItemSystem';
 import { RewardSystem } from '../systems/RewardSystem';
 import { RoomController } from '../systems/RoomController';
 import { RoomNavigationSystem } from '../systems/RoomNavigationSystem';
+import { getRoomTransitionPresentation } from '../systems/RoomTransitionRules';
+import { RoomTransitionSystem } from '../systems/RoomTransitionSystem';
 import { advanceRunToNextFloor } from '../systems/RunProgressionSystem';
 import { KONAMI_CODE, SecretCodeTracker } from '../systems/SecretCodeSystem';
 import { createInitialRunState, type RunState } from '../systems/RunState';
 import { getEffectiveDamage } from '../systems/PlayerStatSystem';
+import { BossHud } from '../ui/BossHud';
 import { Hud } from '../ui/Hud';
 import { applyRenderScale } from '../utils/render';
 import { clamp } from '../utils/math';
@@ -45,8 +43,10 @@ export class GameScene extends Phaser.Scene {
   private itemSystem!: ItemSystem;
   private rewardSystem!: RewardSystem;
   private roomNavigation!: RoomNavigationSystem;
+  private roomTransitions!: RoomTransitionSystem;
   private effects!: EffectsSystem;
   private audio!: AudioSystem;
+  private bombSystem!: BombSystem;
   private combatCollisions!: CombatCollisionSystem;
   private roomController!: RoomController;
   private player!: Player;
@@ -58,14 +58,11 @@ export class GameScene extends Phaser.Scene {
   private secretCodeTracker!: SecretCodeTracker;
   private debugVisible = false;
   private nextDoorAt = 0;
-  private nextBombAt = 0;
   private gameOverStarted = false;
   private floorTransitionStarted = false;
   private playerDamageFeedbackQueued = false;
   private removeRuntimeErrorListener?: () => void;
-  private bossHealthBack?: Phaser.GameObjects.Rectangle;
-  private bossHealthFill?: Phaser.GameObjects.Rectangle;
-  private bossHealthText?: Phaser.GameObjects.Text;
+  private bossHud!: BossHud;
 
   private enemies!: Phaser.Physics.Arcade.Group;
   private playerBullets!: Phaser.Physics.Arcade.Group;
@@ -73,7 +70,6 @@ export class GameScene extends Phaser.Scene {
   private beams!: Phaser.Physics.Arcade.Group;
   private items!: Phaser.Physics.Arcade.Group;
   private rewards!: Phaser.Physics.Arcade.Group;
-  private plantedBombs!: Phaser.GameObjects.Group;
   private floorExits!: Phaser.Physics.Arcade.Group;
   private hud!: Hud;
 
@@ -87,7 +83,6 @@ export class GameScene extends Phaser.Scene {
     // a prior game-over leaves gameOverStarted stuck true and freezes update().
     this.debugVisible = false;
     this.nextDoorAt = 0;
-    this.nextBombAt = 0;
     this.gameOverStarted = false;
     this.floorTransitionStarted = false;
     this.playerDamageFeedbackQueued = false;
@@ -112,9 +107,7 @@ export class GameScene extends Phaser.Scene {
     this.beams = this.physics.add.group();
     this.items = this.physics.add.group();
     this.rewards = this.physics.add.group();
-    this.plantedBombs = this.add.group();
     this.floorExits = this.physics.add.group({ allowGravity: false, immovable: true });
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.clearPlantedBombs());
 
     this.player = new Player(this, 480, 320, this.runState.stats, this.runState.attackProfile);
     this.controls = this.createControls();
@@ -129,6 +122,30 @@ export class GameScene extends Phaser.Scene {
       onRoomCleared: (room) => this.handleRoomCleared(room),
       onEnemyDefeated: (score) => this.handleEnemyDefeated(score),
       onBossPhaseTwo: (boss) => this.handleBossPhaseTwo(boss),
+    });
+    this.bombSystem = new BombSystem({
+      scene: this,
+      runState: this.runState,
+      enemies: this.enemies,
+      enemyBullets: this.enemyBullets,
+      obstacles: this.roomController.obstacles,
+      effects: this.effects,
+      audio: this.audio,
+      isGameOver: () => this.gameOverStarted,
+    });
+    this.roomTransitions = new RoomTransitionSystem({
+      scene: this,
+      dungeon: this.dungeon,
+      roomController: this.roomController,
+      bombSystem: this.bombSystem,
+      player: this.player,
+      enemies: this.enemies,
+      playerBullets: this.playerBullets,
+      enemyBullets: this.enemyBullets,
+      beams: this.beams,
+      items: this.items,
+      rewards: this.rewards,
+      floorExits: this.floorExits,
     });
 
     this.hud = new Hud(this);
@@ -147,7 +164,7 @@ export class GameScene extends Phaser.Scene {
       onPlayerDamaged: () => this.queuePlayerDamagedFeedback(),
     });
     this.setupRuntimeErrorReporting();
-    this.createBossHud();
+    this.bossHud = new BossHud(this, this.enemies);
     this.setupAudioUnlock();
     this.roomController.enterCurrentRoom();
     this.setupPhysics();
@@ -211,7 +228,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.roomController.update();
-    this.updateBossHud();
+    this.bossHud.update();
     this.updateItemHint();
     this.hud.update(
       this.runState,
@@ -409,33 +426,12 @@ export class GameScene extends Phaser.Scene {
     const moved = navigation.room;
 
     this.nextDoorAt = this.time.now + COMBAT_TUNING.doorCooldownMs;
-    this.playerBullets.clear(true, true);
-    this.enemyBullets.clear(true, true);
-    this.beams.clear(true, true);
-    this.rewards.clear(true, true);
-    this.floorExits.clear(true, true);
-    this.clearPlantedBombs();
+    this.roomTransitions.enterRoom(moved, door.direction);
+    const presentation = getRoomTransitionPresentation(moved.type);
+    this.cameras.main.fadeIn(presentation.fadeInMs, 6, 9, 14);
 
-    const spawnPosition = this.roomController.getSpawnPositionForEntry(door.direction);
-    this.player.setPosition(spawnPosition.x, spawnPosition.y);
-    (this.player.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
-
-    this.roomController.enterCurrentRoom();
-    this.restorePendingRoomReward(moved);
-    this.restoreFloorExit(moved);
-    this.cameras.main.fadeIn(moved.type === 'boss' ? 320 : 150, 6, 9, 14);
-
-    const roomEnteredMessage =
-      moved.type === 'reward'
-        ? t('messages.cacheFound')
-        : moved.type === 'treasure'
-          ? t('messages.treasureRoom')
-          : moved.type === 'boss'
-            ? t('messages.bossRoom')
-            : null;
-
-    if (roomEnteredMessage) {
-      this.hud.showMessage(roomEnteredMessage, 1100);
+    if (presentation.messageKey) {
+      this.hud.showMessage(t(presentation.messageKey), 1100);
     }
   }
 
@@ -534,7 +530,7 @@ export class GameScene extends Phaser.Scene {
 
     this.effects.pickup(pickup.x, pickup.y);
     this.audio.play('pickup');
-    this.clearPendingRewardForPickup(pickup);
+    this.roomTransitions.clearPendingRewardForPickup(pickup);
     pickup.destroy();
   }
 
@@ -554,7 +550,7 @@ export class GameScene extends Phaser.Scene {
     this.audio.play('roomClear');
 
     if (room.type === 'boss') {
-      this.spawnFloorExit();
+      this.roomTransitions.spawnFloorExit();
       this.hud.showMessage(t('messages.nextFloorOpening'), 2200);
     }
   }
@@ -575,79 +571,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   private tryUseBomb(): void {
-    if (this.gameOverStarted || this.time.now < this.nextBombAt) {
-      return;
-    }
-
-    const updatedInventory = spendConsumable(this.runState.inventory, 'bombs', 1);
-
-    if (!updatedInventory) {
+    if (this.bombSystem.tryPlant(this.player.x, this.player.y) === 'no-bombs') {
       this.hud.showMessage(t('messages.noBombs'), 900);
-      return;
     }
-
-    this.runState.inventory = updatedInventory;
-    this.nextBombAt = this.time.now + BOMB_TUNING.cooldownMs;
-    const bomb = new Bomb(this, this.player.x, this.player.y, (x, y) => this.detonateBomb(x, y));
-    this.plantedBombs.add(bomb);
-  }
-
-  private detonateBomb(originX: number, originY: number): void {
-    const radiusSq = BOMB_TUNING.radius * BOMB_TUNING.radius;
-    const withinRadius = (x: number, y: number): boolean => {
-      const dx = x - originX;
-      const dy = y - originY;
-      return dx * dx + dy * dy <= radiusSq;
-    };
-
-    const enemiesInRoom = [...(this.enemies.getChildren() as BaseEnemy[])];
-
-    for (const enemy of enemiesInRoom) {
-      if (!enemy.active || !enemy.body || !withinRadius(enemy.x, enemy.y)) {
-        continue;
-      }
-
-      const enemyX = enemy.x;
-      const enemyY = enemy.y;
-      const defeated = enemy.takeDamage(BOMB_TUNING.damage, originX, originY);
-
-      if (defeated) {
-        this.effects.enemyDeath(enemyX, enemyY, enemy.scoreValue);
-        this.audio.play('enemyDeath');
-      }
-    }
-
-    const enemyBulletsInRoom = [...(this.enemyBullets.getChildren() as Bullet[])];
-
-    for (const bullet of enemyBulletsInRoom) {
-      if (!bullet.active || !withinRadius(bullet.x, bullet.y)) {
-        continue;
-      }
-
-      if (bullet.consume()) {
-        bullet.queueDestroy();
-      }
-    }
-
-    const obstaclesInRoom = [...(this.roomController.obstacles.getChildren() as Obstacle[])];
-
-    for (const obstacle of obstaclesInRoom) {
-      if (!obstacle.active || !withinRadius(obstacle.x, obstacle.y)) {
-        continue;
-      }
-
-      obstacle.destroyByBomb();
-    }
-
-    this.effects.bombBlast(originX, originY);
-    this.effects.shake('bombUse');
-    this.effects.hitStop(FEEDBACK_TUNING.hitStop.enemyDeathMs);
-    this.cameras.main.flash(140, 255, 176, 90, false);
-    this.audio.play('bombUse');
-  }
-
-  private clearPlantedBombs(): void {
-    this.plantedBombs?.clear(true, true);
   }
 
   private dropRoomClearReward(room: RoomNode): void {
@@ -660,33 +586,7 @@ export class GameScene extends Phaser.Scene {
     const x = 480 + Phaser.Math.Between(-60, 60);
     const y = 320 + Phaser.Math.Between(-40, 40);
     room.pendingReward = { reward, x, y };
-    this.spawnPendingRoomReward(room);
-  }
-
-  private restorePendingRoomReward(room: RoomNode): void {
-    if (room.pendingReward) {
-      this.spawnPendingRoomReward(room);
-    }
-  }
-
-  private spawnPendingRoomReward(room: RoomNode): void {
-    const pending = room.pendingReward;
-
-    if (!pending) {
-      return;
-    }
-
-    const pickup = new RewardPickup(this, pending.x, pending.y, pending.reward);
-    pickup.setData('sourceRoomId', room.id);
-    this.rewards.add(pickup);
-  }
-
-  private clearPendingRewardForPickup(pickup: RewardPickup): void {
-    const sourceRoomId = pickup.getData('sourceRoomId') as string | undefined;
-
-    if (sourceRoomId) {
-      this.dungeon.clearPendingReward(sourceRoomId);
-    }
+    this.roomTransitions.spawnPendingReward(room);
   }
 
   private handlePlayerDamaged(): void {
@@ -712,20 +612,6 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  private spawnFloorExit(): void {
-    if (this.floorExits.countActive(true) > 0) {
-      return;
-    }
-
-    this.floorExits.add(new FloorExit(this, 480, 320));
-  }
-
-  private restoreFloorExit(room: RoomNode): void {
-    if (room.type === 'boss' && room.cleared) {
-      this.spawnFloorExit();
-    }
-  }
-
   private handleFloorExitOverlap(exit: FloorExit): void {
     if (this.gameOverStarted || this.floorTransitionStarted || !exit.canEnter(this.time.now)) {
       return;
@@ -745,21 +631,10 @@ export class GameScene extends Phaser.Scene {
     this.floorTransitionStarted = false;
     advanceRunToNextFloor(this.runState);
     this.player.setStats(this.runState.stats);
-    this.player.setPosition(480, 320);
-    (this.player.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
-
-    this.playerBullets.clear(true, true);
-    this.enemyBullets.clear(true, true);
-    this.enemies.clear(true, true);
-    this.items.clear(true, true);
-    this.rewards.clear(true, true);
-    this.beams.clear(true, true);
-    this.floorExits.clear(true, true);
-    this.clearPlantedBombs();
-
-    this.dungeon.generateFloor(this.runState.floor);
-    this.player.hasChargeBeam = this.runState.unlockedAbilityIds.includes('charge-beam');
-    this.roomController.enterCurrentRoom();
+    this.roomTransitions.enterFloor(
+      this.runState.floor,
+      this.runState.unlockedAbilityIds.includes('charge-beam'),
+    );
     this.cameras.main.fadeIn(260, 5, 9, 14);
     this.hud.showMessage(t('messages.floor', { floor: this.runState.floor }), 1800);
   }
@@ -773,53 +648,5 @@ export class GameScene extends Phaser.Scene {
       amount: result.amount,
       resource: t(`resources.${result.consumable}`),
     });
-  }
-
-  private createBossHud(): void {
-    this.bossHealthBack = this.add
-      .rectangle(GAME_WIDTH / 2, 28, 320, 12, 0x10151c, 0.86)
-      .setOrigin(0.5)
-      .setDepth(101)
-      .setVisible(false);
-    this.bossHealthFill = this.add
-      .rectangle(GAME_WIDTH / 2 - 158, 28, 316, 8, 0xd84f66, 1)
-      .setOrigin(0, 0.5)
-      .setDepth(102)
-      .setVisible(false);
-    this.bossHealthText = this.add
-      .text(GAME_WIDTH / 2, 48, '', {
-        fontFamily: koreanFontStack(),
-        fontSize: '13px',
-        color: '#ffe39b',
-        stroke: '#090b10',
-        strokeThickness: 4,
-        resolution: RENDER_SCALE,
-      })
-      .setOrigin(0.5)
-      .setDepth(103)
-      .setVisible(false);
-  }
-
-  private updateBossHud(): void {
-    const boss = (this.enemies.getChildren() as BaseEnemy[]).find(
-      (enemy) => enemy.active && enemy.isBoss,
-    );
-    const visible = Boolean(boss);
-
-    this.bossHealthBack?.setVisible(visible);
-    this.bossHealthFill?.setVisible(visible);
-    this.bossHealthText?.setVisible(visible);
-
-    if (!boss || !this.bossHealthFill || !this.bossHealthText) {
-      return;
-    }
-
-    const phaseAwareBoss = boss as BaseEnemy & { isInPhaseTwo?: () => boolean };
-    const isPhaseTwo = phaseAwareBoss.isInPhaseTwo?.() ?? false;
-
-    this.bossHealthFill.displayWidth = 316 * boss.getHealthRatio();
-    this.bossHealthFill.setFillStyle(boss.getBossBarColor(isPhaseTwo), 1);
-    this.bossHealthText.setText(boss.getDisplayName());
-    this.bossHealthText.setColor(isPhaseTwo ? '#ffb3c1' : '#ffe39b');
   }
 }
