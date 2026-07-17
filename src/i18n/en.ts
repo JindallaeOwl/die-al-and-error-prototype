@@ -84,7 +84,7 @@ export const en: TranslationTree = {
     chestHealed: 'Chest: healed {amount}',
     chestConsumable: 'Chest: +{amount} {resource}',
     itemPickup: '{name}: {description}',
-    secretItemSpawned: 'Secret input detected: Prism Lance spawned',
+    secretItemSpawned: 'Secret input detected: Prism Lance + Quad Shot spawned',
     clear: 'CLEAR',
     localeKo: 'Korean',
     localeEn: 'English',
@@ -140,12 +140,12 @@ export const en: TranslationTree = {
     },
     prismLance: {
       name: 'Prism Lance',
-      description:
-        'Replaces seed attacks with a charged piercing beam. Damage and attack speed still apply.',
+      description: 'Replaces seeds with a charged piercing beam. Quad Shot splits it four ways.',
     },
     quadShot: {
       name: 'Quad Shot',
-      description: 'Fires four seeds in a fan (attack speed multiplier ×0.42).',
+      description:
+        'Fires four seeds in a fan. Prism Lance beams also split four ways (attack speed multiplier ×0.42).',
     },
     megaSeed: {
       name: 'Mega Seed',

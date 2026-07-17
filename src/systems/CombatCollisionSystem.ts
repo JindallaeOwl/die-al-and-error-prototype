@@ -85,12 +85,6 @@ export class CombatCollisionSystem {
     this.scene.physics.add.overlap(this.player, this.enemies, (_playerObject, enemyObject) => {
       this.handlePlayerEnemyContact(enemyObject as BaseEnemy);
     });
-    this.scene.physics.add.overlap(this.beams, this.enemies, (beamObject, enemyObject) => {
-      this.handleBeamEnemy(beamObject as BeamAttack, enemyObject as BaseEnemy);
-    });
-    this.scene.physics.add.overlap(this.beams, this.obstacles, (beamObject, obstacleObject) => {
-      this.handleBeamObstacle(beamObject as BeamAttack, obstacleObject as Obstacle);
-    });
   }
 
   update(): void {
@@ -119,6 +113,20 @@ export class CombatCollisionSystem {
 
       if (damaged) {
         this.onPlayerDamaged();
+      }
+    }
+
+    for (const beam of this.beams.getChildren() as BeamAttack[]) {
+      if (!beam.active) {
+        continue;
+      }
+
+      for (const enemy of this.enemies.getChildren() as BaseEnemy[]) {
+        this.handleBeamEnemy(beam, enemy);
+      }
+
+      for (const obstacle of this.obstacles.getChildren() as Obstacle[]) {
+        this.handleBeamObstacle(beam, obstacle);
       }
     }
   }
@@ -201,10 +209,13 @@ export class CombatCollisionSystem {
   }
 
   private handleBeamEnemy(beam: BeamAttack, enemy: BaseEnemy): void {
+    const body = enemy.body as Phaser.Physics.Arcade.Body | undefined;
+
     if (
       !beam.active ||
       !enemy.active ||
-      !enemy.body ||
+      !body ||
+      !beam.intersectsCircle(body.center.x, body.center.y, body.halfWidth) ||
       !beam.canDamage(enemy, this.scene.time.now)
     ) {
       return;
@@ -218,10 +229,17 @@ export class CombatCollisionSystem {
   }
 
   private handleBeamObstacle(beam: BeamAttack, obstacle: Obstacle): void {
+    const body = obstacle.body as Phaser.Physics.Arcade.StaticBody | undefined;
+
     if (
       !beam.active ||
       !obstacle.active ||
-      !obstacle.body ||
+      !body ||
+      !beam.intersectsCircle(
+        body.center.x,
+        body.center.y,
+        Math.max(body.halfWidth, body.halfHeight),
+      ) ||
       !beam.canDamage(obstacle, this.scene.time.now)
     ) {
       return;

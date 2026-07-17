@@ -13,6 +13,7 @@ import {
 import { Bullet } from './Bullet';
 import { clamp, normalizeVector } from '../utils/math';
 import { resolvePlayerFacing, type PlayerFacing } from '../utils/playerFacing';
+import { createSpreadDirections, type AttackDirection } from '../utils/attackDirections';
 import {
   getEffectiveBeamChargeMs,
   getEffectiveDamage,
@@ -29,6 +30,10 @@ export interface PlayerControls {
   fireDown: Phaser.Input.Keyboard.Key;
   fireLeft: Phaser.Input.Keyboard.Key;
   fireRight: Phaser.Input.Keyboard.Key;
+}
+
+export interface BeamFiredEvent {
+  directions: AttackDirection[];
 }
 
 type PlayerAnimationState = 'idle' | 'walk' | 'hurt' | 'death';
@@ -270,16 +275,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const fireRate = getEffectiveFireRate(this.stats);
     const projectileSpeed = getEffectiveProjectileSpeed(this.stats);
     const damage = getEffectiveDamage(this.stats);
-    const seedCount = this.attackProfile.seedCount;
-    const centerIndex = (seedCount - 1) / 2;
+    const seedDirections = createSpreadDirections(
+      direction,
+      this.attackProfile.seedCount,
+      this.attackProfile.spreadStepDegrees,
+    );
+    const centerIndex = (seedDirections.length - 1) / 2;
     this.nextShotAt = time + 1000 / fireRate;
 
-    for (let index = 0; index < seedCount; index += 1) {
-      const angleOffset = Phaser.Math.DegToRad(
-        (index - centerIndex) * this.attackProfile.spreadStepDegrees,
-      );
-      const angle = Math.atan2(direction.y, direction.x) + angleOffset;
-      const seedDirection = { x: Math.cos(angle), y: Math.sin(angle) };
+    seedDirections.forEach((seedDirection, index) => {
       const lateralOffset = (index - centerIndex) * 2;
       const seedX = this.x + seedDirection.x * 12 - direction.y * lateralOffset;
       const seedY = this.y + seedDirection.y * 12 + direction.x * lateralOffset;
@@ -296,7 +300,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         scale: this.attackProfile.seedScale,
         tint: this.attackProfile.forceRedSeeds ? 0xff4d4d : undefined,
       });
-    }
+    });
 
     const muzzleX = this.x + direction.x * 12;
     const muzzleY = this.y + direction.y * 12;
@@ -339,7 +343,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (canFire) {
       this.beamCooldownUntil = time + BEAM_TUNING.cooldownMs;
-      this.emit('beam-fired', this.beamChargeDirection);
+      const event: BeamFiredEvent = {
+        directions: createSpreadDirections(
+          this.beamChargeDirection,
+          this.attackProfile.seedCount,
+          this.attackProfile.spreadStepDegrees,
+        ),
+      };
+      this.emit('beam-fired', event);
     }
 
     this.beamChargeStartedAt = null;
@@ -347,7 +358,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.clearTint();
   }
 
-  private getFireDirection(controls: PlayerControls): { x: number; y: number } | null {
+  private getFireDirection(controls: PlayerControls): AttackDirection | null {
     if (controls.fireUp.isDown) {
       return { x: 0, y: -1 };
     }

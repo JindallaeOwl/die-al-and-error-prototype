@@ -59,4 +59,23 @@ describe('ItemSystem', () => {
     expect(state.unlockedAbilityIds).toEqual(['charge-beam']);
     expect(state.collectedItemIds).toEqual(['prism-lance', 'prism-lance']);
   });
+
+  it.each([
+    ['quad-shot', 'prism-lance'],
+    ['prism-lance', 'quad-shot'],
+  ])('keeps the four-way beam synergy when acquired as %s then %s', (firstId, secondId) => {
+    const state = createInitialRunState();
+    const system = new ItemSystem(() => 0);
+    const first = PASSIVE_ITEMS.find((item) => item.id === firstId);
+    const second = PASSIVE_ITEMS.find((item) => item.id === secondId);
+
+    expect(first).toBeDefined();
+    expect(second).toBeDefined();
+    system.acquireItem(state, first!);
+    system.acquireItem(state, second!);
+
+    expect(state.attackProfile.seedCount).toBe(4);
+    expect(state.attackProfile.spreadStepDegrees).toBe(12);
+    expect(state.unlockedAbilityIds).toContain('charge-beam');
+  });
 });

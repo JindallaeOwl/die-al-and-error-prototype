@@ -28,7 +28,7 @@ export function createInitialRunState(): RunState {
     unlockedAbilityIds: [],
     inventory: {
       keys: 1,
-      bombs: 0,
+      bombs: 1,
       coins: 0,
     },
     stats: { ...PLAYER_BASE_STATS },

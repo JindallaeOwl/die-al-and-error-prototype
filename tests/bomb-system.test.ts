@@ -27,6 +27,7 @@ describe('BombSystem rules', () => {
 
   it('reports when no bombs are available', () => {
     const state = createInitialRunState();
+    state.inventory.bombs = 0;
 
     expect(resolveBombPlantAttempt(state, 1000, 0, false)).toEqual({
       status: 'no-bombs',

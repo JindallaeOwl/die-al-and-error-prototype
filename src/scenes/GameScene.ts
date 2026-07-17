@@ -4,7 +4,7 @@ import { Bullet } from '../entities/Bullet';
 import { Door } from '../entities/Door';
 import { FloorExit } from '../entities/FloorExit';
 import { ItemPickup } from '../entities/ItemPickup';
-import { Player, type PlayerControls } from '../entities/Player';
+import { Player, type BeamFiredEvent, type PlayerControls } from '../entities/Player';
 import { RewardPickup } from '../entities/RewardPickup';
 import type { BaseEnemy } from '../entities/enemies/BaseEnemy';
 import {
@@ -15,9 +15,8 @@ import {
   GAME_HEIGHT,
   GAME_WIDTH,
   ITEM_PREVIEW_RADIUS,
-  ROOM_RECT,
 } from '../config/gameConfig';
-import { PASSIVE_ITEMS, PRISM_LANCE_ITEM_ID } from '../data/items';
+import { PASSIVE_ITEMS, PRISM_LANCE_ITEM_ID, QUAD_SHOT_ITEM_ID } from '../data/items';
 import { t, toggleLocale } from '../i18n';
 import { AudioSystem } from '../systems/AudioSystem';
 import { BombSystem } from '../systems/BombSystem';
@@ -31,13 +30,16 @@ import { RoomNavigationSystem } from '../systems/RoomNavigationSystem';
 import { getRoomTransitionPresentation } from '../systems/RoomTransitionRules';
 import { RoomTransitionSystem } from '../systems/RoomTransitionSystem';
 import { advanceRunToNextFloor } from '../systems/RunProgressionSystem';
-import { KONAMI_CODE, SecretCodeTracker } from '../systems/SecretCodeSystem';
+import {
+  getSecretSynergySpawnPositions,
+  KONAMI_CODE,
+  SecretCodeTracker,
+} from '../systems/SecretCodeSystem';
 import { createInitialRunState, type RunState } from '../systems/RunState';
 import { getEffectiveDamage } from '../systems/PlayerStatSystem';
 import { BossHud } from '../ui/BossHud';
 import { Hud } from '../ui/Hud';
 import { applyRenderScale } from '../utils/render';
-import { clamp } from '../utils/math';
 import { isGameOverRestartCode } from '../utils/gameOverInput';
 
 interface GameOverData {
@@ -304,27 +306,31 @@ export class GameScene extends Phaser.Scene {
 
   private handleSecretCodeKey(event: KeyboardEvent): void {
     if (this.secretCodeTracker.push(event.code)) {
-      this.spawnSecretPrismLance();
+      this.spawnSecretSynergyItems();
     }
   }
 
-  private spawnSecretPrismLance(): void {
+  private spawnSecretSynergyItems(): void {
     if (this.gameOverStarted) {
       return;
     }
 
-    const item = PASSIVE_ITEMS.find((candidate) => candidate.id === PRISM_LANCE_ITEM_ID);
+    const prismLance = PASSIVE_ITEMS.find((candidate) => candidate.id === PRISM_LANCE_ITEM_ID);
+    const quadShot = PASSIVE_ITEMS.find((candidate) => candidate.id === QUAD_SHOT_ITEM_ID);
 
-    if (!item) {
+    if (!prismLance || !quadShot) {
       return;
     }
 
-    const offsetX = this.player.x > GAME_CENTER_X ? -36 : 36;
-    const x = clamp(this.player.x + offsetX, ROOM_RECT.left + 24, ROOM_RECT.right - 24);
-    const y = clamp(this.player.y, ROOM_RECT.top + 24, ROOM_RECT.bottom - 24);
-    const pickup = new ItemPickup(this, x, y, item, 'secret');
-    this.items.add(pickup);
-    this.effects.pickup(x, y);
+    const positions = getSecretSynergySpawnPositions(this.player.x, this.player.y);
+    this.items.add(
+      new ItemPickup(this, positions.prismLance.x, positions.prismLance.y, prismLance, 'secret'),
+    );
+    this.items.add(
+      new ItemPickup(this, positions.quadShot.x, positions.quadShot.y, quadShot, 'secret'),
+    );
+    this.effects.pickup(positions.prismLance.x, positions.prismLance.y);
+    this.effects.pickup(positions.quadShot.x, positions.quadShot.y);
     this.audio.play('pickup');
     this.hud.showMessage(t('messages.secretItemSpawned'), 1600);
   }
@@ -390,16 +396,15 @@ export class GameScene extends Phaser.Scene {
       }
     });
 
-    this.player.on('beam-fired', (direction: { x: number; y: number }) => {
-      const beam = new BeamAttack(
-        this,
-        this.player.x,
-        this.player.y,
-        direction,
-        BEAM_TUNING.range,
-        BEAM_TUNING.damage + getEffectiveDamage(this.runState.stats) * 0.8,
-      );
-      this.beams.add(beam);
+    this.player.on('beam-fired', (event: BeamFiredEvent) => {
+      const damage = BEAM_TUNING.damage + getEffectiveDamage(this.runState.stats) * 0.8;
+
+      for (const direction of event.directions) {
+        this.beams.add(
+          new BeamAttack(this, this.player.x, this.player.y, direction, BEAM_TUNING.range, damage),
+        );
+      }
+
       this.effects.beamFire(this.player.x, this.player.y);
       this.effects.shake('beamFire');
       this.audio.play('beamFire');

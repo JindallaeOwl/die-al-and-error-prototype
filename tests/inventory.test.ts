@@ -11,9 +11,14 @@ describe('InventorySystem', () => {
 
   it('does not spend a consumable when the balance is insufficient', () => {
     const inventory = createInitialRunState().inventory;
+    inventory.bombs = 0;
 
     expect(spendConsumable(inventory, 'bombs', 1)).toBeNull();
     expect(inventory.bombs).toBe(0);
+  });
+
+  it('starts a new run with one bomb', () => {
+    expect(createInitialRunState().inventory.bombs).toBe(1);
   });
 
   it('returns a new inventory when spending succeeds', () => {

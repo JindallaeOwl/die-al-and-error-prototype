@@ -118,3 +118,4 @@ export const PASSIVE_ITEMS: PassiveItemDefinition[] = [
 ];
 
 export const PRISM_LANCE_ITEM_ID = 'prism-lance';
+export const QUAD_SHOT_ITEM_ID = 'quad-shot';
