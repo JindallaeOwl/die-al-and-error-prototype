@@ -39,6 +39,7 @@ import { createInitialRunState, type RunState } from '../systems/RunState';
 import { getEffectiveDamage } from '../systems/PlayerStatSystem';
 import { BossHud } from '../ui/BossHud';
 import { Hud } from '../ui/Hud';
+import { UiCameraSystem } from '../ui/UiCameraSystem';
 import { applyRenderScale } from '../utils/render';
 import { isGameOverRestartCode } from '../utils/gameOverInput';
 
@@ -87,6 +88,7 @@ export class GameScene extends Phaser.Scene {
   private playerDamageFeedbackQueued = false;
   private removeRuntimeErrorListener?: () => void;
   private bossHud!: BossHud;
+  private uiCameraSystem!: UiCameraSystem;
 
   private enemies!: Phaser.Physics.Arcade.Group;
   private playerBullets!: Phaser.Physics.Arcade.Group;
@@ -114,6 +116,7 @@ export class GameScene extends Phaser.Scene {
 
     this.cameras.main.setBackgroundColor('#0d1117');
     applyRenderScale(this);
+    this.uiCameraSystem = new UiCameraSystem(this);
     this.physics.world.setBounds(0, 0, GAME_WIDTH, GAME_HEIGHT);
     this.physics.world.resume();
 
@@ -180,7 +183,7 @@ export class GameScene extends Phaser.Scene {
       floorExits: this.floorExits,
     });
 
-    this.hud = new Hud(this);
+    this.hud = new Hud(this, this.uiCameraSystem.register);
     this.prepareGameOverOverlay();
     this.combatCollisions = new CombatCollisionSystem({
       scene: this,
@@ -197,7 +200,7 @@ export class GameScene extends Phaser.Scene {
       onPlayerDamaged: () => this.queuePlayerDamagedFeedback(),
     });
     this.setupRuntimeErrorReporting();
-    this.bossHud = new BossHud(this, this.enemies);
+    this.bossHud = new BossHud(this, this.enemies, this.uiCameraSystem.register);
     this.setupAudioUnlock();
     this.roomController.enterCurrentRoom();
     this.setupPhysics();

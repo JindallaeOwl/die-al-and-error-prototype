@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { GAME_WIDTH, RENDER_SCALE } from '../config/gameConfig';
 import type { BaseEnemy } from '../entities/enemies/BaseEnemy';
 import { gameFontStack } from '../i18n';
+import type { UiObjectRegistrar } from './UiCameraSystem';
 
 const BAR_WIDTH = 158;
 
@@ -11,27 +12,34 @@ export class BossHud {
   private readonly healthFill: Phaser.GameObjects.Rectangle;
   private readonly healthText: Phaser.GameObjects.Text;
 
-  constructor(scene: Phaser.Scene, enemies: Phaser.Physics.Arcade.Group) {
+  constructor(
+    scene: Phaser.Scene,
+    enemies: Phaser.Physics.Arcade.Group,
+    registerUiObject: UiObjectRegistrar,
+  ) {
     this.enemies = enemies;
-    this.healthBack = scene.add
-      .rectangle(GAME_WIDTH / 2, 10, 162, 8, 0x10151c, 0.86)
+    this.healthBack = registerUiObject(
+      scene.add.rectangle(GAME_WIDTH / 2, 10, 162, 8, 0x10151c, 0.86),
+    )
       .setOrigin(0.5)
       .setDepth(101)
       .setVisible(false);
-    this.healthFill = scene.add
-      .rectangle(GAME_WIDTH / 2 - BAR_WIDTH / 2, 10, BAR_WIDTH, 4, 0xd84f66, 1)
+    this.healthFill = registerUiObject(
+      scene.add.rectangle(GAME_WIDTH / 2 - BAR_WIDTH / 2, 10, BAR_WIDTH, 4, 0xd84f66, 1),
+    )
       .setOrigin(0, 0.5)
       .setDepth(102)
       .setVisible(false);
-    this.healthText = scene.add
-      .text(GAME_WIDTH / 2, 20, '', {
+    this.healthText = registerUiObject(
+      scene.add.text(GAME_WIDTH / 2, 20, '', {
         fontFamily: gameFontStack(),
         fontSize: '7px',
         color: '#ffe39b',
         stroke: '#090b10',
         strokeThickness: 2,
         resolution: RENDER_SCALE,
-      })
+      }),
+    )
       .setOrigin(0.5)
       .setDepth(103)
       .setVisible(false);

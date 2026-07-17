@@ -6,6 +6,7 @@ import type { DungeonManager } from '../systems/DungeonManager';
 import type { RunState } from '../systems/RunState';
 import { getEffectiveDamage, getEffectiveFireRate } from '../systems/PlayerStatSystem';
 import { getHeartFillUnits } from '../utils/healthHearts';
+import type { UiObjectRegistrar } from './UiCameraSystem';
 
 // ENVELOP fills wide browser windows by cropping a little from the top and
 // bottom. Keep the corner HUD inside a safe area so it remains fully visible.
@@ -23,6 +24,7 @@ interface HealthHeartImages {
 
 export class Hud {
   private readonly scene: Phaser.Scene;
+  private readonly registerUiObject: UiObjectRegistrar;
   private readonly healthHearts: HealthHeartImages[] = [];
   private readonly keyCountText: Phaser.GameObjects.Text;
   private readonly bombCountText: Phaser.GameObjects.Text;
@@ -37,8 +39,9 @@ export class Hud {
   private messageUntil = 0;
   private debugVisible = false;
 
-  constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene, registerUiObject: UiObjectRegistrar) {
     this.scene = scene;
+    this.registerUiObject = registerUiObject;
 
     this.createPanel(
       HUD_EDGE_MARGIN + STATS_PANEL_WIDTH / 2,
@@ -87,7 +90,7 @@ export class Hud {
     this.debugText = this.createText(statsTextX, PANEL_TOP + STATS_PANEL_HEIGHT + 6, 6).setVisible(
       false,
     );
-    this.minimap = scene.add.graphics();
+    this.minimap = this.registerUiObject(scene.add.graphics());
     this.minimap.setDepth(DEPTH.ui);
   }
 
@@ -209,16 +212,16 @@ export class Hud {
   }
 
   private createText(x: number, y: number, size: number): Phaser.GameObjects.Text {
-    return this.scene.add
-      .text(x, y, '', {
+    return this.registerUiObject(
+      this.scene.add.text(x, y, '', {
         fontFamily: gameFontStack(),
         fontSize: `${size}px`,
         color: '#f7f3e8',
         stroke: '#090b10',
         strokeThickness: 2,
         resolution: RENDER_SCALE,
-      })
-      .setDepth(DEPTH.ui);
+      }),
+    ).setDepth(DEPTH.ui);
   }
 
   private updateHealthHearts(health: number, maxHealth: number): void {
@@ -228,14 +231,12 @@ export class Hud {
       const index = this.healthHearts.length;
       const x = HUD_EDGE_MARGIN + 4 + index * 18;
       const y = PANEL_TOP + 1;
-      const empty = this.scene.add
-        .image(x, y, TextureKeys.hudHeart)
+      const empty = this.registerUiObject(this.scene.add.image(x, y, TextureKeys.hudHeart))
         .setOrigin(0)
         .setDisplaySize(16, 16)
         .setTint(0x4b2730)
         .setDepth(DEPTH.ui);
-      const fill = this.scene.add
-        .image(x, y, TextureKeys.hudHeart)
+      const fill = this.registerUiObject(this.scene.add.image(x, y, TextureKeys.hudHeart))
         .setOrigin(0)
         .setDisplaySize(16, 16)
         .setTint(0xff5d72)
@@ -268,8 +269,7 @@ export class Hud {
       ? preferredTexture
       : fallbackTexture;
 
-    return this.scene.add
-      .image(x, y, texture)
+    return this.registerUiObject(this.scene.add.image(x, y, texture))
       .setOrigin(0)
       .setDisplaySize(16, 16)
       .setTint(tint)
@@ -283,8 +283,7 @@ export class Hud {
     height: number,
     alpha = 0.78,
   ): Phaser.GameObjects.Rectangle {
-    return this.scene.add
-      .rectangle(x, y, width, height, 0x070c12, alpha)
+    return this.registerUiObject(this.scene.add.rectangle(x, y, width, height, 0x070c12, alpha))
       .setStrokeStyle(1, 0x40525f, 0.82)
       .setDepth(DEPTH.ui - 1);
   }
