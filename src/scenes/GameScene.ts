@@ -243,9 +243,15 @@ export class GameScene extends Phaser.Scene {
 
     this.player.update(time, this.controls, this.playerBullets);
 
+    const enemiesCanAct = this.roomController.canEnemiesAct(time);
+
     for (const enemy of this.enemies.getChildren() as BaseEnemy[]) {
       if (enemy.active) {
-        enemy.updateAI(time, this.player, this.enemyBullets);
+        if (enemiesCanAct) {
+          enemy.updateAI(time, this.player, this.enemyBullets);
+        } else {
+          enemy.stopForAiDelay();
+        }
       }
     }
 

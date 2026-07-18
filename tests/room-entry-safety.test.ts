@@ -1,12 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { ROOM_ENTRY_SAFE_RADIUS } from '../src/config/gameConfig';
-import { resolveEnemySpawnAwayFromEntry } from '../src/systems/RoomEntrySafety';
+import { ROOM_ENTRY_ENEMY_AI_DELAY_MS, ROOM_ENTRY_SAFE_RADIUS } from '../src/config/gameConfig';
+import {
+  canEnemiesActAfterRoomEntry,
+  getRoomEntryEnemyAiResumeAt,
+  resolveEnemySpawnAwayFromEntry,
+} from '../src/systems/RoomEntrySafety';
 
 function distance(left: { x: number; y: number }, right: { x: number; y: number }): number {
   return Math.hypot(left.x - right.x, left.y - right.y);
 }
 
 describe('room entry safety', () => {
+  it('keeps enemy AI paused for the first 0.4 seconds', () => {
+    const enteredAt = 1200;
+    const resumeAt = getRoomEntryEnemyAiResumeAt(enteredAt);
+
+    expect(resumeAt).toBe(enteredAt + ROOM_ENTRY_ENEMY_AI_DELAY_MS);
+    expect(canEnemiesActAfterRoomEntry(resumeAt - 1, resumeAt)).toBe(false);
+    expect(canEnemiesActAfterRoomEntry(resumeAt, resumeAt)).toBe(true);
+  });
+
   it('keeps enemies that are already safely away from the entrance', () => {
     const spawn = { x: 240, y: 136 };
     expect(resolveEnemySpawnAwayFromEntry(spawn, { x: 240, y: 60 })).toEqual(spawn);

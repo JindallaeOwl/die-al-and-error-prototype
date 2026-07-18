@@ -131,6 +131,11 @@ export abstract class BaseEnemy extends Phaser.Physics.Arcade.Sprite {
     return true;
   }
 
+  stopForAiDelay(): void {
+    const body = this.body as Phaser.Physics.Arcade.Body | undefined;
+    body?.stop();
+  }
+
   protected setPersistentTint(tint: number): void {
     this.persistentTint = tint;
     this.setTint(tint);

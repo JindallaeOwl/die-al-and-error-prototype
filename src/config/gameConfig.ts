@@ -112,6 +112,7 @@ export const COMBAT_TUNING = {
 export const ROOM_CLEAR_DOOR_DELAY_MS = 500;
 export const ROOM_ENTRY_SAFE_RADIUS = 72;
 export const ROOM_ENTRY_PROTECTION_MS = 600;
+export const ROOM_ENTRY_ENEMY_AI_DELAY_MS = 400;
 
 export const ITEM_PREVIEW_RADIUS = 48;
 

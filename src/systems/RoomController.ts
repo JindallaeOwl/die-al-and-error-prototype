@@ -21,7 +21,12 @@ import type { DungeonManager, RoomNode } from './DungeonManager';
 import type { RunState } from './RunState';
 import { DIRECTIONS, type Direction } from '../utils/directions';
 import { randomInt, randomOf, type RandomSource } from '../utils/random';
-import { resolveEnemySpawnAwayFromEntry, type RoomPoint } from './RoomEntrySafety';
+import {
+  canEnemiesActAfterRoomEntry,
+  getRoomEntryEnemyAiResumeAt,
+  resolveEnemySpawnAwayFromEntry,
+  type RoomPoint,
+} from './RoomEntrySafety';
 
 interface RoomControllerConfig {
   scene: Phaser.Scene;
@@ -55,6 +60,7 @@ export class RoomController {
   private readonly random: RandomSource;
   private readonly doorSprites = new Map<Direction, Door>();
   private readonly floorGraphics: Phaser.GameObjects.Graphics;
+  private enemyAiResumeAt = 0;
 
   constructor(config: RoomControllerConfig) {
     this.scene = config.scene;
@@ -86,6 +92,10 @@ export class RoomController {
 
     const room = this.dungeon.getCurrentRoom();
     const template = getRoomTemplate(room.templateId);
+    const hasWaitingEnemies = (room.type === 'combat' || room.type === 'boss') && !room.cleared;
+    this.enemyAiResumeAt = hasWaitingEnemies
+      ? getRoomEntryEnemyAiResumeAt(this.scene.time.now)
+      : this.scene.time.now;
     this.drawRoom(template.accentColor);
     this.updateDoors(room);
 
@@ -121,6 +131,10 @@ export class RoomController {
         }
       });
     }
+  }
+
+  canEnemiesAct(time: number): boolean {
+    return canEnemiesActAfterRoomEntry(time, this.enemyAiResumeAt);
   }
 
   updateDoorEntryGates(playerBody: Phaser.Physics.Arcade.Body): void {

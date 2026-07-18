@@ -1,6 +1,7 @@
 import {
   GAME_CENTER_X,
   GAME_CENTER_Y,
+  ROOM_ENTRY_ENEMY_AI_DELAY_MS,
   ROOM_ENTRY_SAFE_RADIUS,
   ROOM_RECT,
 } from '../config/gameConfig';
@@ -8,6 +9,14 @@ import {
 export interface RoomPoint {
   x: number;
   y: number;
+}
+
+export function getRoomEntryEnemyAiResumeAt(enteredAt: number): number {
+  return enteredAt + ROOM_ENTRY_ENEMY_AI_DELAY_MS;
+}
+
+export function canEnemiesActAfterRoomEntry(time: number, resumeAt: number): boolean {
+  return time >= resumeAt;
 }
 
 const ENEMY_EDGE_MARGIN = 24;
