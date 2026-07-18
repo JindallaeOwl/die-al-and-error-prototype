@@ -12,7 +12,7 @@ import type { UiObjectRegistrar } from './UiCameraSystem';
 // different window sizes and aspect ratios.
 const HUD_EDGE_MARGIN = 4;
 const STATS_PANEL_WIDTH = 122;
-const STATS_PANEL_HEIGHT = 66;
+const STATS_PANEL_HEIGHT = 57;
 const MINIMAP_PANEL_WIDTH = 64;
 const MINIMAP_PANEL_HEIGHT = 48;
 const PANEL_TOP = HUD_EDGE_MARGIN;
@@ -30,7 +30,6 @@ export class Hud {
   private readonly bombCountText: Phaser.GameObjects.Text;
   private readonly coinCountText: Phaser.GameObjects.Text;
   private readonly statsText: Phaser.GameObjects.Text;
-  private readonly roomText: Phaser.GameObjects.Text;
   private readonly messageText: Phaser.GameObjects.Text;
   private readonly itemHintText: Phaser.GameObjects.Text;
   private readonly debugText: Phaser.GameObjects.Text;
@@ -84,7 +83,6 @@ export class Hud {
     this.bombCountText = this.createText(statsTextX + 58, PANEL_TOP + 22, 7);
     this.coinCountText = this.createText(statsTextX + 97, PANEL_TOP + 22, 7);
     this.statsText = this.createText(statsTextX, PANEL_TOP + 37, 6);
-    this.roomText = this.createText(statsTextX, PANEL_TOP + 54, 6);
     this.messageText = this.createText(GAME_WIDTH / 2, 250, 8)
       .setOrigin(0.5)
       .setFontStyle('bold');
@@ -149,12 +147,6 @@ export class Hud {
         )}`,
       ].join('\n'),
     );
-    this.roomText.setText(
-      `${t('hud.floor')} ${runState.floor}  ${t('hud.cleared')} ${
-        runState.clearedRooms
-      }  ${t('hud.left')} ${dungeon.getCombatRoomsRemaining() + dungeon.getBossRoomsRemaining()}`,
-    );
-
     if (this.messageUntil > 0 && this.scene.time.now > this.messageUntil) {
       this.messageText.setText('');
       this.messageUntil = 0;
