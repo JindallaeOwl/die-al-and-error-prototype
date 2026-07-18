@@ -29,6 +29,7 @@ export const ko: TranslationTree = {
     title: '일시정지',
     continue: '계속하기',
     settings: '설정',
+    exit: '나가기',
     fullscreen: '전체화면',
     titleScreen: '타이틀로 돌아가기',
   },

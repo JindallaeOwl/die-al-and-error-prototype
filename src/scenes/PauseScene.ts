@@ -6,10 +6,16 @@ import {
   buildSettingsMenuItems,
   type SettingsMenuAction,
 } from '../ui/SettingsMenu';
+import {
+  getPauseEscapeAction,
+  getPauseMainActions,
+  isPauseCode,
+  type PauseMainAction,
+  type PauseMode,
+} from '../ui/PauseMenuRules';
 import { applyRenderScale } from '../utils/render';
 
-type PauseMode = 'main' | 'settings';
-type PauseAction = 'continue' | 'settings' | 'title' | SettingsMenuAction;
+type PauseAction = PauseMainAction | SettingsMenuAction;
 
 interface PauseItem {
   label: string;
@@ -26,7 +32,19 @@ export class PauseScene extends Phaser.Scene {
   private upKeys: Phaser.Input.Keyboard.Key[] = [];
   private downKeys: Phaser.Input.Keyboard.Key[] = [];
   private confirmKeys: Phaser.Input.Keyboard.Key[] = [];
-  private escapeKey?: Phaser.Input.Keyboard.Key;
+  private readonly handleEscapeKeyDown = (event: KeyboardEvent): void => {
+    if (!isPauseCode(event.code) || event.repeat || !this.scene.isActive()) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (getPauseEscapeAction(this.mode) === 'back') {
+      this.renderMenu('main');
+    } else {
+      this.resumeGame();
+    }
+  };
 
   constructor() {
     super('PauseScene');
@@ -35,10 +53,10 @@ export class PauseScene extends Phaser.Scene {
   create(): void {
     applyRenderScale(this);
     this.add
-      .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x04070b, 0.82)
+      .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x04070b, 0.32)
       .setDepth(DEPTH.ui + 20);
     this.add
-      .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 456, 250, 0x0a1119, 0.96)
+      .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 456, 250, 0x0a1119, 0.18)
       .setStrokeStyle(2, 0x56dce5, 0.75)
       .setDepth(DEPTH.ui + 21);
     this.add
@@ -67,19 +85,14 @@ export class PauseScene extends Phaser.Scene {
       .setDepth(DEPTH.ui + 22);
 
     this.createControls();
+    document.addEventListener('keydown', this.handleEscapeKeyDown, true);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      document.removeEventListener('keydown', this.handleEscapeKeyDown, true);
+    });
     this.renderMenu('main');
   }
 
   update(): void {
-    if (this.escapeKey && Phaser.Input.Keyboard.JustDown(this.escapeKey)) {
-      if (this.mode === 'settings') {
-        this.renderMenu('main');
-      } else {
-        this.resumeGame();
-      }
-      return;
-    }
-
     if (this.upKeys.some((key) => Phaser.Input.Keyboard.JustDown(key))) {
       this.selectedIndex = Phaser.Math.Wrap(this.selectedIndex - 1, 0, this.items.length);
       this.refreshSelection();
@@ -114,7 +127,6 @@ export class PauseScene extends Phaser.Scene {
       keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER),
       keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE),
     ];
-    this.escapeKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
   }
 
   private renderMenu(mode: PauseMode): void {
@@ -146,7 +158,10 @@ export class PauseScene extends Phaser.Scene {
         this.selectedIndex = index;
         this.refreshSelection();
       });
-      text.on('pointerdown', () => this.activateSelection());
+      text.on('pointerdown', () => {
+        this.selectedIndex = index;
+        this.activateSelection();
+      });
       this.menuContainer?.add(text);
       this.itemTexts.push(text);
     });
@@ -156,12 +171,10 @@ export class PauseScene extends Phaser.Scene {
 
   private buildItems(mode: PauseMode): PauseItem[] {
     if (mode === 'main') {
-      return [
-        { label: t('pause.continue'), action: 'continue' },
-        { label: t('pause.settings'), action: 'settings' },
-        { label: t('pause.fullscreen'), action: 'fullscreen' },
-        { label: t('pause.titleScreen'), action: 'title' },
-      ];
+      return getPauseMainActions().map((action) => ({
+        action,
+        label: t(`pause.${action}`),
+      }));
     }
 
     return buildSettingsMenuItems();
@@ -179,7 +192,7 @@ export class PauseScene extends Phaser.Scene {
       return;
     }
 
-    if (action === 'title') {
+    if (action === 'exit') {
       this.scene.stop('GameScene');
       this.scene.start('TitleScene');
       return;

@@ -29,6 +29,7 @@ export const en: TranslationTree = {
     title: 'PAUSED',
     continue: 'Continue',
     settings: 'Settings',
+    exit: 'Exit',
     fullscreen: 'Fullscreen',
     titleScreen: 'Return to title',
   },

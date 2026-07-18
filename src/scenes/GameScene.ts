@@ -39,6 +39,7 @@ import { createInitialRunState, type RunState } from '../systems/RunState';
 import { getEffectiveDamage } from '../systems/PlayerStatSystem';
 import { BossHud } from '../ui/BossHud';
 import { Hud } from '../ui/Hud';
+import { isPauseCode } from '../ui/PauseMenuRules';
 import { UiCameraSystem } from '../ui/UiCameraSystem';
 import { applyRenderScale } from '../utils/render';
 import { isGameOverRestartCode } from '../utils/gameOverInput';
@@ -66,7 +67,6 @@ export class GameScene extends Phaser.Scene {
   private debugKey?: Phaser.Input.Keyboard.Key;
   private localeKey?: Phaser.Input.Keyboard.Key;
   private bombKey?: Phaser.Input.Keyboard.Key;
-  private pauseKey?: Phaser.Input.Keyboard.Key;
   private secretCodeTracker!: SecretCodeTracker;
   private debugVisible = false;
   private nextDoorAt = 0;
@@ -86,9 +86,29 @@ export class GameScene extends Phaser.Scene {
   };
   private floorTransitionStarted = false;
   private playerDamageFeedbackQueued = false;
+  private pauseTransitionStarted = false;
   private removeRuntimeErrorListener?: () => void;
   private bossHud!: BossHud;
   private uiCameraSystem!: UiCameraSystem;
+  private readonly handlePauseKeyDown = (event: KeyboardEvent): void => {
+    if (
+      !isPauseCode(event.code) ||
+      event.repeat ||
+      this.gameOverStarted ||
+      this.pauseTransitionStarted ||
+      !this.scene.isActive()
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    this.pauseTransitionStarted = true;
+    this.scene.pause();
+    this.scene.run('PauseScene');
+  };
+  private readonly handleGameSceneResume = (): void => {
+    this.pauseTransitionStarted = false;
+  };
 
   private enemies!: Phaser.Physics.Arcade.Group;
   private playerBullets!: Phaser.Physics.Arcade.Group;
@@ -112,6 +132,7 @@ export class GameScene extends Phaser.Scene {
     this.gameOverStarted = false;
     this.floorTransitionStarted = false;
     this.playerDamageFeedbackQueued = false;
+    this.pauseTransitionStarted = false;
     this.secretCodeTracker = new SecretCodeTracker(KONAMI_CODE);
 
     this.cameras.main.setBackgroundColor('#0d1117');
@@ -205,6 +226,7 @@ export class GameScene extends Phaser.Scene {
     this.roomController.enterCurrentRoom();
     this.setupPhysics();
     this.setupPlayerEvents();
+    this.setupPauseInput();
     this.hud.showMessage(t('messages.floor', { floor: 1 }));
     this.cameras.main.fadeIn(220, 5, 9, 14);
     this.time.delayedCall(1500, () => {
@@ -224,12 +246,6 @@ export class GameScene extends Phaser.Scene {
       this.hud.setDebugVisible(this.debugVisible);
       this.physics.world.drawDebug = this.debugVisible;
       this.physics.world.debugGraphic?.setVisible(this.debugVisible);
-    }
-
-    if (this.pauseKey && Phaser.Input.Keyboard.JustDown(this.pauseKey)) {
-      this.scene.pause();
-      this.scene.launch('PauseScene');
-      return;
     }
 
     if (this.localeKey && Phaser.Input.Keyboard.JustDown(this.localeKey)) {
@@ -296,7 +312,6 @@ export class GameScene extends Phaser.Scene {
     this.debugKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F3);
     this.localeKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.L);
     this.bombKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
-    this.pauseKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     keyboard.on('keydown', this.handleSecretCodeKey, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       keyboard.off('keydown', this.handleSecretCodeKey, this);
@@ -485,6 +500,15 @@ export class GameScene extends Phaser.Scene {
   private setupAudioUnlock(): void {
     this.input.once('pointerdown', () => this.audio.unlock());
     this.input.keyboard?.once('keydown', () => this.audio.unlock());
+  }
+
+  private setupPauseInput(): void {
+    document.addEventListener('keydown', this.handlePauseKeyDown, true);
+    this.events.on(Phaser.Scenes.Events.RESUME, this.handleGameSceneResume);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      document.removeEventListener('keydown', this.handlePauseKeyDown, true);
+      this.events.off(Phaser.Scenes.Events.RESUME, this.handleGameSceneResume);
+    });
   }
 
   private setupRuntimeErrorReporting(): void {
