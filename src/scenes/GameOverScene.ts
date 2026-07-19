@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
 import { TextureKeys } from '../config/assets';
-import { GAME_HEIGHT, GAME_WIDTH, RENDER_SCALE } from '../config/gameConfig';
+import { GAME_HEIGHT, GAME_WIDTH } from '../config/gameConfig';
 import { gameFontStack, t } from '../i18n';
 import { applyRenderScale } from '../utils/render';
+import { getRenderScale } from '../systems/GameSettings';
 
 interface GameOverData {
   clearedRooms: number;
@@ -43,7 +44,7 @@ export class GameOverScene extends Phaser.Scene {
         color: '#ff8b8b',
         stroke: '#0d1117',
         strokeThickness: 4,
-        resolution: RENDER_SCALE,
+        resolution: getRenderScale(),
       })
       .setOrigin(0.5)
       .setDepth(2);
@@ -63,7 +64,7 @@ export class GameOverScene extends Phaser.Scene {
           color: '#f7f3e8',
           stroke: '#0d1117',
           strokeThickness: 2,
-          resolution: RENDER_SCALE,
+          resolution: getRenderScale(),
         },
       )
       .setOrigin(0.5)
@@ -76,7 +77,7 @@ export class GameOverScene extends Phaser.Scene {
         color: '#ffe39b',
         stroke: '#0d1117',
         strokeThickness: 2,
-        resolution: RENDER_SCALE,
+        resolution: getRenderScale(),
       })
       .setOrigin(0.5)
       .setDepth(2);

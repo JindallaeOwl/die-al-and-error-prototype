@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
-import { DEPTH, GAME_HEIGHT, GAME_WIDTH, RENDER_SCALE } from '../config/gameConfig';
+import { DEPTH, GAME_HEIGHT, GAME_WIDTH } from '../config/gameConfig';
 import { gameFontStack, t } from '../i18n';
 import { MusicSystem } from '../systems/MusicSystem';
+import { getRenderScale } from '../systems/GameSettings';
 import {
   activateSettingsMenuAction,
   buildSettingsMenuItems,
@@ -15,7 +16,7 @@ import {
   type PauseMainAction,
   type PauseMode,
 } from '../ui/PauseMenuRules';
-import { applyRenderScale } from '../utils/render';
+import { applyCurrentRenderScaleToGame, applyRenderScale } from '../utils/render';
 
 type PauseAction = PauseMainAction | SettingsMenuAction;
 
@@ -71,7 +72,7 @@ export class PauseScene extends Phaser.Scene {
         color: '#dfffff',
         stroke: '#071116',
         strokeThickness: 4,
-        resolution: RENDER_SCALE,
+        resolution: getRenderScale(),
       })
       .setOrigin(0.5)
       .setDepth(DEPTH.ui + 22);
@@ -83,7 +84,7 @@ export class PauseScene extends Phaser.Scene {
         color: '#ffd783',
         stroke: '#071116',
         strokeThickness: 2,
-        resolution: RENDER_SCALE,
+        resolution: getRenderScale(),
       })
       .setOrigin(0.5)
       .setDepth(DEPTH.ui + 22);
@@ -152,7 +153,7 @@ export class PauseScene extends Phaser.Scene {
           color: '#f5fbff',
           stroke: '#071116',
           strokeThickness: 3,
-          resolution: RENDER_SCALE,
+          resolution: getRenderScale(),
         })
         .setOrigin(0.5)
         .setPadding(11, 4, 11, 4)
@@ -225,8 +226,8 @@ export class PauseScene extends Phaser.Scene {
     this.hintText?.setText('');
     this.refreshSelection();
 
-    if (result.showRestartHint) {
-      this.hintText?.setText(t('settings.nextLaunch'));
+    if (result.renderScaleChanged) {
+      applyCurrentRenderScaleToGame(this);
     }
   }
 

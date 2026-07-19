@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { TextureKeys } from '../config/assets';
-import { BOMB_TUNING, DEPTH, RENDER_SCALE } from '../config/gameConfig';
+import { BOMB_TUNING, DEPTH } from '../config/gameConfig';
+import { getRenderScale } from '../systems/GameSettings';
 import { gameFontStack } from '../i18n';
 
 type DetonateCallback = (x: number, y: number) => void;
@@ -40,7 +41,7 @@ export class Bomb extends Phaser.GameObjects.Sprite {
         color: '#fff2c7',
         stroke: '#35130e',
         strokeThickness: 2,
-        resolution: RENDER_SCALE,
+        resolution: getRenderScale(),
       })
       .setOrigin(0.5)
       .setDepth(DEPTH.item + 1);

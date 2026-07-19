@@ -23,7 +23,6 @@ export const en: TranslationTree = {
     low: 'Low',
     balanced: 'Balanced',
     high: 'High',
-    nextLaunch: 'Render quality applies on the next launch',
   },
   pause: {
     title: 'PAUSED',

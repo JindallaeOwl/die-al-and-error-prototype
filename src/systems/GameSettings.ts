@@ -34,7 +34,11 @@ export function updateGameSettings(patch: Partial<GameSettings>): Readonly<GameS
 }
 
 export function getRenderScale(): number {
-  return RENDER_SCALES[settings.renderQuality];
+  return getRenderScaleForQuality(settings.renderQuality);
+}
+
+export function getRenderScaleForQuality(quality: RenderQuality): number {
+  return RENDER_SCALES[quality];
 }
 
 export function nextRenderQuality(current: RenderQuality): RenderQuality {

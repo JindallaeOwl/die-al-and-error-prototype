@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { TextureKeys } from '../config/assets';
-import { DEPTH, GAME_WIDTH, RENDER_SCALE } from '../config/gameConfig';
+import { DEPTH, GAME_WIDTH } from '../config/gameConfig';
+import { getRenderScale } from '../systems/GameSettings';
 import { gameFontStack, t } from '../i18n';
 import type { DungeonManager } from '../systems/DungeonManager';
 import type { RunState } from '../systems/RunState';
@@ -245,7 +246,7 @@ export class Hud {
         color: '#f7f3e8',
         stroke: '#090b10',
         strokeThickness: 2,
-        resolution: RENDER_SCALE,
+        resolution: getRenderScale(),
       }),
     ).setDepth(DEPTH.ui);
   }

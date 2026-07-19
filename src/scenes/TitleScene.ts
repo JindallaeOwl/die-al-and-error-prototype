@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
 import { MusicKeys, TextureKeys } from '../config/assets';
-import { DEPTH, GAME_HEIGHT, GAME_WIDTH, RENDER_SCALE } from '../config/gameConfig';
+import { DEPTH, GAME_HEIGHT, GAME_WIDTH } from '../config/gameConfig';
 import { gameFontStack, t } from '../i18n';
 import { AudioSystem } from '../systems/AudioSystem';
-import { getGameSettings } from '../systems/GameSettings';
+import { getGameSettings, getRenderScale } from '../systems/GameSettings';
 import { MusicSystem } from '../systems/MusicSystem';
 import {
   activateSettingsMenuAction,
@@ -17,7 +17,7 @@ import {
   isEscapeCode,
   type TitleMenuMode,
 } from '../ui/TitleMenuRules';
-import { applyRenderScale } from '../utils/render';
+import { applyCurrentRenderScaleToGame, applyRenderScale } from '../utils/render';
 
 type MenuAction = 'start' | 'settings' | 'quit' | SettingsMenuAction;
 
@@ -155,7 +155,7 @@ export class TitleScene extends Phaser.Scene {
         color: '#f7f3e8',
         stroke: '#421f2e',
         strokeThickness: 4,
-        resolution: RENDER_SCALE,
+        resolution: getRenderScale(),
       })
       .setOrigin(0.5);
 
@@ -166,7 +166,7 @@ export class TitleScene extends Phaser.Scene {
         color: '#ffcf75',
         stroke: '#0d1117',
         strokeThickness: 2,
-        resolution: RENDER_SCALE,
+        resolution: getRenderScale(),
       })
       .setOrigin(0.5);
     this.subtitleText = subtitle;
@@ -197,7 +197,7 @@ export class TitleScene extends Phaser.Scene {
         color: '#ffe39b',
         stroke: '#0d1117',
         strokeThickness: 2,
-        resolution: RENDER_SCALE,
+        resolution: getRenderScale(),
       })
       .setOrigin(0.5)
       .setDepth(DEPTH.ui);
@@ -244,7 +244,7 @@ export class TitleScene extends Phaser.Scene {
           color: '#f7f3e8',
           stroke: '#0d1117',
           strokeThickness: 3,
-          resolution: RENDER_SCALE,
+          resolution: getRenderScale(),
         })
         .setOrigin(0.5)
         .setPadding(12, 4, 12, 4)
@@ -334,8 +334,8 @@ export class TitleScene extends Phaser.Scene {
     this.hintText?.setText('');
     this.refreshMenuText();
 
-    if (result.showRestartHint) {
-      this.hintText?.setText(t('settings.nextLaunch'));
+    if (result.renderScaleChanged) {
+      applyCurrentRenderScaleToGame(this);
     }
   }
 

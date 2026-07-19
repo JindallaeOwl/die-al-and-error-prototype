@@ -1,17 +1,20 @@
 import Phaser from 'phaser';
 import './styles.css';
-import { GAME_HEIGHT, GAME_WIDTH, RENDER_SCALE } from './config/gameConfig';
+import { GAME_HEIGHT, GAME_WIDTH } from './config/gameConfig';
 import { BootScene } from './scenes/BootScene';
 import { GameOverScene } from './scenes/GameOverScene';
 import { GameScene } from './scenes/GameScene';
 import { PauseScene } from './scenes/PauseScene';
 import { TitleScene } from './scenes/TitleScene';
+import { getRenderScale } from './systems/GameSettings';
+
+const initialRenderScale = getRenderScale();
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent: 'game-container',
-  width: GAME_WIDTH * RENDER_SCALE,
-  height: GAME_HEIGHT * RENDER_SCALE,
+  width: GAME_WIDTH * initialRenderScale,
+  height: GAME_HEIGHT * initialRenderScale,
   backgroundColor: '#0d1117',
   render: {
     antialias: false,

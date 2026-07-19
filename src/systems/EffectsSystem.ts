@@ -1,14 +1,7 @@
 import Phaser from 'phaser';
-import {
-  DEPTH,
-  FEEDBACK_TUNING,
-  GAME_HEIGHT,
-  GAME_WIDTH,
-  RENDER_SCALE,
-} from '../config/gameConfig';
+import { DEPTH, FEEDBACK_TUNING, GAME_HEIGHT, GAME_WIDTH } from '../config/gameConfig';
 import { gameFontStack, t } from '../i18n';
-
-import { getGameSettings } from './GameSettings';
+import { getGameSettings, getRenderScale } from './GameSettings';
 
 type ShakeKind = keyof typeof FEEDBACK_TUNING.cameraShake;
 
@@ -127,7 +120,7 @@ export class EffectsSystem {
         color: Phaser.Display.Color.IntegerToColor(color).rgba,
         stroke: '#090b10',
         strokeThickness: 2,
-        resolution: RENDER_SCALE,
+        resolution: getRenderScale(),
       })
       .setOrigin(0.5)
       .setDepth(DEPTH.effect);

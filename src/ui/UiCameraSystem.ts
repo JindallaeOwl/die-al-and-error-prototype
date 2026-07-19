@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { GAME_HEIGHT, GAME_WIDTH, RENDER_SCALE } from '../config/gameConfig';
+import { GAME_HEIGHT, GAME_WIDTH } from '../config/gameConfig';
+import { getRenderScale } from '../systems/GameSettings';
 import { excludeCamera, includeCamera } from '../utils/cameraFilter';
 
 export type UiObjectRegistrar = <T extends Phaser.GameObjects.GameObject>(gameObject: T) => T;
@@ -31,7 +32,7 @@ export class UiCameraSystem {
       false,
       'UiCamera',
     );
-    this.camera.setZoom(RENDER_SCALE);
+    this.camera.setZoom(getRenderScale());
     this.camera.setRoundPixels(true);
     this.camera.centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
 

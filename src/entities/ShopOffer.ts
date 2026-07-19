@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
 import { itemIconKey, TextureKeys } from '../config/assets';
-import { DEPTH, RENDER_SCALE } from '../config/gameConfig';
+import { DEPTH } from '../config/gameConfig';
 import { getShopProduct, type ShopOfferState } from '../data/shop';
 import { gameFontStack } from '../i18n';
+import { getRenderScale } from '../systems/GameSettings';
 
 export class ShopOffer extends Phaser.GameObjects.Container {
   readonly offer: ShopOfferState;
@@ -29,7 +30,7 @@ export class ShopOffer extends Phaser.GameObjects.Container {
       color: offer.discounted ? '#ff5d72' : '#ffd166',
       stroke: '#090b10',
       strokeThickness: 2,
-      resolution: RENDER_SCALE,
+      resolution: getRenderScale(),
     });
     priceText.setOrigin(0, 0);
 

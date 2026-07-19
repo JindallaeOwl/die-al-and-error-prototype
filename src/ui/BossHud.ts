@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { GAME_WIDTH, RENDER_SCALE } from '../config/gameConfig';
+import { GAME_WIDTH } from '../config/gameConfig';
+import { getRenderScale } from '../systems/GameSettings';
 import type { BaseEnemy } from '../entities/enemies/BaseEnemy';
 import { gameFontStack } from '../i18n';
 import type { UiObjectRegistrar } from './UiCameraSystem';
@@ -37,7 +38,7 @@ export class BossHud {
         color: '#ffe39b',
         stroke: '#090b10',
         strokeThickness: 2,
-        resolution: RENDER_SCALE,
+        resolution: getRenderScale(),
       }),
     )
       .setOrigin(0.5)

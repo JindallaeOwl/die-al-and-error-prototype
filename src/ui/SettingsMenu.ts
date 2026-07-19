@@ -19,7 +19,7 @@ export interface SettingsMenuItem {
 export interface SettingsMenuActionResult {
   command: 'refresh' | 'fullscreen' | 'back';
   settings?: Readonly<GameSettings>;
-  showRestartHint?: boolean;
+  renderScaleChanged?: boolean;
 }
 
 export function buildSettingsMenuItems(includeFullscreen = false): SettingsMenuItem[] {
@@ -75,7 +75,7 @@ export function activateSettingsMenuAction(action: SettingsMenuAction): Settings
   return {
     command: 'refresh',
     settings: updateGameSettings(patch),
-    showRestartHint: action === 'quality',
+    renderScaleChanged: action === 'quality',
   };
 }
 

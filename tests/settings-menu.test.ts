@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { getGameSettings, getRenderScale, type GameSettings } from '../src/systems/GameSettings';
+import {
+  getGameSettings,
+  getRenderScale,
+  getRenderScaleForQuality,
+  type GameSettings,
+} from '../src/systems/GameSettings';
 import { getSettingsPatch, preserveMenuSelection } from '../src/ui/SettingsMenu';
 
 const settings: GameSettings = {
@@ -14,6 +19,12 @@ describe('SettingsMenu rules', () => {
     expect(getGameSettings().renderQuality).toBe('high');
     expect(getGameSettings().screenShake).toBe(0.5);
     expect(getRenderScale()).toBe(4);
+  });
+
+  it('maps every render quality to a distinct internal scale', () => {
+    expect(getRenderScaleForQuality('low')).toBe(1);
+    expect(getRenderScaleForQuality('balanced')).toBe(2);
+    expect(getRenderScaleForQuality('high')).toBe(4);
   });
 
   it('toggles sound without changing unrelated settings', () => {

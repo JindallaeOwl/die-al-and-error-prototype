@@ -23,7 +23,6 @@ export const ko: TranslationTree = {
     low: '낮음',
     balanced: '균형',
     high: '높음',
-    nextLaunch: '렌더 품질은 다음 실행부터 적용됩니다',
   },
   pause: {
     title: '일시정지',

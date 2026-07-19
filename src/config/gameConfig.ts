@@ -13,29 +13,6 @@ export const PIXEL_ART_SIZES = {
   boss: [64, 96],
 } as const;
 
-// Gameplay is authored on a 480x272 pixel-art canvas. The render scale only
-// changes how many physical pixels draw each gameplay pixel.
-export const RENDER_SCALE = readStoredRenderScale();
-
-function readStoredRenderScale(): number {
-  try {
-    const raw = window.localStorage.getItem('die-al-and-error-settings-v1');
-    const parsed = raw ? (JSON.parse(raw) as { renderQuality?: string }) : null;
-
-    if (parsed?.renderQuality === 'low') {
-      return 1;
-    }
-
-    if (parsed?.renderQuality === 'high') {
-      return 4;
-    }
-  } catch {
-    // Use the high-quality fallback when storage is unavailable or malformed.
-  }
-
-  return 4;
-}
-
 export const ROOM_RECT = {
   left: 32,
   right: 448,
