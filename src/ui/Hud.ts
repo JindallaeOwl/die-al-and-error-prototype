@@ -6,22 +6,32 @@ import { formatRunElapsedTime } from '../systems/MinimapExpansionController';
 import { gameFontStack, t } from '../i18n';
 import type { DungeonManager } from '../systems/DungeonManager';
 import type { RunState } from '../systems/RunState';
-import { getEffectiveDamage, getEffectiveFireRate } from '../systems/PlayerStatSystem';
 import { getHeartFillUnits } from '../utils/healthHearts';
+import { getHudStatValues, type HudStatValues } from './HudStatPresentation';
 import { calculateExpandedMinimapCellLayout } from './MinimapLayout';
 import type { UiObjectRegistrar } from './UiCameraSystem';
 
 // Keep a small inset around the corner HUD so it remains easy to read at
 // different window sizes and aspect ratios.
 const HUD_EDGE_MARGIN = 4;
-const STATS_PANEL_WIDTH = 122;
-const STATS_PANEL_HEIGHT = 57;
+const PANEL_TOP = HUD_EDGE_MARGIN;
+const HEART_START_X = HUD_EDGE_MARGIN + 2;
+const HEART_TOP = HUD_EDGE_MARGIN + 1;
+const HEART_STEP_X = 15;
+const RESOURCE_ICON_X = HUD_EDGE_MARGIN + 2;
+const RESOURCE_VALUE_X = HUD_EDGE_MARGIN + 21;
+const RESOURCE_START_Y = PANEL_TOP + 23;
+const RESOURCE_ROW_GAP = 17;
+const STAT_ICON_X = HUD_EDGE_MARGIN + 3;
+const STAT_VALUE_X = HUD_EDGE_MARGIN + 21;
+const STAT_START_Y = PANEL_TOP + 79;
+const STAT_ROW_GAP = 15;
+const STAT_ICON_SIZE = 12;
 const MINIMAP_PANEL_WIDTH = 64;
 const MINIMAP_PANEL_HEIGHT = 48;
 const EXPANDED_MINIMAP_PANEL_WIDTH = 118;
 const EXPANDED_MINIMAP_PANEL_HEIGHT = 82;
 const MINIMAP_TRANSITION_MS = 180;
-const PANEL_TOP = HUD_EDGE_MARGIN;
 
 interface HealthHeartImages {
   empty: Phaser.GameObjects.Image;
@@ -35,7 +45,7 @@ export class Hud {
   private readonly keyCountText: Phaser.GameObjects.Text;
   private readonly bombCountText: Phaser.GameObjects.Text;
   private readonly coinCountText: Phaser.GameObjects.Text;
-  private readonly statsText: Phaser.GameObjects.Text;
+  private readonly statValueTexts: Record<keyof HudStatValues, Phaser.GameObjects.Text>;
   private readonly messageText: Phaser.GameObjects.Text;
   private readonly itemHintText: Phaser.GameObjects.Text;
   private readonly debugText: Phaser.GameObjects.Text;
@@ -56,54 +66,65 @@ export class Hud {
     this.scene = scene;
     this.registerUiObject = registerUiObject;
 
-    this.createPanel(
-      HUD_EDGE_MARGIN + STATS_PANEL_WIDTH / 2,
-      PANEL_TOP + STATS_PANEL_HEIGHT / 2,
-      STATS_PANEL_WIDTH,
-      STATS_PANEL_HEIGHT,
-      0.62,
-    );
     this.minimapPanel = this.createPanel(
       GAME_WIDTH - HUD_EDGE_MARGIN - MINIMAP_PANEL_WIDTH / 2,
       PANEL_TOP + MINIMAP_PANEL_HEIGHT / 2,
       MINIMAP_PANEL_WIDTH,
       MINIMAP_PANEL_HEIGHT,
     );
-    const statsTextX = HUD_EDGE_MARGIN + 4;
     this.createInventoryIcon(
-      statsTextX,
-      PANEL_TOP + 18,
+      RESOURCE_ICON_X,
+      RESOURCE_START_Y,
       TextureKeys.hudKey,
       TextureKeys.keyPickup,
       0x8bd3ff,
     );
     this.createInventoryIcon(
-      statsTextX + 39,
-      PANEL_TOP + 18,
+      RESOURCE_ICON_X,
+      RESOURCE_START_Y + RESOURCE_ROW_GAP,
       TextureKeys.hudBomb,
       TextureKeys.bombPickup,
       0xff8f70,
     );
     this.createInventoryIcon(
-      statsTextX + 78,
-      PANEL_TOP + 18,
+      RESOURCE_ICON_X,
+      RESOURCE_START_Y + RESOURCE_ROW_GAP * 2,
       TextureKeys.hudCoin,
       TextureKeys.coinPickup,
       0xffd166,
     );
-    this.keyCountText = this.createText(statsTextX + 19, PANEL_TOP + 22, 7);
-    this.bombCountText = this.createText(statsTextX + 58, PANEL_TOP + 22, 7);
-    this.coinCountText = this.createText(statsTextX + 97, PANEL_TOP + 22, 7);
-    this.statsText = this.createText(statsTextX, PANEL_TOP + 37, 6);
+    this.keyCountText = this.createText(RESOURCE_VALUE_X, RESOURCE_START_Y + 3, 8).setFontStyle(
+      'bold',
+    );
+    this.bombCountText = this.createText(
+      RESOURCE_VALUE_X,
+      RESOURCE_START_Y + RESOURCE_ROW_GAP + 3,
+      8,
+    ).setFontStyle('bold');
+    this.coinCountText = this.createText(
+      RESOURCE_VALUE_X,
+      RESOURCE_START_Y + RESOURCE_ROW_GAP * 2 + 3,
+      8,
+    ).setFontStyle('bold');
+    this.statValueTexts = {
+      moveSpeed: this.createStatRow(0, TextureKeys.hudStatMoveSpeed, 0xd8b07a),
+      fireRate: this.createStatRow(1, TextureKeys.hudStatFireRate, 0xff596d),
+      damage: this.createStatRow(2, TextureKeys.hudStatDamage, 0xc9785b),
+      range: this.createStatRow(3, TextureKeys.hudStatRange, 0xf2f0e8),
+      projectileSpeed: this.createStatRow(4, TextureKeys.hudStatProjectileSpeed, 0xa9c8e8),
+      luck: this.createStatRow(5, TextureKeys.hudStatLuck, 0x75ce76),
+    };
     this.messageText = this.createText(GAME_WIDTH / 2, 250, 8)
       .setOrigin(0.5)
       .setFontStyle('bold');
     this.itemHintText = this.createText(GAME_WIDTH / 2, 261, 6)
       .setOrigin(0.5)
       .setFontStyle('bold');
-    this.debugText = this.createText(statsTextX, PANEL_TOP + STATS_PANEL_HEIGHT + 6, 6).setVisible(
-      false,
-    );
+    this.debugText = this.createText(
+      HUD_EDGE_MARGIN + 2,
+      STAT_START_Y + STAT_ROW_GAP * 6 + 2,
+      6,
+    ).setVisible(false);
     this.adminText = this.createText(GAME_WIDTH / 2, PANEL_TOP + 2, 8)
       .setOrigin(0.5, 0)
       .setColor('#ff5d72')
@@ -178,8 +199,7 @@ export class Hud {
     runElapsedMs: number,
   ): void {
     const stats = runState.stats;
-    const effectiveDamage = getEffectiveDamage(stats);
-    const effectiveFireRate = getEffectiveFireRate(stats);
+    const statValues = getHudStatValues(stats);
     if (stats.health !== this.lastHealth || stats.maxHealth !== this.lastMaxHealth) {
       this.updateHealthHearts(stats.health, stats.maxHealth);
       this.lastHealth = stats.health;
@@ -188,16 +208,9 @@ export class Hud {
     this.keyCountText.setText(`${runState.inventory.keys}`);
     this.bombCountText.setText(`${runState.inventory.bombs}`);
     this.coinCountText.setText(`${runState.inventory.coins}`);
-    this.statsText.setText(
-      [
-        `${t('hud.damage')} ${effectiveDamage.toFixed(1)}  ${t('hud.range')} ${Math.round(
-          stats.range,
-        )}  ${t('hud.fireRate')} ${effectiveFireRate.toFixed(1)}`,
-        `${t('hud.luck')} ${stats.luck.toFixed(1)}  ${t('hud.speed')} ${Math.round(
-          stats.moveSpeed,
-        )}`,
-      ].join('\n'),
-    );
+    for (const key of Object.keys(this.statValueTexts) as (keyof HudStatValues)[]) {
+      this.statValueTexts[key].setText(statValues[key]);
+    }
     if (this.messageUntil > 0 && this.scene.time.now > this.messageUntil) {
       this.messageText.setText('');
       this.messageUntil = 0;
@@ -345,8 +358,8 @@ export class Hud {
 
     while (this.healthHearts.length < fillUnits.length) {
       const index = this.healthHearts.length;
-      const x = HUD_EDGE_MARGIN + 4 + index * 18;
-      const y = PANEL_TOP + 1;
+      const x = HEART_START_X + index * HEART_STEP_X;
+      const y = HEART_TOP;
       const empty = this.registerUiObject(this.scene.add.image(x, y, TextureKeys.hudHeart))
         .setOrigin(0)
         .setDisplaySize(16, 16)
@@ -387,9 +400,23 @@ export class Hud {
 
     return this.registerUiObject(this.scene.add.image(x, y, texture))
       .setOrigin(0)
-      .setDisplaySize(16, 16)
+      .setDisplaySize(14, 14)
       .setTint(tint)
       .setDepth(DEPTH.ui);
+  }
+
+  private createStatRow(row: number, texture: string, tint: number): Phaser.GameObjects.Text {
+    const y = STAT_START_Y + row * STAT_ROW_GAP;
+    this.registerUiObject(this.scene.add.image(STAT_ICON_X, y, texture))
+      .setOrigin(0)
+      .setDisplaySize(STAT_ICON_SIZE, STAT_ICON_SIZE)
+      .setTint(tint)
+      .setDepth(DEPTH.ui);
+
+    return this.createText(STAT_VALUE_X, y + 1, 8)
+      .setColor('#ffffff')
+      .setStroke('#05070a', 3)
+      .setFontStyle('bold');
   }
 
   private createPanel(

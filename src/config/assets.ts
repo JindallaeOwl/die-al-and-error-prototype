@@ -27,6 +27,12 @@ export const TextureKeys = {
   hudBomb: 'hud-bomb',
   hudCoin: 'hud-coin',
   hudHeart: 'hud-heart',
+  hudStatMoveSpeed: 'hud-stat-move-speed',
+  hudStatFireRate: 'hud-stat-fire-rate',
+  hudStatDamage: 'hud-stat-damage',
+  hudStatRange: 'hud-stat-range',
+  hudStatProjectileSpeed: 'hud-stat-projectile-speed',
+  hudStatLuck: 'hud-stat-luck',
   keyPickup: 'key-pickup',
   bombPickup: 'bomb-pickup',
   bombPlaced: 'bomb-placed',
@@ -53,6 +59,21 @@ export const HUD_ICON_ASSETS = [
   { key: TextureKeys.hudKey, path: 'assets/icons/nikoichu/hud-key.png' },
   { key: TextureKeys.hudBomb, path: 'assets/icons/nikoichu/hud-bomb.png' },
   { key: TextureKeys.hudCoin, path: 'assets/icons/nikoichu/hud-coin.png' },
+  {
+    key: TextureKeys.hudStatMoveSpeed,
+    path: 'assets/icons/nikoichu/hud-stat-move-speed.png',
+  },
+  {
+    key: TextureKeys.hudStatFireRate,
+    path: 'assets/icons/nikoichu/hud-stat-fire-rate.png',
+  },
+  { key: TextureKeys.hudStatDamage, path: 'assets/icons/nikoichu/hud-stat-damage.png' },
+  { key: TextureKeys.hudStatRange, path: 'assets/icons/nikoichu/hud-stat-range.png' },
+  {
+    key: TextureKeys.hudStatProjectileSpeed,
+    path: 'assets/icons/nikoichu/hud-stat-projectile-speed.png',
+  },
+  { key: TextureKeys.hudStatLuck, path: 'assets/icons/nikoichu/hud-stat-luck.png' },
 ] as const;
 
 export const ITEM_IMAGE_ASSETS = [

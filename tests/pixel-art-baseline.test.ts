@@ -37,12 +37,36 @@ describe('pixel art baseline', () => {
     });
   });
 
-  it('registers the four 16-pixel HUD icons', () => {
+  it('registers the inventory, health, and stat HUD icons', () => {
     expect(HUD_ICON_ASSETS).toEqual([
       { key: TextureKeys.hudHeart, path: 'assets/icons/nikoichu/hud-heart.png' },
       { key: TextureKeys.hudKey, path: 'assets/icons/nikoichu/hud-key.png' },
       { key: TextureKeys.hudBomb, path: 'assets/icons/nikoichu/hud-bomb.png' },
       { key: TextureKeys.hudCoin, path: 'assets/icons/nikoichu/hud-coin.png' },
+      {
+        key: TextureKeys.hudStatMoveSpeed,
+        path: 'assets/icons/nikoichu/hud-stat-move-speed.png',
+      },
+      {
+        key: TextureKeys.hudStatFireRate,
+        path: 'assets/icons/nikoichu/hud-stat-fire-rate.png',
+      },
+      {
+        key: TextureKeys.hudStatDamage,
+        path: 'assets/icons/nikoichu/hud-stat-damage.png',
+      },
+      {
+        key: TextureKeys.hudStatRange,
+        path: 'assets/icons/nikoichu/hud-stat-range.png',
+      },
+      {
+        key: TextureKeys.hudStatProjectileSpeed,
+        path: 'assets/icons/nikoichu/hud-stat-projectile-speed.png',
+      },
+      {
+        key: TextureKeys.hudStatLuck,
+        path: 'assets/icons/nikoichu/hud-stat-luck.png',
+      },
     ]);
   });
 
