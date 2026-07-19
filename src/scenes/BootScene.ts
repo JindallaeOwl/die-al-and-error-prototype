@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import {
   HUD_ICON_ASSETS,
+  MUSIC_ASSETS,
   PICKUP_SPRITESHEET_ASSETS,
   PLAYER_IMAGE_ASSETS,
   PLAYER_SPRITESHEET_ASSETS,
@@ -17,6 +18,10 @@ export class BootScene extends Phaser.Scene {
   preload(): void {
     for (const asset of HUD_ICON_ASSETS) {
       this.load.image(asset.key, asset.path);
+    }
+
+    for (const asset of MUSIC_ASSETS) {
+      this.load.audio(asset.key, asset.path);
     }
 
     for (const asset of PLAYER_SPRITESHEET_ASSETS) {

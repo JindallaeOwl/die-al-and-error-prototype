@@ -1,5 +1,14 @@
 # Asset Credits
 
+## Cute & Silly RPG Music Pack
+
+- Creator: chajamakesmusic
+- Source: https://chajamakesmusic.itch.io/cute-and-silly-rpg-music-pack
+- License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+- Changes: WAV sources converted to OGG Vorbis for web delivery
+- Tracks used: `start`, `journey`, `shop`, `boss battle`
+- Usage: title screen, regular rooms, shop room, and boss room background music
+
 프로젝트에 포함하거나 참고한 외부 에셋의 출처와 라이선스를 기록합니다.
 
 ## 1-bit Pixel Icons

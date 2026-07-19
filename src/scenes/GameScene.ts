@@ -34,6 +34,7 @@ import {
 } from '../systems/DeveloperConsoleCommands';
 import { addConsumable } from '../systems/InventorySystem';
 import { ItemSystem } from '../systems/ItemSystem';
+import { getRoomMusicKey, MusicSystem } from '../systems/MusicSystem';
 import { RewardSystem } from '../systems/RewardSystem';
 import { RoomController } from '../systems/RoomController';
 import { RoomNavigationSystem } from '../systems/RoomNavigationSystem';
@@ -72,6 +73,7 @@ export class GameScene extends Phaser.Scene {
   private roomTransitions!: RoomTransitionSystem;
   private effects!: EffectsSystem;
   private audio!: AudioSystem;
+  private music!: MusicSystem;
   private bombSystem!: BombSystem;
   private combatCollisions!: CombatCollisionSystem;
   private roomController!: RoomController;
@@ -166,6 +168,7 @@ export class GameScene extends Phaser.Scene {
     this.roomNavigation = new RoomNavigationSystem(this.dungeon);
     this.effects = new EffectsSystem(this);
     this.audio = new AudioSystem();
+    this.music = new MusicSystem(this);
     this.dungeon.generateFloor(this.runState.floor);
 
     this.enemies = this.physics.add.group();
@@ -244,6 +247,7 @@ export class GameScene extends Phaser.Scene {
     this.bossHud = new BossHud(this, this.enemies, this.uiCameraSystem.register);
     this.setupAudioUnlock();
     this.roomController.enterCurrentRoom();
+    this.updateBackgroundMusic(this.dungeon.getCurrentRoom());
     this.setupPhysics();
     this.setupPlayerEvents();
     this.setupPauseInput();
@@ -668,6 +672,7 @@ export class GameScene extends Phaser.Scene {
         command.floor,
         this.runState.unlockedAbilityIds.includes('charge-beam'),
       );
+      this.updateBackgroundMusic(this.dungeon.getCurrentRoom());
       return { lines: [`${command.floor}층으로 이동`] };
     }
 
@@ -744,6 +749,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.roomTransitions.enterRoomDirect(targetRoom);
+    this.updateBackgroundMusic(targetRoom);
     return { lines: [`${this.runState.floor}층 ${roomLabel}으로 이동`] };
   }
 
@@ -831,6 +837,7 @@ export class GameScene extends Phaser.Scene {
 
     this.nextDoorAt = this.time.now + COMBAT_TUNING.doorCooldownMs;
     this.roomTransitions.enterRoom(moved, door.direction);
+    this.updateBackgroundMusic(moved);
     const presentation = getRoomTransitionPresentation(moved.type);
     this.cameras.main.fadeIn(presentation.fadeInMs, 6, 9, 14);
 
@@ -1066,6 +1073,7 @@ export class GameScene extends Phaser.Scene {
     this.audio.play('roomClear');
 
     if (room.type === 'boss') {
+      this.music.play(getRoomMusicKey('combat'));
       this.roomController.spawnBossReward(room);
       this.roomTransitions.spawnFloorExit();
       this.hud.showMessage(t('messages.nextFloorOpening'), 2200);
@@ -1162,6 +1170,7 @@ export class GameScene extends Phaser.Scene {
       this.runState.floor,
       this.runState.unlockedAbilityIds.includes('charge-beam'),
     );
+    this.updateBackgroundMusic(this.dungeon.getCurrentRoom());
     this.cameras.main.fadeIn(260, 5, 9, 14);
     this.hud.showMessage(t('messages.floor', { floor: this.runState.floor }), 1800);
   }
@@ -1175,5 +1184,9 @@ export class GameScene extends Phaser.Scene {
       amount: result.amount,
       resource: t(`resources.${result.consumable}`),
     });
+  }
+
+  private updateBackgroundMusic(room: RoomNode): void {
+    this.music.play(getRoomMusicKey(room.type));
   }
 }

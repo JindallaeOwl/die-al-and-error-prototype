@@ -41,6 +41,13 @@ export const TextureKeys = {
   shopNpc: 'shop-npc',
 } as const;
 
+export const MusicKeys = {
+  title: 'music-title',
+  journey: 'music-journey',
+  shop: 'music-shop',
+  boss: 'music-boss',
+} as const;
+
 export const HUD_ICON_ASSETS = [
   { key: TextureKeys.hudHeart, path: 'assets/icons/nikoichu/hud-heart.png' },
   { key: TextureKeys.hudKey, path: 'assets/icons/nikoichu/hud-key.png' },
@@ -55,6 +62,13 @@ export const PICKUP_SPRITESHEET_ASSETS = [
     frameWidth: 64,
     frameHeight: 64,
   },
+] as const;
+
+export const MUSIC_ASSETS = [
+  { key: MusicKeys.title, path: 'assets/music/chajamakesmusic/start.ogg' },
+  { key: MusicKeys.journey, path: 'assets/music/chajamakesmusic/journey.ogg' },
+  { key: MusicKeys.shop, path: 'assets/music/chajamakesmusic/shop.ogg' },
+  { key: MusicKeys.boss, path: 'assets/music/chajamakesmusic/boss-battle.ogg' },
 ] as const;
 
 export const PLAYER_SPRITESHEET_ASSETS = [

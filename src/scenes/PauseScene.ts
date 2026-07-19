@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { DEPTH, GAME_HEIGHT, GAME_WIDTH, RENDER_SCALE } from '../config/gameConfig';
 import { gameFontStack, t } from '../i18n';
+import { MusicSystem } from '../systems/MusicSystem';
 import {
   activateSettingsMenuAction,
   buildSettingsMenuItems,
@@ -30,6 +31,7 @@ export class PauseScene extends Phaser.Scene {
   private itemTexts: Phaser.GameObjects.Text[] = [];
   private menuContainer?: Phaser.GameObjects.Container;
   private hintText?: Phaser.GameObjects.Text;
+  private music?: MusicSystem;
   private upKeys: Phaser.Input.Keyboard.Key[] = [];
   private downKeys: Phaser.Input.Keyboard.Key[] = [];
   private confirmKeys: Phaser.Input.Keyboard.Key[] = [];
@@ -53,6 +55,7 @@ export class PauseScene extends Phaser.Scene {
 
   create(): void {
     applyRenderScale(this);
+    this.music = new MusicSystem(this);
     this.add
       .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x04070b, 0.32)
       .setDepth(DEPTH.ui + 20);
@@ -213,6 +216,10 @@ export class PauseScene extends Phaser.Scene {
     if (result.command === 'back') {
       this.renderMenu('main');
       return;
+    }
+
+    if (result.settings) {
+      this.music?.setEnabled(result.settings.soundEnabled);
     }
 
     this.hintText?.setText('');

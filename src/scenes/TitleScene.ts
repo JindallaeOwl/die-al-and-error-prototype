@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
-import { TextureKeys } from '../config/assets';
+import { MusicKeys, TextureKeys } from '../config/assets';
 import { DEPTH, GAME_HEIGHT, GAME_WIDTH, RENDER_SCALE } from '../config/gameConfig';
 import { gameFontStack, t } from '../i18n';
 import { AudioSystem } from '../systems/AudioSystem';
 import { getGameSettings } from '../systems/GameSettings';
+import { MusicSystem } from '../systems/MusicSystem';
 import {
   activateSettingsMenuAction,
   buildSettingsMenuItems,
@@ -35,6 +36,7 @@ export class TitleScene extends Phaser.Scene {
   private hintText?: Phaser.GameObjects.Text;
   private menuContainer?: Phaser.GameObjects.Container;
   private audio?: AudioSystem;
+  private music?: MusicSystem;
   private suppressNextFullscreenLeaveNavigation = false;
 
   private upKeys: Phaser.Input.Keyboard.Key[] = [];
@@ -77,6 +79,8 @@ export class TitleScene extends Phaser.Scene {
     this.suppressNextFullscreenLeaveNavigation = false;
     applyRenderScale(this);
     this.audio = new AudioSystem();
+    this.music = new MusicSystem(this);
+    this.music.play(MusicKeys.title);
     this.soundEnabled = getGameSettings().soundEnabled;
     this.input.once('pointerdown', () => this.audio?.unlock());
     this.input.keyboard?.once('keydown', () => this.audio?.unlock());
@@ -326,6 +330,7 @@ export class TitleScene extends Phaser.Scene {
     }
 
     this.soundEnabled = result.settings?.soundEnabled ?? getGameSettings().soundEnabled;
+    this.music?.setEnabled(this.soundEnabled);
     this.hintText?.setText('');
     this.refreshMenuText();
 
