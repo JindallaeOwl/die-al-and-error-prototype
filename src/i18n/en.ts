@@ -62,6 +62,7 @@ export const en: TranslationTree = {
     items: 'Items',
     abilities: 'Abilities',
     score: 'Score',
+    time: 'Time',
     open: 'open',
     locked: 'locked',
   },

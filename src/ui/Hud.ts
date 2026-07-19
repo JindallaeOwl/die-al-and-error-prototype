@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { TextureKeys } from '../config/assets';
 import { DEPTH, GAME_WIDTH } from '../config/gameConfig';
 import { getRenderScale } from '../systems/GameSettings';
+import { formatRunElapsedTime } from '../systems/MinimapExpansionController';
 import { gameFontStack, t } from '../i18n';
 import type { DungeonManager } from '../systems/DungeonManager';
 import type { RunState } from '../systems/RunState';
@@ -16,6 +17,9 @@ const STATS_PANEL_WIDTH = 122;
 const STATS_PANEL_HEIGHT = 57;
 const MINIMAP_PANEL_WIDTH = 64;
 const MINIMAP_PANEL_HEIGHT = 48;
+const EXPANDED_MINIMAP_PANEL_WIDTH = 118;
+const EXPANDED_MINIMAP_PANEL_HEIGHT = 82;
+const MINIMAP_TRANSITION_MS = 180;
 const PANEL_TOP = HUD_EDGE_MARGIN;
 
 interface HealthHeartImages {
@@ -36,6 +40,11 @@ export class Hud {
   private readonly debugText: Phaser.GameObjects.Text;
   private readonly adminText: Phaser.GameObjects.Text;
   private readonly minimap: Phaser.GameObjects.Graphics;
+  private readonly minimapPanel: Phaser.GameObjects.Rectangle;
+  private readonly runInfoText: Phaser.GameObjects.Text;
+  private minimapExpansionProgress = 0;
+  private minimapExpandedTarget = false;
+  private minimapTween?: Phaser.Tweens.Tween;
   private messageUntil = 0;
   private debugVisible = false;
   private lastHealth = Number.NaN;
@@ -53,7 +62,7 @@ export class Hud {
       STATS_PANEL_HEIGHT,
       0.62,
     );
-    this.createPanel(
+    this.minimapPanel = this.createPanel(
       GAME_WIDTH - HUD_EDGE_MARGIN - MINIMAP_PANEL_WIDTH / 2,
       PANEL_TOP + MINIMAP_PANEL_HEIGHT / 2,
       MINIMAP_PANEL_WIDTH,
@@ -100,6 +109,11 @@ export class Hud {
       .setFontStyle('bold')
       .setText('ADMIN')
       .setVisible(false);
+    this.runInfoText = this.createText(GAME_WIDTH / 2, PANEL_TOP + 2, 7)
+      .setOrigin(0.5, 0)
+      .setAlign('center')
+      .setFontStyle('bold')
+      .setAlpha(0);
     this.minimap = this.registerUiObject(scene.add.graphics());
     this.minimap.setDepth(DEPTH.ui);
   }
@@ -111,6 +125,29 @@ export class Hud {
 
   setAdminVisible(visible: boolean): void {
     this.adminText.setVisible(visible);
+  }
+
+  setMapExpanded(expanded: boolean): void {
+    if (expanded === this.minimapExpandedTarget) {
+      return;
+    }
+
+    this.minimapExpandedTarget = expanded;
+    this.minimapTween?.stop();
+    const target = expanded ? 1 : 0;
+    const duration = Math.max(
+      1,
+      MINIMAP_TRANSITION_MS * Math.abs(target - this.minimapExpansionProgress),
+    );
+    this.minimapTween = this.scene.tweens.add({
+      targets: this,
+      minimapExpansionProgress: target,
+      duration,
+      ease: 'Sine.easeOut',
+      onComplete: () => {
+        this.minimapTween = undefined;
+      },
+    });
   }
 
   showMessage(message: string, durationMs = 2200): void {
@@ -137,6 +174,7 @@ export class Hud {
     playerPosition: { x: number; y: number },
     activeBulletCount: number,
     fps: number,
+    runElapsedMs: number,
   ): void {
     const stats = runState.stats;
     const effectiveDamage = getEffectiveDamage(stats);
@@ -164,6 +202,7 @@ export class Hud {
       this.messageUntil = 0;
     }
 
+    this.updateMinimapPresentation(runState.score, runElapsedMs);
     this.drawMinimap(dungeon);
 
     if (this.debugVisible) {
@@ -188,7 +227,7 @@ export class Hud {
   private drawMinimap(dungeon: DungeonManager): void {
     const rooms = dungeon.getRooms();
     const current = dungeon.getCurrentRoom();
-    const signature = `${current.id}|${rooms
+    const signature = `${this.minimapExpansionProgress.toFixed(3)}|${current.id}|${rooms
       .map(
         (room) =>
           `${room.id}:${room.coord.x},${room.coord.y}:${room.type}:${Number(
@@ -202,14 +241,28 @@ export class Hud {
     }
 
     this.lastMinimapSignature = signature;
-    const size = 6;
-    const gap = 2;
+    const progress = this.minimapExpansionProgress;
+    const size = Phaser.Math.Linear(6, 10, progress);
+    const gap = Phaser.Math.Linear(2, 3, progress);
     const minX = Math.min(...rooms.map((room) => room.coord.x));
     const maxX = Math.max(...rooms.map((room) => room.coord.x));
     const minY = Math.min(...rooms.map((room) => room.coord.y));
+    const maxY = Math.max(...rooms.map((room) => room.coord.y));
     const mapWidth = (maxX - minX) * (size + gap) + size;
-    const originX = GAME_WIDTH - HUD_EDGE_MARGIN - 6 - mapWidth;
-    const originY = PANEL_TOP + 6;
+    const mapHeight = (maxY - minY) * (size + gap) + size;
+    const panelWidth = Phaser.Math.Linear(
+      MINIMAP_PANEL_WIDTH,
+      EXPANDED_MINIMAP_PANEL_WIDTH,
+      progress,
+    );
+    const panelHeight = Phaser.Math.Linear(
+      MINIMAP_PANEL_HEIGHT,
+      EXPANDED_MINIMAP_PANEL_HEIGHT,
+      progress,
+    );
+    const panelLeft = GAME_WIDTH - HUD_EDGE_MARGIN - panelWidth;
+    const originX = panelLeft + (panelWidth - mapWidth) / 2;
+    const originY = PANEL_TOP + (panelHeight - mapHeight) / 2;
 
     this.minimap.clear();
 
@@ -236,6 +289,35 @@ export class Hud {
         this.minimap.strokeRect(x - 1, y - 1, size + 2, size + 2);
       }
     }
+  }
+
+  private updateMinimapPresentation(score: number, runElapsedMs: number): void {
+    const progress = this.minimapExpansionProgress;
+    const panelWidth = Phaser.Math.Linear(
+      MINIMAP_PANEL_WIDTH,
+      EXPANDED_MINIMAP_PANEL_WIDTH,
+      progress,
+    );
+    const panelHeight = Phaser.Math.Linear(
+      MINIMAP_PANEL_HEIGHT,
+      EXPANDED_MINIMAP_PANEL_HEIGHT,
+      progress,
+    );
+    this.minimapPanel
+      .setPosition(GAME_WIDTH - HUD_EDGE_MARGIN - panelWidth / 2, PANEL_TOP + panelHeight / 2)
+      .setDisplaySize(panelWidth, panelHeight)
+      .setAlpha(Phaser.Math.Linear(1, 0.82, progress));
+
+    const runInfo = `${t('hud.time')} ${formatRunElapsedTime(runElapsedMs)}\n${t(
+      'hud.score',
+    )} ${score}`;
+
+    if (this.runInfoText.text !== runInfo) {
+      this.runInfoText.setText(runInfo);
+    }
+
+    this.runInfoText.setAlpha(progress * 0.68);
+    this.adminText.y = Phaser.Math.Linear(PANEL_TOP + 2, PANEL_TOP + 25, progress);
   }
 
   private createText(x: number, y: number, size: number): Phaser.GameObjects.Text {

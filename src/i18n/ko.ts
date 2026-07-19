@@ -62,6 +62,7 @@ export const ko: TranslationTree = {
     items: '아이템',
     abilities: '능력',
     score: '점수',
+    time: '시간',
     open: '열림',
     locked: '잠김',
   },

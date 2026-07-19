@@ -40,6 +40,7 @@ import {
 } from '../systems/DeveloperConsoleCommands';
 import { addConsumable } from '../systems/InventorySystem';
 import { ItemSystem } from '../systems/ItemSystem';
+import { MinimapExpansionController } from '../systems/MinimapExpansionController';
 import { getRoomMusicKey, MusicSystem } from '../systems/MusicSystem';
 import { RewardSystem } from '../systems/RewardSystem';
 import { RoomController } from '../systems/RoomController';
@@ -89,6 +90,9 @@ export class GameScene extends Phaser.Scene {
   private localeKey?: Phaser.Input.Keyboard.Key;
   private bombKey?: Phaser.Input.Keyboard.Key;
   private interactKey?: Phaser.Input.Keyboard.Key;
+  private minimapKey?: Phaser.Input.Keyboard.Key;
+  private minimapExpansion = new MinimapExpansionController();
+  private runElapsedMs = 0;
   private secretCodeTracker!: SecretCodeTracker;
   private developerConsole!: DeveloperConsole;
   private godModeEnabled = false;
@@ -133,6 +137,8 @@ export class GameScene extends Phaser.Scene {
   private readonly handleGameSceneResume = (): void => {
     this.pauseTransitionStarted = false;
     this.godModeEnabled = false;
+    this.minimapExpansion.cancelHold();
+    this.hud.setMapExpanded(this.minimapExpansion.expanded);
   };
 
   private enemies!: Phaser.Physics.Arcade.Group;
@@ -158,6 +164,8 @@ export class GameScene extends Phaser.Scene {
     this.floorTransitionStarted = false;
     this.playerDamageFeedbackQueued = false;
     this.pauseTransitionStarted = false;
+    this.runElapsedMs = 0;
+    this.minimapExpansion = new MinimapExpansionController();
     this.secretCodeTracker = new SecretCodeTracker(KONAMI_CODE);
 
     this.cameras.main.setBackgroundColor('#0d1117');
@@ -266,10 +274,13 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  update(time: number): void {
+  update(time: number, delta: number): void {
     if (this.gameOverStarted) {
       return;
     }
+
+    this.runElapsedMs += Math.max(0, delta);
+    this.updateMinimapExpansionInput(time);
 
     if (this.debugKey && Phaser.Input.Keyboard.JustDown(this.debugKey)) {
       this.debugVisible = !this.debugVisible;
@@ -333,6 +344,7 @@ export class GameScene extends Phaser.Scene {
       },
       this.playerBullets.countActive(true) + this.enemyBullets.countActive(true),
       Math.round(this.game.loop.actualFps),
+      this.runElapsedMs,
     );
   }
 
@@ -347,6 +359,7 @@ export class GameScene extends Phaser.Scene {
     this.localeKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.L);
     this.bombKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
     this.interactKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
+    this.minimapKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TAB);
     keyboard.on('keydown', this.handleSecretCodeKey, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       keyboard.off('keydown', this.handleSecretCodeKey, this);
@@ -362,6 +375,22 @@ export class GameScene extends Phaser.Scene {
       fireLeft: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT),
       fireRight: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT),
     };
+  }
+
+  private updateMinimapExpansionInput(time: number): void {
+    if (!this.minimapKey) {
+      return;
+    }
+
+    if (Phaser.Input.Keyboard.JustDown(this.minimapKey)) {
+      this.minimapExpansion.press(time);
+    }
+
+    if (Phaser.Input.Keyboard.JustUp(this.minimapKey)) {
+      this.minimapExpansion.release(time);
+    }
+
+    this.hud.setMapExpanded(this.minimapExpansion.expanded);
   }
 
   private handleSecretCodeKey(event: KeyboardEvent): void {
