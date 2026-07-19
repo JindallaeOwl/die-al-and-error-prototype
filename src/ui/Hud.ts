@@ -19,14 +19,15 @@ const HEART_START_X = HUD_EDGE_MARGIN + 2;
 const HEART_TOP = HUD_EDGE_MARGIN + 1;
 const HEART_STEP_X = 15;
 const RESOURCE_ICON_X = HUD_EDGE_MARGIN + 2;
-const RESOURCE_VALUE_X = HUD_EDGE_MARGIN + 21;
+const RESOURCE_VALUE_X = HUD_EDGE_MARGIN + 18;
 const RESOURCE_START_Y = PANEL_TOP + 23;
 const RESOURCE_ROW_GAP = 17;
 const STAT_ICON_X = HUD_EDGE_MARGIN + 3;
-const STAT_VALUE_X = HUD_EDGE_MARGIN + 21;
+const STAT_VALUE_X = HUD_EDGE_MARGIN + 18;
 const STAT_START_Y = PANEL_TOP + 79;
 const STAT_ROW_GAP = 15;
 const STAT_ICON_SIZE = 12;
+const STAT_ALPHA = 0.72;
 const MINIMAP_PANEL_WIDTH = 64;
 const MINIMAP_PANEL_HEIGHT = 48;
 const EXPANDED_MINIMAP_PANEL_WIDTH = 118;
@@ -75,9 +76,9 @@ export class Hud {
     this.createInventoryIcon(
       RESOURCE_ICON_X,
       RESOURCE_START_Y,
-      TextureKeys.hudKey,
-      TextureKeys.keyPickup,
-      0x8bd3ff,
+      TextureKeys.hudCoin,
+      TextureKeys.coinPickup,
+      0xffd166,
     );
     this.createInventoryIcon(
       RESOURCE_ICON_X,
@@ -89,22 +90,22 @@ export class Hud {
     this.createInventoryIcon(
       RESOURCE_ICON_X,
       RESOURCE_START_Y + RESOURCE_ROW_GAP * 2,
-      TextureKeys.hudCoin,
-      TextureKeys.coinPickup,
-      0xffd166,
+      TextureKeys.hudKey,
+      TextureKeys.keyPickup,
+      0x8bd3ff,
     );
-    this.keyCountText = this.createText(RESOURCE_VALUE_X, RESOURCE_START_Y + 3, 8).setFontStyle(
+    this.coinCountText = this.createText(RESOURCE_VALUE_X, RESOURCE_START_Y + 2, 9).setFontStyle(
       'bold',
     );
     this.bombCountText = this.createText(
       RESOURCE_VALUE_X,
-      RESOURCE_START_Y + RESOURCE_ROW_GAP + 3,
-      8,
+      RESOURCE_START_Y + RESOURCE_ROW_GAP + 2,
+      9,
     ).setFontStyle('bold');
-    this.coinCountText = this.createText(
+    this.keyCountText = this.createText(
       RESOURCE_VALUE_X,
-      RESOURCE_START_Y + RESOURCE_ROW_GAP * 2 + 3,
-      8,
+      RESOURCE_START_Y + RESOURCE_ROW_GAP * 2 + 2,
+      9,
     ).setFontStyle('bold');
     this.statValueTexts = {
       moveSpeed: this.createStatRow(0, TextureKeys.hudStatMoveSpeed, 0xd8b07a),
@@ -205,9 +206,9 @@ export class Hud {
       this.lastHealth = stats.health;
       this.lastMaxHealth = stats.maxHealth;
     }
-    this.keyCountText.setText(`${runState.inventory.keys}`);
-    this.bombCountText.setText(`${runState.inventory.bombs}`);
-    this.coinCountText.setText(`${runState.inventory.coins}`);
+    this.keyCountText.setText(this.formatInventoryCount(runState.inventory.keys));
+    this.bombCountText.setText(this.formatInventoryCount(runState.inventory.bombs));
+    this.coinCountText.setText(this.formatInventoryCount(runState.inventory.coins));
     for (const key of Object.keys(this.statValueTexts) as (keyof HudStatValues)[]) {
       this.statValueTexts[key].setText(statValues[key]);
     }
@@ -411,12 +412,18 @@ export class Hud {
       .setOrigin(0)
       .setDisplaySize(STAT_ICON_SIZE, STAT_ICON_SIZE)
       .setTint(tint)
+      .setAlpha(STAT_ALPHA)
       .setDepth(DEPTH.ui);
 
     return this.createText(STAT_VALUE_X, y + 1, 8)
       .setColor('#ffffff')
       .setStroke('#05070a', 3)
+      .setAlpha(STAT_ALPHA)
       .setFontStyle('bold');
+  }
+
+  private formatInventoryCount(count: number): string {
+    return Math.max(0, Math.floor(count)).toString().padStart(2, '0');
   }
 
   private createPanel(

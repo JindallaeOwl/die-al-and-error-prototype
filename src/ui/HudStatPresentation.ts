@@ -1,4 +1,4 @@
-import type { PlayerStats } from '../config/gameConfig';
+import { PLAYER_BASE_STATS, type PlayerStats } from '../config/gameConfig';
 import {
   getEffectiveDamage,
   getEffectiveFireRate,
@@ -14,13 +14,17 @@ export interface HudStatValues {
   luck: string;
 }
 
+const BASE_DISPLAY_RANGE = 6.5;
+
 export function getHudStatValues(stats: PlayerStats): HudStatValues {
   return {
-    moveSpeed: Math.round(stats.moveSpeed).toString(),
-    fireRate: getEffectiveFireRate(stats).toFixed(1),
-    damage: getEffectiveDamage(stats).toFixed(1),
-    range: Math.round(stats.range).toString(),
-    projectileSpeed: Math.round(getEffectiveProjectileSpeed(stats)).toString(),
-    luck: stats.luck.toFixed(1),
+    moveSpeed: (stats.moveSpeed / PLAYER_BASE_STATS.moveSpeed).toFixed(2),
+    fireRate: getEffectiveFireRate(stats).toFixed(2),
+    damage: getEffectiveDamage(stats).toFixed(2),
+    range: ((stats.range / PLAYER_BASE_STATS.range) * BASE_DISPLAY_RANGE).toFixed(2),
+    projectileSpeed: (
+      getEffectiveProjectileSpeed(stats) / PLAYER_BASE_STATS.projectileSpeed
+    ).toFixed(2),
+    luck: stats.luck.toFixed(2),
   };
 }

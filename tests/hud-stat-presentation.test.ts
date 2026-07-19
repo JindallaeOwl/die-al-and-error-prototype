@@ -5,12 +5,12 @@ import { getHudStatValues } from '../src/ui/HudStatPresentation';
 describe('HUD stat presentation', () => {
   it('shows all six combat and movement values in HUD-friendly formats', () => {
     expect(getHudStatValues(PLAYER_BASE_STATS)).toEqual({
-      moveSpeed: '130',
-      fireRate: '2.8',
-      damage: '1.0',
-      range: '220',
-      projectileSpeed: '260',
-      luck: '0.0',
+      moveSpeed: '1.00',
+      fireRate: '2.80',
+      damage: '1.00',
+      range: '6.50',
+      projectileSpeed: '1.00',
+      luck: '0.00',
     });
   });
 
@@ -25,6 +25,6 @@ describe('HUD stat presentation', () => {
         projectileSpeed: 300,
         projectileSpeedMultiplier: 1.2,
       }),
-    ).toMatchObject({ damage: '3.0', fireRate: '2.0', projectileSpeed: '360' });
+    ).toMatchObject({ damage: '3.00', fireRate: '2.00', projectileSpeed: '1.38' });
   });
 });
