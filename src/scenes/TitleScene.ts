@@ -143,8 +143,9 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private createTitle(): void {
-    this.add
-      .text(GAME_WIDTH / 2, 39, t('title.name'), {
+    const titleGroup = this.add.container(GAME_WIDTH / 2, 39).setDepth(DEPTH.ui);
+    const title = this.add
+      .text(0, 0, t('title.name'), {
         fontFamily: gameFontStack(),
         fontSize: '50px',
         color: '#f7f3e8',
@@ -152,11 +153,10 @@ export class TitleScene extends Phaser.Scene {
         strokeThickness: 4,
         resolution: RENDER_SCALE,
       })
-      .setOrigin(0.5)
-      .setDepth(DEPTH.ui);
+      .setOrigin(0.5);
 
-    this.subtitleText = this.add
-      .text(GAME_WIDTH / 2, 78, '404% roguelike action', {
+    const subtitle = this.add
+      .text(0, 31, '404% roguelike action', {
         fontFamily: gameFontStack(),
         fontSize: '8px',
         color: '#ffcf75',
@@ -164,8 +164,27 @@ export class TitleScene extends Phaser.Scene {
         strokeThickness: 2,
         resolution: RENDER_SCALE,
       })
-      .setOrigin(0.5)
-      .setDepth(DEPTH.ui);
+      .setOrigin(0.5);
+    this.subtitleText = subtitle;
+    titleGroup.add([title, subtitle]);
+
+    titleGroup.setAngle(-0.35);
+    this.tweens.add({
+      targets: titleGroup,
+      y: 37,
+      duration: 1650,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+    this.tweens.add({
+      targets: titleGroup,
+      angle: 0.35,
+      duration: 2350,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
 
     this.hintText = this.add
       .text(GAME_WIDTH / 2, 258, '', {
