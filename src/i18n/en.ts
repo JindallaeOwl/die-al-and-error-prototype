@@ -112,6 +112,7 @@ export const en: TranslationTree = {
     boss: 'Boss',
   },
   shop: {
+    greeting: 'Welcome! Take a look around.',
     products: {
       heart: {
         name: 'Healing Heart',

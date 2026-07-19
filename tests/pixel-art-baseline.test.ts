@@ -15,7 +15,7 @@ import {
   PIXEL_GRID_SIZE,
 } from '../src/config/gameConfig';
 import { calculateFitViewport } from '../src/utils/render';
-import { BOLD_PIXELS_FONT_FAMILY, gameFontStack } from '../src/i18n';
+import { BOLD_PIXELS_FONT_FAMILY, KOREAN_GAME_FONT_FAMILY, gameFontStack } from '../src/i18n';
 import { resolvePlayerFacing } from '../src/utils/playerFacing';
 
 describe('pixel art baseline', () => {
@@ -118,6 +118,10 @@ describe('pixel art baseline', () => {
 
   it('uses BoldPixels for Latin UI and keeps the Korean fallback fonts', () => {
     expect(gameFontStack()).toContain(`"${BOLD_PIXELS_FONT_FAMILY}"`);
+    expect(gameFontStack()).toContain(`"${KOREAN_GAME_FONT_FAMILY}"`);
+    expect(gameFontStack().indexOf(BOLD_PIXELS_FONT_FAMILY)).toBeLessThan(
+      gameFontStack().indexOf(KOREAN_GAME_FONT_FAMILY),
+    );
     expect(gameFontStack()).toContain('Noto Sans KR');
     expect(gameFontStack()).toContain('Malgun Gothic');
   });

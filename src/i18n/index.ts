@@ -10,6 +10,7 @@ const KOREAN_FONT_FALLBACK =
   'Galmuri11, DungGeunMo, "NeoDunggeunmo Pro", DOSGothic, DNFBitBitv2, Pretendard, "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", Inter, "Segoe UI", Arial, sans-serif';
 
 export const BOLD_PIXELS_FONT_FAMILY = 'BoldPixels';
+export const KOREAN_GAME_FONT_FAMILY = 'ProjectDungGeunMo';
 
 let currentLocale: Locale = loadStoredLocale();
 
@@ -37,7 +38,7 @@ export function t(key: string, params: TranslationParams = {}): string {
 }
 
 export function gameFontStack(): string {
-  return `"${BOLD_PIXELS_FONT_FAMILY}", ${KOREAN_FONT_FALLBACK}`;
+  return `"${BOLD_PIXELS_FONT_FAMILY}", "${KOREAN_GAME_FONT_FAMILY}", ${KOREAN_FONT_FALLBACK}`;
 }
 
 function lookup(tree: TranslationTree, key: string): TranslationValue | undefined {

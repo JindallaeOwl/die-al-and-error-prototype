@@ -8,7 +8,7 @@ import {
   PLAYER_SPRITESHEET_ASSETS,
   SHOP_NPC_IMAGE_ASSETS,
 } from '../config/assets';
-import { BOLD_PIXELS_FONT_FAMILY } from '../i18n';
+import { BOLD_PIXELS_FONT_FAMILY, KOREAN_GAME_FONT_FAMILY } from '../i18n';
 import { createPlaceholderAnimations, createPlaceholderTextures } from '../systems/AssetFactory';
 import { applyRenderScale } from '../utils/render';
 
@@ -57,8 +57,10 @@ export class BootScene extends Phaser.Scene {
     applyRenderScale(this);
     createPlaceholderTextures(this);
     createPlaceholderAnimations(this);
-    void document.fonts
-      .load(`16px "${BOLD_PIXELS_FONT_FAMILY}"`)
+    void Promise.all([
+      document.fonts.load(`16px "${BOLD_PIXELS_FONT_FAMILY}"`),
+      document.fonts.load(`16px "${KOREAN_GAME_FONT_FAMILY}"`, '한글'),
+    ])
       .catch(() => [])
       .then(() => this.scene.start('TitleScene'));
   }

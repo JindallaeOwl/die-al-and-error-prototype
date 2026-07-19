@@ -26,6 +26,8 @@ import { DIRECTIONS, type Direction } from '../utils/directions';
 import { randomInt, randomOf, type RandomSource } from '../utils/random';
 import { BossRewardSystem } from './BossRewardSystem';
 import type { ShopSystem } from './ShopSystem';
+import { createShopNpcSpeechBubble } from '../ui/ShopNpcSpeechBubble';
+import { t } from '../i18n';
 import {
   canEnemiesActAfterRoomEntry,
   getRoomEntryEnemyAiResumeAt,
@@ -120,7 +122,7 @@ export class RoomController {
     }
 
     if (room.type === 'shop') {
-      this.spawnShop(room);
+      this.spawnShop(room, true);
     }
 
     if (room.type === 'treasure') {
@@ -166,7 +168,7 @@ export class RoomController {
 
     this.shopOffers.clear(true, true);
     this.shopDecorations.clear(true, true);
-    this.spawnShop(room);
+    this.spawnShop(room, false);
     return true;
   }
 
@@ -283,7 +285,7 @@ export class RoomController {
     });
   }
 
-  private spawnShop(room: RoomNode): void {
+  private spawnShop(room: RoomNode, showGreeting: boolean): void {
     if (!room.shopOffers) {
       room.shopOffers = this.shopSystem.createOffers(this.runState.collectedItemIds);
     }
@@ -299,6 +301,16 @@ export class RoomController {
     npc.setDisplaySize(SHOP_NPC_DISPLAY_SIZE, SHOP_NPC_DISPLAY_SIZE);
     npc.setDepth(DEPTH.actor);
     this.shopDecorations.add(npc);
+
+    if (showGreeting) {
+      const greeting = createShopNpcSpeechBubble(
+        this.scene,
+        SHOP_NPC_POSITION.x,
+        SHOP_NPC_POSITION.y - 36,
+        t('shop.greeting'),
+      );
+      this.shopDecorations.add(greeting);
+    }
 
     for (const offer of room.shopOffers) {
       if (offer.purchased) {

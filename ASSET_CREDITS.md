@@ -1,5 +1,16 @@
 # Asset Credits
 
+## DungGeunMo WebFont
+
+- Font: 둥근모꼴+Fixedsys 1.3 (`DungGeunMo`)
+- Webfont editor/distributor: CACTUS (orioncactus)
+- Original typefaces: 둥근모꼴 by 김중태; Fixedsys Excelsior by Darien Gavin Valentine
+- Source: https://cactus.tistory.com/193
+- License: Public Domain
+- Permissions stated by the distributor: redistribution, modification, and commercial use
+- File used: `DungGeunMo.woff2`
+- Usage: Korean characters in the game UI
+
 ## Original Potato Merchant Artwork
 
 - `idle-a.png`, `idle-b.png`: original 48×48 pixel art created by the project owner

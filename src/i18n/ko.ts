@@ -112,6 +112,7 @@ export const ko: TranslationTree = {
     boss: '보스',
   },
   shop: {
+    greeting: '어서 와! 천천히 둘러봐.',
     products: {
       heart: {
         name: '회복 하트',
