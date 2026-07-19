@@ -18,6 +18,11 @@ export class RewardPickup extends Phaser.Physics.Arcade.Sprite {
     super(scene, x, y, textureForReward(reward));
     this.reward = reward;
     scene.add.existing(this);
+
+    if (this.isChest && this.texture.has('0')) {
+      this.setFrame('0');
+    }
+
     scene.physics.add.existing(this);
     this.setDepth(DEPTH.item);
     const baseScale = reward.kind === 'chest' ? 1 : 0.5;
@@ -29,7 +34,13 @@ export class RewardPickup extends Phaser.Physics.Arcade.Sprite {
 
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setAllowGravity(false);
-    body.setCircle(this.isChest ? 13 : 10, this.isChest ? 3 : 0, this.isChest ? 3 : 0);
+    const chestOffsetX = this.width >= 64 ? 19 : 3;
+    const chestOffsetY = this.height >= 64 ? 27 : 3;
+    body.setCircle(
+      this.isChest ? 13 : 10,
+      this.isChest ? chestOffsetX : 0,
+      this.isChest ? chestOffsetY : 0,
+    );
 
     if (this.isChest) {
       body.setDrag(CHEST_PUSH_DRAG, CHEST_PUSH_DRAG);
@@ -63,7 +74,13 @@ export class RewardPickup extends Phaser.Physics.Arcade.Sprite {
 
     this.chestOpened = true;
     this.clearTint();
-    this.setTexture(TextureKeys.chestOpenPickup);
+
+    if (this.texture.key === TextureKeys.chestPickup && this.texture.has('1')) {
+      this.setFrame('1');
+    } else {
+      this.setTexture(TextureKeys.chestOpenPickup);
+    }
+
     return true;
   }
 

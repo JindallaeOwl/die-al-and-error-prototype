@@ -630,6 +630,10 @@ function createFiveCoinTexture(scene: Phaser.Scene): void {
 }
 
 function createChestTexture(scene: Phaser.Scene): void {
+  if (scene.textures.exists(TextureKeys.chestPickup)) {
+    return;
+  }
+
   const closed = scene.add.graphics();
   closed.fillStyle(0x05090e, 0.48);
   closed.fillRect(5, 29, 22, 2);

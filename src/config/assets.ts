@@ -48,6 +48,15 @@ export const HUD_ICON_ASSETS = [
   { key: TextureKeys.hudCoin, path: 'assets/icons/nikoichu/hud-coin.png' },
 ] as const;
 
+export const PICKUP_SPRITESHEET_ASSETS = [
+  {
+    key: TextureKeys.chestPickup,
+    path: 'assets/pickups/treasure-chest.png',
+    frameWidth: 64,
+    frameHeight: 64,
+  },
+] as const;
+
 export const PLAYER_SPRITESHEET_ASSETS = [
   {
     key: TextureKeys.playerYellowIdle,
