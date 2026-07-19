@@ -9,6 +9,8 @@ import {
 } from '../systems/ChestPushRules';
 import type { RewardDrop } from '../systems/RewardSystem';
 
+const CHEST_DISPLAY_SCALE = 0.7;
+
 export class RewardPickup extends Phaser.Physics.Arcade.Sprite {
   readonly reward: RewardDrop;
   private chestOpened = false;
@@ -25,7 +27,7 @@ export class RewardPickup extends Phaser.Physics.Arcade.Sprite {
 
     scene.physics.add.existing(this);
     this.setDepth(DEPTH.item);
-    const baseScale = reward.kind === 'chest' ? 1 : 0.5;
+    const baseScale = reward.kind === 'chest' ? CHEST_DISPLAY_SCALE : 0.5;
     this.setScale(baseScale);
 
     if (!this.isChest) {
