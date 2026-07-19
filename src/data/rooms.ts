@@ -1,6 +1,6 @@
 import type { EnemyId } from './enemies';
 
-export type RoomType = 'start' | 'combat' | 'reward' | 'treasure' | 'boss';
+export type RoomType = 'start' | 'combat' | 'shop' | 'treasure' | 'boss';
 
 export interface EnemySpawn {
   enemyId: EnemyId;
@@ -28,9 +28,9 @@ export const START_ROOM_TEMPLATE: RoomTemplate = {
   spawnSets: [[]],
 };
 
-export const REWARD_ROOM_TEMPLATE: RoomTemplate = {
-  id: 'small-cache',
-  roomType: 'reward',
+export const SHOP_ROOM_TEMPLATE: RoomTemplate = {
+  id: 'yellow-market',
+  roomType: 'shop',
   accentColor: 0xcaa64f,
   spawnSets: [[]],
 };
@@ -150,8 +150,8 @@ export function getRoomTemplate(templateId: string): RoomTemplate {
     return START_ROOM_TEMPLATE;
   }
 
-  if (templateId === REWARD_ROOM_TEMPLATE.id) {
-    return REWARD_ROOM_TEMPLATE;
+  if (templateId === SHOP_ROOM_TEMPLATE.id) {
+    return SHOP_ROOM_TEMPLATE;
   }
 
   if (templateId === TREASURE_ROOM_TEMPLATE.id) {

@@ -118,7 +118,7 @@ export const ITEM_PREVIEW_RADIUS = 48;
 
 export const INVENTORY_TUNING = {
   maxConsumable: 99,
-  treasureRoomKeyCost: 1,
+  specialRoomKeyCost: 1,
 };
 
 export const BEAM_TUNING = {

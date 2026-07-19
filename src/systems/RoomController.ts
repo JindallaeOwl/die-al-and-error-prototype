@@ -2,6 +2,7 @@
 import { Door } from '../entities/Door';
 import { ItemPickup } from '../entities/ItemPickup';
 import { Obstacle } from '../entities/Obstacle';
+import { ShopOffer } from '../entities/ShopOffer';
 import { createEnemy } from '../entities/enemies/EnemyFactory';
 import type { BaseEnemy } from '../entities/enemies/BaseEnemy';
 import {
@@ -16,12 +17,15 @@ import {
 } from '../config/gameConfig';
 import { PASSIVE_ITEMS } from '../data/items';
 import { getRoomTemplate } from '../data/rooms';
+import { SHOP_NPC_POSITION, SHOP_OFFER_POSITIONS } from '../data/shop';
+import { TextureKeys } from '../config/assets';
 import type { ItemSystem } from './ItemSystem';
 import type { DungeonManager, RoomNode } from './DungeonManager';
 import type { RunState } from './RunState';
 import { DIRECTIONS, type Direction } from '../utils/directions';
 import { randomInt, randomOf, type RandomSource } from '../utils/random';
 import { BossRewardSystem } from './BossRewardSystem';
+import type { ShopSystem } from './ShopSystem';
 import {
   canEnemiesActAfterRoomEntry,
   getRoomEntryEnemyAiResumeAt,
@@ -35,6 +39,7 @@ interface RoomControllerConfig {
   enemies: Phaser.Physics.Arcade.Group;
   items: Phaser.Physics.Arcade.Group;
   itemSystem: ItemSystem;
+  shopSystem: ShopSystem;
   runState: RunState;
   onRoomCleared: (room: RoomNode) => void;
   onEnemyDefeated: (score: number) => void;
@@ -47,6 +52,7 @@ export class RoomController {
   readonly walls: Phaser.Physics.Arcade.StaticGroup;
   readonly doors: Phaser.Physics.Arcade.Group;
   readonly obstacles: Phaser.Physics.Arcade.StaticGroup;
+  readonly shopOffers: Phaser.GameObjects.Group;
 
   private readonly scene: Phaser.Scene;
   private readonly dungeon: DungeonManager;
@@ -54,6 +60,7 @@ export class RoomController {
   private readonly items: Phaser.Physics.Arcade.Group;
   private readonly itemSystem: ItemSystem;
   private readonly bossRewardSystem: BossRewardSystem;
+  private readonly shopSystem: ShopSystem;
   private readonly runState: RunState;
   private readonly onRoomCleared: (room: RoomNode) => void;
   private readonly onEnemyDefeated: (score: number) => void;
@@ -62,6 +69,7 @@ export class RoomController {
   private readonly random: RandomSource;
   private readonly doorSprites = new Map<Direction, Door>();
   private readonly floorGraphics: Phaser.GameObjects.Graphics;
+  private readonly shopDecorations: Phaser.GameObjects.Group;
   private enemyAiResumeAt = 0;
 
   constructor(config: RoomControllerConfig) {
@@ -71,6 +79,7 @@ export class RoomController {
     this.items = config.items;
     this.itemSystem = config.itemSystem;
     this.bossRewardSystem = new BossRewardSystem(config.itemSystem);
+    this.shopSystem = config.shopSystem;
     this.runState = config.runState;
     this.onRoomCleared = config.onRoomCleared;
     this.onEnemyDefeated = config.onEnemyDefeated;
@@ -83,6 +92,8 @@ export class RoomController {
     this.walls = this.scene.physics.add.staticGroup();
     this.doors = this.scene.physics.add.group({ allowGravity: false, immovable: true });
     this.obstacles = this.scene.physics.add.staticGroup();
+    this.shopOffers = this.scene.add.group();
+    this.shopDecorations = this.scene.add.group();
 
     this.createWalls();
     this.createDoors();
@@ -92,6 +103,8 @@ export class RoomController {
     this.enemies.clear(true, true);
     this.items.clear(true, true);
     this.obstacles.clear(true, true);
+    this.shopOffers.clear(true, true);
+    this.shopDecorations.clear(true, true);
 
     const room = this.dungeon.getCurrentRoom();
     const template = getRoomTemplate(room.templateId);
@@ -106,8 +119,8 @@ export class RoomController {
       this.spawnCombatRoom(room, entryPosition);
     }
 
-    if (room.type === 'reward' && !room.rewardClaimed) {
-      this.spawnReward(room);
+    if (room.type === 'shop') {
+      this.spawnShop(room);
     }
 
     if (room.type === 'treasure') {
@@ -257,19 +270,26 @@ export class RoomController {
     });
   }
 
-  private spawnReward(room: RoomNode): void {
-    if (!room.rewardItemId) {
-      room.rewardItemId = this.itemSystem.pickRewardItem(this.runState.collectedItemIds).id;
+  private spawnShop(room: RoomNode): void {
+    if (!room.shopOffers) {
+      room.shopOffers = this.shopSystem.createOffers(this.runState.collectedItemIds);
     }
 
-    const item = PASSIVE_ITEMS.find((candidate) => candidate.id === room.rewardItemId);
+    const npc = this.scene.add.image(SHOP_NPC_POSITION.x, SHOP_NPC_POSITION.y, TextureKeys.shopNpc);
+    npc.setDepth(DEPTH.actor);
+    this.shopDecorations.add(npc);
 
-    if (!item) {
-      return;
+    for (const offer of room.shopOffers) {
+      if (offer.purchased) {
+        continue;
+      }
+
+      const position = SHOP_OFFER_POSITIONS[offer.slot];
+
+      if (position) {
+        this.shopOffers.add(new ShopOffer(this.scene, position.x, position.y, offer));
+      }
     }
-
-    const pickup = new ItemPickup(this.scene, GAME_CENTER_X, GAME_CENTER_Y, item);
-    this.items.add(pickup);
   }
 
   private spawnTreasure(room: RoomNode): void {
@@ -277,11 +297,11 @@ export class RoomController {
       return;
     }
 
-    if (!room.rewardItemId) {
-      room.rewardItemId = this.itemSystem.pickTreasureItem(this.runState.collectedItemIds).id;
+    if (!room.treasureItemId) {
+      room.treasureItemId = this.itemSystem.pickTreasureItem(this.runState.collectedItemIds).id;
     }
 
-    const item = PASSIVE_ITEMS.find((candidate) => candidate.id === room.rewardItemId);
+    const item = PASSIVE_ITEMS.find((candidate) => candidate.id === room.treasureItemId);
 
     if (item) {
       this.items.add(new ItemPickup(this.scene, GAME_CENTER_X, GAME_CENTER_Y, item));
@@ -438,13 +458,16 @@ export class RoomController {
 
       const hasExit = room.exits.includes(direction);
       const targetRoom = hasExit ? this.dungeon.getNeighbor(room, direction) : null;
-      const isLockedTreasure = targetRoom?.type === 'treasure' && !targetRoom.treasureUnlocked;
+      const isLockedSpecialRoom =
+        (targetRoom?.type === 'shop' || targetRoom?.type === 'treasure') &&
+        !targetRoom.specialRoomUnlocked;
       door.setVisible(hasExit);
       door.setActive(hasExit);
       door.setOpen(room.cleared && !forceClosed, requireFreshEntry);
+      door.clearTint();
 
-      if (hasExit && isLockedTreasure && room.cleared) {
-        door.setTint(0x7f6bd9);
+      if (hasExit && isLockedSpecialRoom && room.cleared) {
+        door.setTint(targetRoom.type === 'shop' ? 0xcaa64f : 0x7f6bd9);
       }
 
       const body = door.body as Phaser.Physics.Arcade.Body;

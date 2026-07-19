@@ -205,7 +205,7 @@ export class Hud {
       const x = originX + (room.coord.x - minX) * (size + gap);
       const y = originY + (room.coord.y - minY) * (size + gap);
       const color =
-        room.type === 'reward'
+        room.type === 'shop'
           ? 0xf3c766
           : room.type === 'treasure'
             ? 0xb59cff

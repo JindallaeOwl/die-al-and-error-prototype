@@ -13,9 +13,26 @@ describe('DungeonManager', () => {
     expect(start.exits.length).toBeGreaterThanOrEqual(2);
     expect(rooms.filter((room) => room.type === 'combat')).toHaveLength(3);
     expect(rooms.filter((room) => room.type === 'boss')).toHaveLength(1);
-    expect(rooms.some((room) => room.type === 'reward')).toBe(true);
+    expect(rooms.some((room) => room.type === 'shop')).toBe(true);
     expect(rooms.some((room) => room.type === 'treasure')).toBe(true);
+    expect(
+      rooms
+        .filter((room) => room.type === 'shop' || room.type === 'treasure')
+        .every((room) => room.specialRoomUnlocked),
+    ).toBe(true);
     expect(getReachableRoomIds(dungeon)).toEqual(new Set(rooms.map((room) => room.id)));
+  });
+
+  it('locks shop and treasure rooms starting on the second floor', () => {
+    const dungeon = new DungeonManager(() => 0);
+    dungeon.generateFloor(2);
+
+    const specialRooms = dungeon
+      .getRooms()
+      .filter((room) => room.type === 'shop' || room.type === 'treasure');
+
+    expect(specialRooms).toHaveLength(2);
+    expect(specialRooms.every((room) => !room.specialRoomUnlocked)).toBe(true);
   });
 
   it('alternates boss templates by floor', () => {

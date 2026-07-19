@@ -4,10 +4,12 @@ import type { DungeonManager, RoomNode } from './DungeonManager';
 import { spendConsumable } from './InventorySystem';
 import type { RunState } from './RunState';
 
+export type KeyLockedRoomType = Extract<RoomNode['type'], 'shop' | 'treasure'>;
+
 export type RoomNavigationResult =
   | { status: 'no-target' }
-  | { status: 'key-needed' }
-  | { status: 'moved'; room: RoomNode; treasureUnlocked: boolean };
+  | { status: 'key-needed'; roomType: KeyLockedRoomType }
+  | { status: 'moved'; room: RoomNode; unlockedRoomType: KeyLockedRoomType | null };
 
 export class RoomNavigationSystem {
   constructor(private readonly dungeon: DungeonManager) {}
@@ -19,22 +21,22 @@ export class RoomNavigationSystem {
       return { status: 'no-target' };
     }
 
-    let treasureUnlocked = false;
+    let unlockedRoomType: KeyLockedRoomType | null = null;
 
-    if (targetRoom.type === 'treasure' && !targetRoom.treasureUnlocked) {
+    if (isKeyLockedRoom(targetRoom) && !targetRoom.specialRoomUnlocked) {
       const updatedInventory = spendConsumable(
         runState.inventory,
         'keys',
-        INVENTORY_TUNING.treasureRoomKeyCost,
+        INVENTORY_TUNING.specialRoomKeyCost,
       );
 
       if (!updatedInventory) {
-        return { status: 'key-needed' };
+        return { status: 'key-needed', roomType: targetRoom.type };
       }
 
       runState.inventory = updatedInventory;
       this.dungeon.unlockRoom(targetRoom.id);
-      treasureUnlocked = true;
+      unlockedRoomType = targetRoom.type;
     }
 
     const room = this.dungeon.move(direction);
@@ -43,6 +45,10 @@ export class RoomNavigationSystem {
       return { status: 'no-target' };
     }
 
-    return { status: 'moved', room, treasureUnlocked };
+    return { status: 'moved', room, unlockedRoomType };
   }
+}
+
+function isKeyLockedRoom(room: RoomNode): room is RoomNode & { type: KeyLockedRoomType } {
+  return room.type === 'shop' || room.type === 'treasure';
 }

@@ -6,6 +6,7 @@ import { FloorExit } from '../entities/FloorExit';
 import { ItemPickup } from '../entities/ItemPickup';
 import { Player, type BeamFiredEvent, type PlayerControls } from '../entities/Player';
 import { RewardPickup } from '../entities/RewardPickup';
+import { ShopOffer } from '../entities/ShopOffer';
 import type { BaseEnemy } from '../entities/enemies/BaseEnemy';
 import {
   BEAM_TUNING,
@@ -17,6 +18,7 @@ import {
   ITEM_PREVIEW_RADIUS,
 } from '../config/gameConfig';
 import { PASSIVE_ITEMS, PRISM_LANCE_ITEM_ID, QUAD_SHOT_ITEM_ID } from '../data/items';
+import { getShopProduct, SHOP_INTERACTION_RADIUS, type ShopProductDefinition } from '../data/shop';
 import { t, toggleLocale } from '../i18n';
 import { AudioSystem } from '../systems/AudioSystem';
 import { BombSystem } from '../systems/BombSystem';
@@ -29,6 +31,7 @@ import { RoomController } from '../systems/RoomController';
 import { RoomNavigationSystem } from '../systems/RoomNavigationSystem';
 import { getRoomTransitionPresentation } from '../systems/RoomTransitionRules';
 import { RoomTransitionSystem } from '../systems/RoomTransitionSystem';
+import { ShopSystem } from '../systems/ShopSystem';
 import { advanceRunToNextFloor } from '../systems/RunProgressionSystem';
 import {
   getSecretSynergySpawnPositions,
@@ -55,6 +58,7 @@ export class GameScene extends Phaser.Scene {
   private dungeon!: DungeonManager;
   private itemSystem!: ItemSystem;
   private rewardSystem!: RewardSystem;
+  private shopSystem!: ShopSystem;
   private roomNavigation!: RoomNavigationSystem;
   private roomTransitions!: RoomTransitionSystem;
   private effects!: EffectsSystem;
@@ -67,6 +71,7 @@ export class GameScene extends Phaser.Scene {
   private debugKey?: Phaser.Input.Keyboard.Key;
   private localeKey?: Phaser.Input.Keyboard.Key;
   private bombKey?: Phaser.Input.Keyboard.Key;
+  private interactKey?: Phaser.Input.Keyboard.Key;
   private secretCodeTracker!: SecretCodeTracker;
   private debugVisible = false;
   private nextDoorAt = 0;
@@ -145,6 +150,7 @@ export class GameScene extends Phaser.Scene {
     this.dungeon = new DungeonManager();
     this.itemSystem = new ItemSystem();
     this.rewardSystem = new RewardSystem();
+    this.shopSystem = new ShopSystem(this.itemSystem);
     this.roomNavigation = new RoomNavigationSystem(this.dungeon);
     this.effects = new EffectsSystem(this);
     this.audio = new AudioSystem();
@@ -173,6 +179,7 @@ export class GameScene extends Phaser.Scene {
       enemies: this.enemies,
       items: this.items,
       itemSystem: this.itemSystem,
+      shopSystem: this.shopSystem,
       runState: this.runState,
       onRoomCleared: (room) => this.handleRoomCleared(room),
       onEnemyDefeated: (score) => this.handleEnemyDefeated(score),
@@ -257,6 +264,10 @@ export class GameScene extends Phaser.Scene {
       this.tryUseBomb();
     }
 
+    if (this.interactKey && Phaser.Input.Keyboard.JustDown(this.interactKey)) {
+      this.tryPurchaseNearestShopOffer();
+    }
+
     this.player.update(time, this.controls, this.playerBullets);
 
     const enemiesCanAct = this.roomController.canEnemiesAct(time);
@@ -312,6 +323,7 @@ export class GameScene extends Phaser.Scene {
     this.debugKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F3);
     this.localeKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.L);
     this.bombKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+    this.interactKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
     keyboard.on('keydown', this.handleSecretCodeKey, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       keyboard.off('keydown', this.handleSecretCodeKey, this);
@@ -544,8 +556,15 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    if (navigation.treasureUnlocked) {
-      this.hud.showMessage(t('messages.treasureUnlocked'), 1200);
+    if (navigation.unlockedRoomType) {
+      this.hud.showMessage(
+        t(
+          navigation.unlockedRoomType === 'shop'
+            ? 'messages.shopUnlocked'
+            : 'messages.treasureUnlocked',
+        ),
+        1200,
+      );
     }
 
     const moved = navigation.room;
@@ -561,6 +580,22 @@ export class GameScene extends Phaser.Scene {
   }
 
   private updateItemHint(): void {
+    const shopOffer = this.findNearestShopOffer();
+
+    if (shopOffer) {
+      const product = getShopProduct(shopOffer.offer.productId);
+
+      if (product) {
+        this.hud.showItemHint(
+          t('messages.shopOffer', {
+            name: this.getShopProductName(product),
+            price: shopOffer.offer.price,
+          }),
+        );
+        return;
+      }
+    }
+
     let nearest: ItemPickup | null = null;
     let nearestDistSq = ITEM_PREVIEW_RADIUS * ITEM_PREVIEW_RADIUS;
 
@@ -607,9 +642,7 @@ export class GameScene extends Phaser.Scene {
     this.player.setAttackProfile(this.runState.attackProfile);
     const currentRoom = this.dungeon.getCurrentRoom();
 
-    if (pickup.source === 'room' && currentRoom.type === 'reward') {
-      this.dungeon.markCurrentRewardClaimed();
-    } else if (pickup.source === 'room' && currentRoom.type === 'treasure') {
+    if (pickup.source === 'room' && currentRoom.type === 'treasure') {
       this.dungeon.markCurrentTreasureClaimed();
     } else if (pickup.source === 'boss' && currentRoom.type === 'boss') {
       this.dungeon.markCurrentBossRewardClaimed();
@@ -625,6 +658,82 @@ export class GameScene extends Phaser.Scene {
     this.effects.pickup(pickup.x, pickup.y);
     this.audio.play('pickup');
     pickup.destroy();
+  }
+
+  private findNearestShopOffer(): ShopOffer | null {
+    if (this.dungeon.getCurrentRoom().type !== 'shop') {
+      return null;
+    }
+
+    let nearest: ShopOffer | null = null;
+    let nearestDistSq = SHOP_INTERACTION_RADIUS * SHOP_INTERACTION_RADIUS;
+
+    for (const offer of this.roomController.shopOffers.getChildren() as ShopOffer[]) {
+      if (!offer.active) {
+        continue;
+      }
+
+      const dx = offer.x - this.player.x;
+      const dy = offer.y - this.player.y;
+      const distSq = dx * dx + dy * dy;
+
+      if (distSq <= nearestDistSq) {
+        nearest = offer;
+        nearestDistSq = distSq;
+      }
+    }
+
+    return nearest;
+  }
+
+  private tryPurchaseNearestShopOffer(): void {
+    const offerObject = this.findNearestShopOffer();
+
+    if (!offerObject) {
+      return;
+    }
+
+    const result = this.shopSystem.purchase(this.runState, offerObject.offer);
+
+    if (result.status === 'coins-needed') {
+      this.hud.showMessage(t('messages.shopCoinsNeeded', { price: result.price }), 1200);
+      return;
+    }
+
+    if (result.status === 'health-full') {
+      this.hud.showMessage(t('messages.shopHealthFull'), 1200);
+      return;
+    }
+
+    if (result.status === 'resource-full') {
+      this.hud.showMessage(t('messages.shopResourceFull'), 1200);
+      return;
+    }
+
+    if (result.status !== 'purchased') {
+      return;
+    }
+
+    if (result.acquisition?.newlyUnlockedAbilityId === 'charge-beam') {
+      this.player.hasChargeBeam = true;
+    }
+
+    this.player.setStats(this.runState.stats);
+    this.player.setAttackProfile(this.runState.attackProfile);
+    const productName = this.getShopProductName(result.product);
+    this.hud.showMessage(t('messages.shopPurchased', { name: productName }), 1800);
+    this.effects.pickup(offerObject.x, offerObject.y);
+    this.audio.play('pickup');
+    offerObject.destroy();
+  }
+
+  private getShopProductName(product: ShopProductDefinition): string {
+    if (product.kind !== 'passive') {
+      return t(product.nameKey);
+    }
+
+    const item = PASSIVE_ITEMS.find((candidate) => candidate.id === product.itemId);
+    return item ? t(item.nameKey) : product.itemId;
   }
 
   private collectReward(pickup: RewardPickup): void {

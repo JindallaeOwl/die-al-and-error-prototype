@@ -37,6 +37,7 @@ export const TextureKeys = {
   floorTile: 'floor-tile',
   wall: 'wall',
   obstacleCrate: 'obstacle-crate',
+  shopNpc: 'shop-npc',
 } as const;
 
 export const HUD_ICON_ASSETS = [

@@ -72,13 +72,19 @@ export const en: TranslationTree = {
     floorCleared: 'Floor cleared',
     nextFloorOpening: 'The passage to the next floor is open',
     stageClear: 'Stage clear',
-    cacheFound: 'Cache found',
+    shopRoom: 'Shop',
     treasureRoom: 'Treasure room',
     bossRoom: 'Boss room',
     bossPhaseTwo: 'Fault Warden: Phase II',
     rootKernelPhaseTwo: 'ROOT KERNEL: ROOT ACCESS OVERRIDE',
     treasureUnlocked: 'Treasure room unlocked',
+    shopUnlocked: 'Shop unlocked',
     keyNeeded: 'A key is needed',
+    shopOffer: '{name} · {price} coins · Press F to buy',
+    shopCoinsNeeded: 'Not enough coins (need {price})',
+    shopHealthFull: 'Health is already full',
+    shopResourceFull: 'You cannot carry any more',
+    shopPurchased: 'Purchased {name}',
     noBombs: 'No bombs left',
     rewardGain: '+{amount} {resource}',
     resourceFull: '{resource} is full',
@@ -101,9 +107,25 @@ export const en: TranslationTree = {
   roomTypes: {
     start: 'Start',
     combat: 'Combat',
-    reward: 'Cache',
+    shop: 'Shop',
     treasure: 'Treasure',
     boss: 'Boss',
+  },
+  shop: {
+    products: {
+      heart: {
+        name: 'Healing Heart',
+        description: 'Restores one full heart.',
+      },
+      key: {
+        name: 'Key',
+        description: 'Adds one key.',
+      },
+      bomb: {
+        name: 'Bomb',
+        description: 'Adds one bomb.',
+      },
+    },
   },
   items: {
     lifeSeed: {

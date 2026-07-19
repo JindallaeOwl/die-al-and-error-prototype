@@ -9,8 +9,8 @@ describe('RoomTransition presentation rules', () => {
     });
   });
 
-  it('returns the matching message for reward and treasure rooms', () => {
-    expect(getRoomTransitionPresentation('reward').messageKey).toBe('messages.cacheFound');
+  it('returns the matching message for shop and treasure rooms', () => {
+    expect(getRoomTransitionPresentation('shop').messageKey).toBe('messages.shopRoom');
     expect(getRoomTransitionPresentation('treasure').messageKey).toBe('messages.treasureRoom');
   });
 

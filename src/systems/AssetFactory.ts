@@ -31,6 +31,7 @@ export function createPlaceholderTextures(scene: Phaser.Scene): void {
   createFloorTile(scene);
   createWallTexture(scene);
   createObstacleTexture(scene);
+  createShopNpcTexture(scene);
 }
 
 function createPlayerCosmeticTextures(scene: Phaser.Scene): void {
@@ -720,5 +721,30 @@ function createObstacleTexture(scene: Phaser.Scene): void {
   graphics.lineBetween(18, 13, 22, 19);
   graphics.lineBetween(22, 19, 18, 24);
   graphics.generateTexture(TextureKeys.obstacleCrate, 40, 40);
+  graphics.destroy();
+}
+
+function createShopNpcTexture(scene: Phaser.Scene): void {
+  const graphics = scene.add.graphics();
+
+  graphics.fillStyle(0x05090e, 0.4);
+  graphics.fillEllipse(20, 39, 31, 6);
+  graphics.fillStyle(0x4a2f20, 1);
+  graphics.fillRect(8, 20, 24, 17);
+  graphics.fillStyle(0xcaa64f, 1);
+  graphics.fillRect(5, 17, 30, 7);
+  graphics.fillStyle(0xf3c766, 1);
+  graphics.fillRect(10, 4, 20, 20);
+  graphics.lineStyle(3, 0x4a2f20, 1);
+  graphics.strokeRect(10, 4, 20, 20);
+  graphics.fillStyle(0x17120d, 1);
+  graphics.fillRect(14, 12, 3, 3);
+  graphics.fillRect(23, 12, 3, 3);
+  graphics.lineStyle(2, 0x17120d, 1);
+  graphics.lineBetween(16, 19, 24, 19);
+  graphics.fillStyle(0xffe39a, 1);
+  graphics.fillRect(5, 2, 30, 5);
+  graphics.fillRect(10, 0, 20, 3);
+  graphics.generateTexture(TextureKeys.shopNpc, 40, 42);
   graphics.destroy();
 }

@@ -1,7 +1,7 @@
 import {
   BOSS_ROOM_TEMPLATES,
   COMBAT_ROOM_TEMPLATES,
-  REWARD_ROOM_TEMPLATE,
+  SHOP_ROOM_TEMPLATE,
   START_ROOM_TEMPLATE,
   TREASURE_ROOM_TEMPLATE,
   type RoomType,
@@ -9,6 +9,7 @@ import {
 import { DIRECTIONS, OPPOSITE_DIRECTION, type Direction, moveCoord } from '../utils/directions';
 import { randomOf, shuffled, type RandomSource } from '../utils/random';
 import type { RewardDrop } from './RewardSystem';
+import type { ShopOfferState } from '../data/shop';
 
 export interface PendingRoomReward {
   reward: RewardDrop;
@@ -29,9 +30,9 @@ export interface RoomNode {
   exits: Direction[];
   cleared: boolean;
   discovered: boolean;
-  rewardClaimed: boolean;
-  rewardItemId?: string;
-  treasureUnlocked: boolean;
+  specialRoomUnlocked: boolean;
+  shopOffers?: ShopOfferState[];
+  treasureItemId?: string;
   treasureClaimed: boolean;
   bossRewardClaimed: boolean;
   bossRewardItemId?: string;
@@ -89,7 +90,7 @@ export class DungeonManager {
     }
 
     this.addTreasureRoom(southCombat);
-    this.addRewardRoom(eastCombat);
+    this.addShopRoom(eastCombat);
     this.addBossRoom(cursor);
   }
 
@@ -151,10 +152,6 @@ export class DungeonManager {
     return true;
   }
 
-  markCurrentRewardClaimed(): void {
-    this.getCurrentRoom().rewardClaimed = true;
-  }
-
   markCurrentTreasureClaimed(): void {
     this.getCurrentRoom().treasureClaimed = true;
   }
@@ -175,7 +172,7 @@ export class DungeonManager {
     const room = this.rooms.get(roomId);
 
     if (room) {
-      room.treasureUnlocked = true;
+      room.specialRoomUnlocked = true;
     }
   }
 
@@ -201,8 +198,7 @@ export class DungeonManager {
       exits: [],
       cleared: type !== 'combat' && type !== 'boss',
       discovered: false,
-      rewardClaimed: false,
-      treasureUnlocked: type !== 'treasure',
+      specialRoomUnlocked: this.floor === 1 || (type !== 'shop' && type !== 'treasure'),
       treasureClaimed: false,
       bossRewardClaimed: false,
     };
@@ -285,7 +281,7 @@ export class DungeonManager {
     this.connectRooms(baseNode, treasureNode, direction);
   }
 
-  private addRewardRoom(preferredBase?: RoomNode): void {
+  private addShopRoom(preferredBase?: RoomNode): void {
     const baseNode =
       preferredBase && this.pickFreeDirection(preferredBase)
         ? preferredBase
@@ -301,12 +297,12 @@ export class DungeonManager {
       return;
     }
 
-    const rewardNode = this.createRoom(
+    const shopNode = this.createRoom(
       moveCoord(baseNode.coord, direction),
-      'reward',
-      REWARD_ROOM_TEMPLATE.id,
+      'shop',
+      SHOP_ROOM_TEMPLATE.id,
     );
-    this.connectRooms(baseNode, rewardNode, direction);
+    this.connectRooms(baseNode, shopNode, direction);
   }
 
   private addBossRoom(preferredBase: RoomNode): void {

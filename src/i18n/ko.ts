@@ -72,13 +72,19 @@ export const ko: TranslationTree = {
     floorCleared: '층 클리어',
     nextFloorOpening: '다음 층 구멍이 열렸습니다',
     stageClear: '스테이지 클리어',
-    cacheFound: '보급품 발견',
+    shopRoom: '상점방',
     treasureRoom: '보물방',
     bossRoom: '보스방',
     bossPhaseTwo: 'Fault Warden: 2페이즈',
     rootKernelPhaseTwo: 'ROOT KERNEL: 루트 권한 폭주',
     treasureUnlocked: '보물방 개방',
+    shopUnlocked: '상점방 개방',
     keyNeeded: '열쇠가 필요합니다',
+    shopOffer: '{name} · {price}코인 · F 구매',
+    shopCoinsNeeded: '코인이 부족합니다 (필요: {price})',
+    shopHealthFull: '체력이 이미 가득 찼습니다',
+    shopResourceFull: '더 이상 보유할 수 없습니다',
+    shopPurchased: '{name} 구매 완료',
     noBombs: '폭탄이 없습니다',
     rewardGain: '+{amount} {resource}',
     resourceFull: '{resource} 가득',
@@ -101,9 +107,25 @@ export const ko: TranslationTree = {
   roomTypes: {
     start: '시작',
     combat: '전투',
-    reward: '보상',
+    shop: '상점',
     treasure: '보물',
     boss: '보스',
+  },
+  shop: {
+    products: {
+      heart: {
+        name: '회복 하트',
+        description: '하트 1칸을 회복합니다.',
+      },
+      key: {
+        name: '열쇠',
+        description: '열쇠를 1개 얻습니다.',
+      },
+      bomb: {
+        name: '폭탄',
+        description: '폭탄을 1개 얻습니다.',
+      },
+    },
   },
   items: {
     lifeSeed: {

@@ -2,12 +2,12 @@ import type { RoomType } from '../data/rooms';
 
 export interface RoomTransitionPresentation {
   fadeInMs: number;
-  messageKey?: 'messages.cacheFound' | 'messages.treasureRoom' | 'messages.bossRoom';
+  messageKey?: 'messages.shopRoom' | 'messages.treasureRoom' | 'messages.bossRoom';
 }
 
 export function getRoomTransitionPresentation(roomType: RoomType): RoomTransitionPresentation {
-  if (roomType === 'reward') {
-    return { fadeInMs: 150, messageKey: 'messages.cacheFound' };
+  if (roomType === 'shop') {
+    return { fadeInMs: 150, messageKey: 'messages.shopRoom' };
   }
 
   if (roomType === 'treasure') {
