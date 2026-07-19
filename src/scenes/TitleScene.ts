@@ -169,8 +169,18 @@ export class TitleScene extends Phaser.Scene {
         resolution: getRenderScale(),
       })
       .setOrigin(0.5);
+    const betaLabel = this.add
+      .text(title.width / 2 - 1, 24, 'BETA', {
+        fontFamily: gameFontStack(),
+        fontSize: '7px',
+        color: '#ffcf75',
+        stroke: '#0d1117',
+        strokeThickness: 2,
+        resolution: getRenderScale(),
+      })
+      .setOrigin(1, 0.5);
     this.subtitleText = subtitle;
-    titleGroup.add([title, subtitle]);
+    titleGroup.add([title, subtitle, betaLabel]);
 
     titleGroup.setAngle(-0.35);
     this.tweens.add({

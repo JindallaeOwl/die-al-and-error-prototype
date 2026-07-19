@@ -8,6 +8,7 @@ import type { DungeonManager } from '../systems/DungeonManager';
 import type { RunState } from '../systems/RunState';
 import { getEffectiveDamage, getEffectiveFireRate } from '../systems/PlayerStatSystem';
 import { getHeartFillUnits } from '../utils/healthHearts';
+import { calculateExpandedMinimapCellLayout } from './MinimapLayout';
 import type { UiObjectRegistrar } from './UiCameraSystem';
 
 // Keep a small inset around the corner HUD so it remains easy to read at
@@ -242,12 +243,18 @@ export class Hud {
 
     this.lastMinimapSignature = signature;
     const progress = this.minimapExpansionProgress;
-    const size = Phaser.Math.Linear(6, 10, progress);
-    const gap = Phaser.Math.Linear(2, 3, progress);
     const minX = Math.min(...rooms.map((room) => room.coord.x));
     const maxX = Math.max(...rooms.map((room) => room.coord.x));
     const minY = Math.min(...rooms.map((room) => room.coord.y));
     const maxY = Math.max(...rooms.map((room) => room.coord.y));
+    const expandedLayout = calculateExpandedMinimapCellLayout(
+      maxX - minX + 1,
+      maxY - minY + 1,
+      EXPANDED_MINIMAP_PANEL_WIDTH,
+      EXPANDED_MINIMAP_PANEL_HEIGHT,
+    );
+    const size = Phaser.Math.Linear(6, expandedLayout.size, progress);
+    const gap = Phaser.Math.Linear(2, expandedLayout.gap, progress);
     const mapWidth = (maxX - minX) * (size + gap) + size;
     const mapHeight = (maxY - minY) * (size + gap) + size;
     const panelWidth = Phaser.Math.Linear(
@@ -308,9 +315,9 @@ export class Hud {
       .setDisplaySize(panelWidth, panelHeight)
       .setAlpha(Phaser.Math.Linear(1, 0.82, progress));
 
-    const runInfo = `${t('hud.time')} ${formatRunElapsedTime(runElapsedMs)}\n${t(
+    const runInfo = `${t('hud.time')}: ${formatRunElapsedTime(runElapsedMs)}\n${t(
       'hud.score',
-    )} ${score}`;
+    )}: ${score}`;
 
     if (this.runInfoText.text !== runInfo) {
       this.runInfoText.setText(runInfo);
