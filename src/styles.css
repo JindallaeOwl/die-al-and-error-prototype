@@ -125,6 +125,10 @@ canvas {
   color: #ffd166;
 }
 
+#developer-console-output .success {
+  color: #8ff0b3;
+}
+
 #developer-console-form {
   display: grid;
   grid-template-columns: auto 1fr;

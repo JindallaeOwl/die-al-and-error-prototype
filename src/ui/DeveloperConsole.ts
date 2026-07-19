@@ -2,6 +2,7 @@ import {
   getDeveloperConsoleSuggestions,
   type DeveloperConsoleSuggestion,
 } from '../systems/DeveloperConsoleAutocomplete';
+import { verifyDeveloperConsolePassword } from '../systems/DeveloperConsoleAccess';
 
 export interface DeveloperConsoleCommandResult {
   lines?: readonly string[];
@@ -50,6 +51,8 @@ export class DeveloperConsole {
   private selectedSuggestionIndex = 0;
   private historyIndex = 0;
   private browsingHistory = false;
+  private authenticated = false;
+  private authenticationPending = false;
   private windowInteraction: ConsoleWindowInteraction | null = null;
   private openState = false;
 
@@ -132,10 +135,11 @@ export class DeveloperConsole {
     this.openState = true;
     this.overlay.hidden = false;
     this.config.onOpenChanged(true);
+    this.updateAuthenticationInputMode();
 
     if (this.output.childElementCount === 0) {
       this.appendLine('GAMZAISSAC 개발자 콘솔');
-      this.appendLine('help를 입력하면 명령어 목록을 볼 수 있습니다.');
+      this.appendLine('명령어를 사용하려면 비밀번호를 입력해주세요.');
     }
 
     window.requestAnimationFrame(() => {
@@ -169,6 +173,11 @@ export class DeveloperConsole {
 
   private readonly handleInputKeyDown = (event: KeyboardEvent): void => {
     event.stopPropagation();
+
+    if (!this.authenticated && event.code === 'Tab') {
+      event.preventDefault();
+      return;
+    }
 
     if (event.code === 'Tab' && this.suggestions.length > 0) {
       event.preventDefault();
@@ -210,6 +219,12 @@ export class DeveloperConsole {
 
   private readonly handleInputChanged = (): void => {
     this.browsingHistory = false;
+
+    if (!this.authenticated) {
+      this.hideSuggestions();
+      return;
+    }
+
     this.updateSuggestions();
   };
 
@@ -231,9 +246,41 @@ export class DeveloperConsole {
 
   private readonly handleSubmit = (event: SubmitEvent): void => {
     event.preventDefault();
+    void this.submitInput();
+  };
+
+  private async submitInput(): Promise<void> {
     const command = this.input.value.trim();
 
-    if (!command) {
+    if (!command || this.authenticationPending) {
+      return;
+    }
+
+    if (!this.authenticated) {
+      this.input.value = '';
+      this.hideSuggestions();
+      this.authenticationPending = true;
+
+      let authenticated: boolean;
+
+      try {
+        authenticated = await verifyDeveloperConsolePassword(command);
+      } catch {
+        authenticated = false;
+      } finally {
+        this.authenticationPending = false;
+      }
+
+      if (authenticated) {
+        this.authenticated = true;
+        this.updateAuthenticationInputMode();
+        this.appendLine('확인되었습니다.', 'success');
+        this.appendLine('help를 입력하면 명령어 목록을 볼 수 있습니다.');
+      } else {
+        this.appendLine('알 수 없는 명령어입니다.');
+      }
+
+      this.input.focus();
       return;
     }
 
@@ -257,7 +304,7 @@ export class DeveloperConsole {
     for (const line of result.lines ?? []) {
       this.appendLine(line);
     }
-  };
+  }
 
   private readonly handleSuggestionPointerDown = (event: PointerEvent): void => {
     const target = event.target;
@@ -360,6 +407,11 @@ export class DeveloperConsole {
   }
 
   private updateSuggestions(): void {
+    if (!this.authenticated) {
+      this.hideSuggestions();
+      return;
+    }
+
     this.suggestions = getDeveloperConsoleSuggestions(this.input.value);
     this.selectedSuggestionIndex = 0;
     this.renderSuggestions();
@@ -473,6 +525,14 @@ export class DeveloperConsole {
     } catch {
       // Console movement and resizing still work when storage is unavailable.
     }
+  }
+
+  private updateAuthenticationInputMode(): void {
+    this.input.type = this.authenticated ? 'text' : 'password';
+    this.input.setAttribute(
+      'aria-label',
+      this.authenticated ? '개발자 명령어' : '개발자 콘솔 비밀번호',
+    );
   }
 
   private appendLine(text: string, className?: string): void {
