@@ -10,9 +10,9 @@ describe('stopScenesSafely', () => {
     });
     const reportError = vi.fn();
 
-    stopScenesSafely({ stop }, ['PauseScene', 'GameOverScene', 'GameScene'], reportError);
+    stopScenesSafely({ stop }, ['PauseScene', 'GameScene'], reportError);
 
-    expect(stop.mock.calls).toEqual([['PauseScene'], ['GameOverScene'], ['GameScene']]);
+    expect(stop.mock.calls).toEqual([['PauseScene'], ['GameScene']]);
     expect(reportError).toHaveBeenCalledOnce();
     expect(reportError).toHaveBeenCalledWith('PauseScene', expect.any(Error));
   });

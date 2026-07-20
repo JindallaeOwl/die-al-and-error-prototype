@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+import type Phaser from 'phaser';
 import { MusicKeys } from '../config/assets';
 import type { RoomType } from '../data/rooms';
 import { getGameSettings } from './GameSettings';

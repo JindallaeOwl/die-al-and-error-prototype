@@ -143,7 +143,6 @@ export class GameScene extends Phaser.Scene {
   };
   private readonly handleGameSceneResume = (): void => {
     this.pauseTransitionStarted = false;
-    this.godModeEnabled = false;
     this.minimapExpansion.cancelHold();
     this.hud.setMapExpanded(this.minimapExpansion.expanded);
   };
@@ -172,6 +171,9 @@ export class GameScene extends Phaser.Scene {
     this.floorTransitionStarted = false;
     this.playerDamageFeedbackQueued = false;
     this.pauseTransitionStarted = false;
+    // A new run always starts normally. Resuming after closing Pause or the
+    // developer console must not silently desynchronise this flag from Player.
+    this.godModeEnabled = false;
     this.runElapsedMs = 0;
     this.minimapExpansion = new MinimapExpansionController();
     this.secretCodeTracker = new SecretCodeTracker(KONAMI_CODE);

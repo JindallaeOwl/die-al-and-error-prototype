@@ -374,7 +374,7 @@ export class TitleScene extends Phaser.Scene {
     // Normally these Scenes are already stopped by TitleTransitionScene.
     // Repeating the cleanup here makes starting a new run safe even if an
     // earlier shutdown listener failed and left a paused Scene behind.
-    stopScenesSafely(this.scene.manager, ['PauseScene', 'GameOverScene', 'GameScene']);
+    stopScenesSafely(this.scene.manager, ['PauseScene', 'GameScene']);
 
     try {
       this.scene.start('GameScene');

@@ -30,10 +30,13 @@ const CUE_SETTINGS: Record<
   bombUse: { frequency: 58, durationMs: 300, type: 'square' },
 };
 
-export class AudioSystem {
-  private context?: AudioContext;
-  private unlocked = false;
+// TitleScene and GameScene are recreated throughout a play session. Sharing
+// one context prevents a new browser audio device from being allocated every
+// time the player returns to the title.
+let sharedContext: AudioContext | undefined;
+let sharedContextUnlocked = false;
 
+export class AudioSystem {
   unlock(): void {
     if (!FEEDBACK_TUNING.audio.enabled || !getGameSettings().soundEnabled) {
       return;
@@ -46,11 +49,16 @@ export class AudioSystem {
     }
 
     try {
-      void context.resume().then(() => {
-        this.unlocked = true;
-      });
+      void context
+        .resume()
+        .then(() => {
+          sharedContextUnlocked = context.state === 'running';
+        })
+        .catch(() => {
+          sharedContextUnlocked = false;
+        });
     } catch {
-      this.unlocked = false;
+      sharedContextUnlocked = false;
     }
   }
 
@@ -63,9 +71,11 @@ export class AudioSystem {
 
     const context = this.getContext();
 
-    if (!context || !this.unlocked) {
+    if (!context || (!sharedContextUnlocked && context.state !== 'running')) {
       return;
     }
+
+    sharedContextUnlocked = true;
 
     try {
       const settings = CUE_SETTINGS[cue];
@@ -93,14 +103,17 @@ export class AudioSystem {
       oscillator.start(now);
       oscillator.stop(now + duration);
     } catch {
-      this.unlocked = false;
+      // A single failed cue should not revoke the browser's audio permission.
     }
   }
 
   private getContext(): AudioContext | undefined {
-    if (this.context) {
-      return this.context;
+    if (sharedContext && sharedContext.state !== 'closed') {
+      return sharedContext;
     }
+
+    sharedContext = undefined;
+    sharedContextUnlocked = false;
 
     const windowWithWebkit = window as Window & {
       webkitAudioContext?: typeof AudioContext;
@@ -112,8 +125,8 @@ export class AudioSystem {
     }
 
     try {
-      this.context = new AudioCtor();
-      return this.context;
+      sharedContext = new AudioCtor();
+      return sharedContext;
     } catch {
       return undefined;
     }
