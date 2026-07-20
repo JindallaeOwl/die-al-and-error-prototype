@@ -18,6 +18,7 @@ import {
   type TitleMenuMode,
 } from '../ui/TitleMenuRules';
 import { applyCurrentRenderScaleToGame, applyRenderScale } from '../utils/render';
+import { stopScenesSafely } from '../utils/sceneLifecycle';
 
 type MenuAction = 'start' | 'settings' | 'quit' | SettingsMenuAction;
 
@@ -42,6 +43,7 @@ export class TitleScene extends Phaser.Scene {
   private audio?: AudioSystem;
   private music?: MusicSystem;
   private suppressNextFullscreenLeaveNavigation = false;
+  private startTransitionStarted = false;
 
   private upKeys: Phaser.Input.Keyboard.Key[] = [];
   private downKeys: Phaser.Input.Keyboard.Key[] = [];
@@ -81,6 +83,7 @@ export class TitleScene extends Phaser.Scene {
 
   create(data: TitleSceneData = {}): void {
     this.suppressNextFullscreenLeaveNavigation = false;
+    this.startTransitionStarted = false;
     this.input.enabled = !data.inputLocked;
     if (this.input.keyboard) {
       this.input.keyboard.enabled = !data.inputLocked;
@@ -309,6 +312,10 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private activateSelection(): void {
+    if (this.startTransitionStarted) {
+      return;
+    }
+
     const selected = this.menuItems[this.selectedIndex];
 
     if (!selected) {
@@ -318,7 +325,7 @@ export class TitleScene extends Phaser.Scene {
     this.playCue('shoot');
 
     if (selected.action === 'start') {
-      this.scene.start('GameScene');
+      this.startGame();
       return;
     }
 
@@ -356,6 +363,32 @@ export class TitleScene extends Phaser.Scene {
 
     if (result.renderScaleChanged) {
       applyCurrentRenderScaleToGame(this);
+    }
+  }
+
+  private startGame(): void {
+    this.startTransitionStarted = true;
+    this.input.enabled = false;
+    this.input.keyboard?.resetKeys();
+
+    // Normally these Scenes are already stopped by TitleTransitionScene.
+    // Repeating the cleanup here makes starting a new run safe even if an
+    // earlier shutdown listener failed and left a paused Scene behind.
+    stopScenesSafely(this.scene.manager, ['PauseScene', 'GameOverScene', 'GameScene']);
+
+    try {
+      this.scene.start('GameScene');
+    } catch (error) {
+      console.error('Failed to start a new game.', error);
+      this.startTransitionStarted = false;
+      this.input.enabled = true;
+
+      if (this.input.keyboard) {
+        this.input.keyboard.enabled = true;
+        this.input.keyboard.resetKeys();
+      }
+
+      this.hintText?.setText(t('messages.startFailed'));
     }
   }
 

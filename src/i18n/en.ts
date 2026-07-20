@@ -96,6 +96,7 @@ export const en: TranslationTree = {
     localeKo: 'Korean',
     localeEn: 'English',
     quitHint: 'Close the browser tab to quit',
+    startFailed: 'Failed to start the game. Please try again',
     objective: 'Objective: clear combat rooms and defeat the boss',
   },
   resources: {

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH, TITLE_TRANSITION_MS } from '../config/gameConfig';
 import { applyRenderScale } from '../utils/render';
+import { stopScenesSafely } from '../utils/sceneLifecycle';
 
 export const TITLE_TRANSITION_SCENE_KEY = 'TitleTransitionScene';
 
@@ -81,22 +82,30 @@ export class TitleTransitionScene extends Phaser.Scene {
       titleScene.input.keyboard.enabled = false;
     }
 
-    sceneManager.stop('PauseScene');
-    sceneManager.stop('GameOverScene');
+    // Register both the tween and its browser-timer fallback before running
+    // old Scene shutdown handlers. A faulty handler must never be able to
+    // strand the player behind an opaque transition cover.
     this.fadeIntoTitle(titleScene);
+    stopScenesSafely(sceneManager, ['PauseScene', 'GameOverScene', 'GameScene']);
   }
 
   private fadeIntoTitle(titleScene: Phaser.Scene): void {
     this.transitionCompleted = true;
     const complete = (): void => this.completeTitleTransition(titleScene);
     this.fadeFallbackTimer = window.setTimeout(complete, TITLE_TRANSITION_MS + 120);
-    this.tweens.add({
-      targets: this.cover,
-      alpha: 0,
-      duration: TITLE_TRANSITION_MS,
-      ease: 'Sine.easeOut',
-      onComplete: complete,
-    });
+
+    try {
+      this.tweens.add({
+        targets: this.cover,
+        alpha: 0,
+        duration: TITLE_TRANSITION_MS,
+        ease: 'Sine.easeOut',
+        onComplete: complete,
+      });
+    } catch (error) {
+      console.error('Title fade-in failed.', error);
+      complete();
+    }
   }
 
   private completeTitleTransition(titleScene: Phaser.Scene): void {
@@ -109,6 +118,11 @@ export class TitleTransitionScene extends Phaser.Scene {
       this.fadeFallbackTimer = undefined;
     }
 
+    this.cover?.destroy();
+    this.cover = undefined;
+
+    const sceneManager = this.scene.manager;
+    sceneManager.bringToTop('TitleScene');
     titleScene.input.enabled = true;
 
     if (titleScene.input.keyboard) {
@@ -116,7 +130,7 @@ export class TitleTransitionScene extends Phaser.Scene {
       titleScene.input.keyboard.resetKeys();
     }
 
-    this.scene.stop();
+    sceneManager.stop(TITLE_TRANSITION_SCENE_KEY);
   }
 
   private hideGameOverOverlay(): void {
