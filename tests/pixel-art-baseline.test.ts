@@ -7,6 +7,7 @@ import {
   PLAYER_SPRITESHEET_ASSETS,
   SHOP_NPC_IMAGE_ASSETS,
   TextureKeys,
+  UI_IMAGE_ASSETS,
 } from '../src/config/assets';
 import {
   GAME_HEIGHT,
@@ -76,6 +77,15 @@ describe('pixel art baseline', () => {
       {
         key: 'item-icon-red-mushroom',
         path: 'assets/items/red-mushroom.png',
+      },
+    ]);
+  });
+
+  it('registers the transparent item announcement scroll', () => {
+    expect(UI_IMAGE_ASSETS).toEqual([
+      {
+        key: TextureKeys.itemAnnouncementScroll,
+        path: 'assets/ui/item-announcement-scroll.png',
       },
     ]);
   });

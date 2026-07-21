@@ -46,6 +46,7 @@ export const TextureKeys = {
   obstacleCrate: 'obstacle-crate',
   shopNpcIdleA: 'shop-npc-idle-a',
   shopNpcIdleB: 'shop-npc-idle-b',
+  itemAnnouncementScroll: 'item-announcement-scroll',
 } as const;
 
 export const MusicKeys = {
@@ -81,6 +82,13 @@ export const ITEM_IMAGE_ASSETS = [
   {
     key: itemIconKey('red-mushroom'),
     path: 'assets/items/red-mushroom.png',
+  },
+] as const;
+
+export const UI_IMAGE_ASSETS = [
+  {
+    key: TextureKeys.itemAnnouncementScroll,
+    path: 'assets/ui/item-announcement-scroll.png',
   },
 ] as const;
 

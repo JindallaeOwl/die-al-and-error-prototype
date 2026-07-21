@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { TextureKeys } from '../config/assets';
 import { DEPTH } from '../config/gameConfig';
 import { gameFontStack } from '../i18n';
 import { getRenderScale } from '../systems/GameSettings';
@@ -55,6 +56,12 @@ export class ItemPickupAnnouncement {
     }
 
     const motion = getAnnouncementMotion();
+    const background = this.registerUiObject(
+      this.scene.add
+        .image(0, 0, TextureKeys.itemAnnouncementScroll)
+        .setDisplaySize(430, 215)
+        .setAlpha(0.96),
+    );
     const title = this.registerUiObject(
       this.scene.add
         .text(0, -8, entry.title, {
@@ -79,12 +86,12 @@ export class ItemPickupAnnouncement {
           strokeThickness: 3,
           resolution: getRenderScale(),
           align: 'center',
-          wordWrap: { width: 360, useAdvancedWrap: true },
+          wordWrap: { width: 320, useAdvancedWrap: true },
         })
         .setOrigin(0.5, 0),
     );
     const container = this.registerUiObject(
-      this.scene.add.container(motion.start.x, motion.start.y, [title, description]),
+      this.scene.add.container(motion.start.x, motion.start.y, [background, title, description]),
     );
     container
       .setDepth(DEPTH.ui + 10)

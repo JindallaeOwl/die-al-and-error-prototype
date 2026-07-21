@@ -7,6 +7,7 @@ import {
   PLAYER_IMAGE_ASSETS,
   PLAYER_SPRITESHEET_ASSETS,
   SHOP_NPC_IMAGE_ASSETS,
+  UI_IMAGE_ASSETS,
 } from '../config/assets';
 import { BOLD_PIXELS_FONT_FAMILY, KOREAN_GAME_FONT_FAMILY } from '../i18n';
 import { createPlaceholderAnimations, createPlaceholderTextures } from '../systems/AssetFactory';
@@ -23,6 +24,10 @@ export class BootScene extends Phaser.Scene {
     }
 
     for (const asset of ITEM_IMAGE_ASSETS) {
+      this.load.image(asset.key, asset.path);
+    }
+
+    for (const asset of UI_IMAGE_ASSETS) {
       this.load.image(asset.key, asset.path);
     }
 

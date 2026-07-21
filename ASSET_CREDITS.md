@@ -21,6 +21,12 @@
 - `red-mushroom.png`: original 32×32 pixel art created by the project owner
 - Usage: Red Mushroom maximum-health boss reward icon
 
+## Item Announcement Scroll
+
+- `item-announcement-scroll.png`: adapted from a user-provided parchment reference
+- Changes: reshaped as a wide pixel-art UI banner, background removed, and exported as a transparent PNG
+- Usage: animated background behind passive-item pickup announcements
+
 ## Cute & Silly RPG Music Pack
 
 - Creator: chajamakesmusic
