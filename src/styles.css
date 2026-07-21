@@ -206,15 +206,25 @@ canvas {
 }
 
 #developer-console-item-picker {
-  position: absolute;
-  inset: 43px 8px 48px;
-  z-index: 2;
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  right: max(8px, env(safe-area-inset-right));
+  z-index: 1210;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
+  width: min(720px, calc(100vw - 16px));
+  height: min(560px, calc(100vh - 16px));
+  min-width: min(360px, calc(100vw - 16px));
+  min-height: min(260px, calc(100vh - 16px));
   overflow: hidden;
   border: 1px solid #70303d;
+  color: #f7f3e8;
   background: rgb(8 11 17 / 99%);
   box-shadow: 0 5px 0 rgb(0 0 0 / 38%);
+  font-family:
+    'ProjectDungGeunMo', Galmuri11, DungGeunMo, DOSGothic, 'Noto Sans KR', 'Malgun Gothic',
+    ui-monospace, monospace;
+  font-size: clamp(12px, 1.5vw, 16px);
 }
 
 #developer-console-item-picker[hidden] {
@@ -230,6 +240,9 @@ canvas {
   border-bottom: 1px solid #70303d;
   color: #ffd166;
   background: #171019;
+  cursor: move;
+  touch-action: none;
+  user-select: none;
 }
 
 .developer-item-picker-title span {
@@ -289,6 +302,27 @@ canvas {
   font-size: 0.82em;
   line-height: 1.15;
   text-align: center;
+}
+
+#developer-item-picker-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
+#developer-item-picker-resize-handle::after {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid #ffd166;
+  border-bottom: 2px solid #ffd166;
+  content: '';
 }
 
 #developer-console-resize-handle {

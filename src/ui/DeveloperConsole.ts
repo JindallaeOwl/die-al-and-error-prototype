@@ -49,6 +49,7 @@ export class DeveloperConsole {
   private readonly dragHandle: HTMLElement;
   private readonly resizeHandle: HTMLElement;
   private readonly suggestionsElement: HTMLElement;
+  private readonly itemPickerRoot: HTMLElement;
   private readonly itemPicker: DeveloperItemPicker;
   private readonly history: string[] = [];
   private suggestions: DeveloperConsoleSuggestion[] = [];
@@ -70,6 +71,12 @@ export class DeveloperConsole {
     const suggestions = document.querySelector<HTMLElement>('#developer-console-suggestions');
     const itemPickerRoot = document.querySelector<HTMLElement>('#developer-console-item-picker');
     const itemPickerGrid = document.querySelector<HTMLElement>('#developer-console-item-grid');
+    const itemPickerDragHandle = document.querySelector<HTMLElement>(
+      '#developer-item-picker-drag-handle',
+    );
+    const itemPickerResizeHandle = document.querySelector<HTMLElement>(
+      '#developer-item-picker-resize-handle',
+    );
 
     if (
       !overlay ||
@@ -80,7 +87,9 @@ export class DeveloperConsole {
       !resizeHandle ||
       !suggestions ||
       !itemPickerRoot ||
-      !itemPickerGrid
+      !itemPickerGrid ||
+      !itemPickerDragHandle ||
+      !itemPickerResizeHandle
     ) {
       throw new Error('Developer console elements are missing.');
     }
@@ -92,12 +101,14 @@ export class DeveloperConsole {
     this.dragHandle = dragHandle;
     this.resizeHandle = resizeHandle;
     this.suggestionsElement = suggestions;
+    this.itemPickerRoot = itemPickerRoot;
     this.itemPicker = new DeveloperItemPicker({
       root: itemPickerRoot,
       grid: itemPickerGrid,
+      dragHandle: itemPickerDragHandle,
+      resizeHandle: itemPickerResizeHandle,
       getOptions: config.getItemOptions,
       onSelect: (option) => {
-        this.itemPicker.close();
         this.executeAuthenticatedCommand(`spawn ${option.id}`);
       },
       onClose: () => {
@@ -133,7 +144,6 @@ export class DeveloperConsole {
     }
 
     this.openState = false;
-    this.itemPicker.close();
     this.hideSuggestions();
     this.overlay.hidden = true;
     this.input.blur();
@@ -184,8 +194,9 @@ export class DeveloperConsole {
   private readonly handleDocumentKeyDown = (event: KeyboardEvent): void => {
     const isToggle = event.code === 'Backquote';
     const isClose = this.openState && event.code === 'Escape';
+    const isPickerClose = !this.openState && this.itemPicker.isOpen && event.code === 'Escape';
 
-    if (isClose && this.itemPicker.isOpen && !event.repeat) {
+    if (isPickerClose && !event.repeat) {
       event.preventDefault();
       event.stopImmediatePropagation();
       this.itemPicker.close();
@@ -274,7 +285,12 @@ export class DeveloperConsole {
   private readonly handleDocumentPointerDown = (event: PointerEvent): void => {
     const target = event.target;
 
-    if (!this.openState || !(target instanceof Node) || this.overlay.contains(target)) {
+    if (
+      !this.openState ||
+      !(target instanceof Node) ||
+      this.overlay.contains(target) ||
+      this.itemPickerRoot.contains(target)
+    ) {
       return;
     }
 
