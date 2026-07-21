@@ -76,7 +76,7 @@ describe('DeveloperConsoleController', () => {
     const { controller, runState, hud } = createController();
 
     expect(controller.execute('help').lines?.length).toBeGreaterThan(0);
-    expect(controller.execute('items').lines?.length).toBeGreaterThan(0);
+    expect(controller.execute('items')).toEqual({ openItemPicker: true });
     expect(controller.execute('clear')).toEqual({ clear: true });
     expect(runState.adminUsed).toBe(false);
     expect(hud.setAdminVisible).not.toHaveBeenCalled();

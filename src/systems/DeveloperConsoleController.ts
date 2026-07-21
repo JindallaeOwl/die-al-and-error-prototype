@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { itemIconKey } from '../config/assets';
 import { GAME_CENTER_X, ROOM_RECT } from '../config/gameConfig';
 import { ItemPickup } from '../entities/ItemPickup';
 import type { Player } from '../entities/Player';
@@ -59,6 +60,13 @@ export class DeveloperConsoleController {
         scene.scene.isActive(),
       onOpenChanged: (open) => this.handleOpenChanged(open),
       onCommand: (input) => this.execute(input),
+      getItemOptions: () =>
+        PASSIVE_ITEMS.map((item) => ({
+          id: item.id,
+          itemNumber: item.itemNumber,
+          name: t(item.nameKey),
+          imageUrl: scene.textures.getBase64(itemIconKey(item.id)),
+        })),
     });
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.destroy());
   }
@@ -79,11 +87,7 @@ export class DeveloperConsoleController {
     }
 
     if (parsed.command.type === 'items') {
-      return {
-        lines: PASSIVE_ITEMS.map(
-          (item) => `${formatItemNumber(item.itemNumber)}  ${item.id}  (${t(item.nameKey)})`,
-        ),
-      };
+      return { openItemPicker: true };
     }
 
     this.markAdminUsed();

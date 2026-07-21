@@ -3,16 +3,19 @@ import {
   type DeveloperConsoleSuggestion,
 } from '../systems/DeveloperConsoleAutocomplete';
 import { verifyDeveloperConsolePassword } from '../systems/DeveloperConsoleAccess';
+import { DeveloperItemPicker, type DeveloperItemPickerOption } from './DeveloperItemPicker';
 
 export interface DeveloperConsoleCommandResult {
   lines?: readonly string[];
   clear?: boolean;
+  openItemPicker?: boolean;
 }
 
 interface DeveloperConsoleConfig {
   canOpen: () => boolean;
   onOpenChanged: (open: boolean) => void;
   onCommand: (input: string) => DeveloperConsoleCommandResult;
+  getItemOptions: () => readonly DeveloperItemPickerOption[];
 }
 
 interface ConsoleWindowInteraction {
@@ -46,6 +49,7 @@ export class DeveloperConsole {
   private readonly dragHandle: HTMLElement;
   private readonly resizeHandle: HTMLElement;
   private readonly suggestionsElement: HTMLElement;
+  private readonly itemPicker: DeveloperItemPicker;
   private readonly history: string[] = [];
   private suggestions: DeveloperConsoleSuggestion[] = [];
   private selectedSuggestionIndex = 0;
@@ -64,8 +68,20 @@ export class DeveloperConsole {
     const dragHandle = document.querySelector<HTMLElement>('#developer-console-drag-handle');
     const resizeHandle = document.querySelector<HTMLElement>('#developer-console-resize-handle');
     const suggestions = document.querySelector<HTMLElement>('#developer-console-suggestions');
+    const itemPickerRoot = document.querySelector<HTMLElement>('#developer-console-item-picker');
+    const itemPickerGrid = document.querySelector<HTMLElement>('#developer-console-item-grid');
 
-    if (!overlay || !output || !form || !input || !dragHandle || !resizeHandle || !suggestions) {
+    if (
+      !overlay ||
+      !output ||
+      !form ||
+      !input ||
+      !dragHandle ||
+      !resizeHandle ||
+      !suggestions ||
+      !itemPickerRoot ||
+      !itemPickerGrid
+    ) {
       throw new Error('Developer console elements are missing.');
     }
 
@@ -76,6 +92,20 @@ export class DeveloperConsole {
     this.dragHandle = dragHandle;
     this.resizeHandle = resizeHandle;
     this.suggestionsElement = suggestions;
+    this.itemPicker = new DeveloperItemPicker({
+      root: itemPickerRoot,
+      grid: itemPickerGrid,
+      getOptions: config.getItemOptions,
+      onSelect: (option) => {
+        this.itemPicker.close();
+        this.executeAuthenticatedCommand(`spawn ${option.id}`);
+      },
+      onClose: () => {
+        if (this.openState) {
+          this.input.focus();
+        }
+      },
+    });
     this.overlay.hidden = true;
     this.restoreWindowState();
     this.form.addEventListener('submit', this.handleSubmit);
@@ -103,6 +133,7 @@ export class DeveloperConsole {
     }
 
     this.openState = false;
+    this.itemPicker.close();
     this.hideSuggestions();
     this.overlay.hidden = true;
     this.input.blur();
@@ -111,6 +142,7 @@ export class DeveloperConsole {
 
   destroy(): void {
     this.close();
+    this.itemPicker.destroy();
     this.form.removeEventListener('submit', this.handleSubmit);
     this.input.removeEventListener('keydown', this.handleInputKeyDown);
     this.input.removeEventListener('keyup', this.stopInputPropagation);
@@ -152,6 +184,13 @@ export class DeveloperConsole {
   private readonly handleDocumentKeyDown = (event: KeyboardEvent): void => {
     const isToggle = event.code === 'Backquote';
     const isClose = this.openState && event.code === 'Escape';
+
+    if (isClose && this.itemPicker.isOpen && !event.repeat) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      this.itemPicker.close();
+      return;
+    }
 
     if ((!isToggle && !isClose) || event.repeat) {
       return;
@@ -284,6 +323,10 @@ export class DeveloperConsole {
       return;
     }
 
+    this.executeAuthenticatedCommand(command);
+  }
+
+  private executeAuthenticatedCommand(command: string): void {
     if (this.history[this.history.length - 1] !== command) {
       this.history.push(command);
     }
@@ -295,6 +338,11 @@ export class DeveloperConsole {
     this.hideSuggestions();
 
     const result = this.config.onCommand(command);
+
+    if (result.openItemPicker) {
+      this.itemPicker.open();
+      return;
+    }
 
     if (result.clear) {
       this.output.replaceChildren();

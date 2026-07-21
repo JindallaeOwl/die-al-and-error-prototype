@@ -205,6 +205,92 @@ canvas {
   background: #263d5a;
 }
 
+#developer-console-item-picker {
+  position: absolute;
+  inset: 43px 8px 48px;
+  z-index: 2;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid #70303d;
+  background: rgb(8 11 17 / 99%);
+  box-shadow: 0 5px 0 rgb(0 0 0 / 38%);
+}
+
+#developer-console-item-picker[hidden] {
+  display: none;
+}
+
+.developer-item-picker-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 10px;
+  border-bottom: 1px solid #70303d;
+  color: #ffd166;
+  background: #171019;
+}
+
+.developer-item-picker-title span {
+  color: #9aa7b4;
+  font-size: 0.75em;
+  text-align: right;
+}
+
+#developer-console-item-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  grid-auto-rows: minmax(100px, auto);
+  gap: 6px;
+  overflow: auto;
+  padding: 8px;
+  scrollbar-color: #70303d #0b0f16;
+}
+
+#developer-console-item-grid button {
+  display: grid;
+  grid-template-rows: 52px auto 1fr;
+  align-items: center;
+  justify-items: center;
+  min-width: 0;
+  border: 1px solid #344253;
+  padding: 6px;
+  color: #c8d0d9;
+  background: #101722;
+  font: inherit;
+  cursor: pointer;
+}
+
+#developer-console-item-grid button:hover,
+#developer-console-item-grid button.selected,
+#developer-console-item-grid button:focus-visible {
+  border-color: #ffd166;
+  outline: 0;
+  color: #fff3c4;
+  background: #263d5a;
+  box-shadow: inset 0 0 0 1px #ffd166;
+}
+
+#developer-console-item-grid img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+#developer-console-item-grid .developer-item-number {
+  color: #8fa1b3;
+  font-size: 0.72em;
+}
+
+#developer-console-item-grid strong {
+  overflow-wrap: anywhere;
+  font-size: 0.82em;
+  line-height: 1.15;
+  text-align: center;
+}
+
 #developer-console-resize-handle {
   position: absolute;
   right: 0;
