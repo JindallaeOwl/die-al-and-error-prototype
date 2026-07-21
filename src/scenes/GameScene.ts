@@ -18,12 +18,7 @@ import {
   GAME_WIDTH,
   ITEM_PREVIEW_RADIUS,
 } from '../config/gameConfig';
-import {
-  ITEM_SYNERGIES,
-  PASSIVE_ITEMS,
-  PRISM_LANCE_ITEM_ID,
-  QUAD_SHOT_ITEM_ID,
-} from '../data/items';
+import { PASSIVE_ITEMS, PRISM_LANCE_ITEM_ID, QUAD_SHOT_ITEM_ID } from '../data/items';
 import { getShopProduct, SHOP_INTERACTION_RADIUS, type ShopProductDefinition } from '../data/shop';
 import { t, toggleLocale } from '../i18n';
 import { AudioSystem } from '../systems/AudioSystem';
@@ -51,6 +46,7 @@ import { createInitialRunState, type RunState } from '../systems/RunState';
 import { getEffectiveDamage } from '../systems/PlayerStatSystem';
 import { BossHud } from '../ui/BossHud';
 import { Hud } from '../ui/Hud';
+import { ItemPickupAnnouncement } from '../ui/ItemPickupAnnouncement';
 import { isPauseCode } from '../ui/PauseMenuRules';
 import { UiCameraSystem } from '../ui/UiCameraSystem';
 import { applyRenderScale } from '../utils/render';
@@ -115,6 +111,7 @@ export class GameScene extends Phaser.Scene {
   private removeRuntimeErrorListener?: () => void;
   private bossHud!: BossHud;
   private uiCameraSystem!: UiCameraSystem;
+  private itemPickupAnnouncement!: ItemPickupAnnouncement;
   private readonly handlePauseKeyDown = (event: KeyboardEvent): void => {
     if (
       !isPauseCode(event.code) ||
@@ -238,6 +235,7 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.hud = new Hud(this, this.uiCameraSystem.register);
+    this.itemPickupAnnouncement = new ItemPickupAnnouncement(this, this.uiCameraSystem.register);
     this.developerConsoleController = new DeveloperConsoleController({
       scene: this,
       runState: this.runState,
@@ -781,20 +779,11 @@ export class GameScene extends Phaser.Scene {
       this.dungeon.markCurrentBossRewardClaimed();
     }
 
-    const synergyNames = acquisition.newlyActivatedSynergyIds
-      .map((synergyId) => ITEM_SYNERGIES.find((synergy) => synergy.id === synergyId))
-      .filter((synergy) => synergy !== undefined)
-      .map((synergy) => t(synergy.nameKey))
-      .join(', ');
-
-    this.hud.showMessage(
-      t(synergyNames ? 'messages.itemPickupSynergy' : 'messages.itemPickup', {
-        name: t(pickup.item.nameKey),
-        description: t(pickup.item.descriptionKey),
-        synergy: synergyNames,
-      }),
-      3000,
-    );
+    const description = t(pickup.item.descriptionKey);
+    this.itemPickupAnnouncement.show({
+      title: t(pickup.item.nameKey),
+      description,
+    });
     this.effects.pickup(pickup.x, pickup.y);
     this.audio.play('pickup');
     pickup.destroy();
@@ -872,18 +861,7 @@ export class GameScene extends Phaser.Scene {
     this.player.setStats(this.runState.stats);
     this.player.setAttackProfile(this.runState.attackProfile);
     const productName = this.getShopProductName(result.product);
-    const synergyNames = (result.acquisition?.newlyActivatedSynergyIds ?? [])
-      .map((synergyId) => ITEM_SYNERGIES.find((synergy) => synergy.id === synergyId))
-      .filter((synergy) => synergy !== undefined)
-      .map((synergy) => t(synergy.nameKey))
-      .join(', ');
-    this.hud.showMessage(
-      t(synergyNames ? 'messages.shopPurchasedSynergy' : 'messages.shopPurchased', {
-        name: productName,
-        synergy: synergyNames,
-      }),
-      2200,
-    );
+    this.hud.showMessage(t('messages.shopPurchased', { name: productName }), 2200);
     this.effects.pickup(offerObject.x, offerObject.y);
     this.audio.play('pickup');
     offerObject.destroy();

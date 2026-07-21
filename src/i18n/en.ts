@@ -85,15 +85,12 @@ export const en: TranslationTree = {
     shopHealthFull: 'Health is already full',
     shopResourceFull: 'You cannot carry any more',
     shopPurchased: 'Purchased {name}',
-    shopPurchasedSynergy: 'Purchased {name} · Synergy activated: {synergy}',
     itemMaxStacks: '{name}: maximum stack count is {max}',
-    itemPickupSynergy: '{name}: {description} · Synergy activated: {synergy}',
     noBombs: 'No bombs left',
     rewardGain: '+{amount} {resource}',
     resourceFull: '{resource} is full',
     chestHealed: 'Chest: healed {amount}',
     chestConsumable: 'Chest: +{amount} {resource}',
-    itemPickup: '{name}: {description}',
     itemPreview: '[{rarity} · {category}] {name}: {description}',
     secretItemSpawned: 'Secret input detected: Prism Lance + Quad Shot spawned',
     clear: 'CLEAR',
@@ -174,12 +171,11 @@ export const en: TranslationTree = {
     },
     prismLance: {
       name: 'Prism Lance',
-      description: 'Replaces seeds with a charged piercing beam. Quad Shot splits it four ways.',
+      description: 'Replaces seeds with a charged piercing beam.',
     },
     quadShot: {
       name: 'Quad Shot',
-      description:
-        'Fires four seeds in a fan. Prism Lance beams also split four ways (attack speed multiplier ×0.42).',
+      description: 'Fires four seeds in a fan.',
     },
     megaSeed: {
       name: 'Mega Seed',

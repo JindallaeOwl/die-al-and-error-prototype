@@ -85,15 +85,12 @@ export const ko: TranslationTree = {
     shopHealthFull: '체력이 이미 가득 찼습니다',
     shopResourceFull: '더 이상 보유할 수 없습니다',
     shopPurchased: '{name} 구매 완료',
-    shopPurchasedSynergy: '{name} 구매 완료 · 시너지 발동: {synergy}',
     itemMaxStacks: '{name}: 최대 {max}개까지 중첩할 수 있습니다',
-    itemPickupSynergy: '{name}: {description} · 시너지 발동: {synergy}',
     noBombs: '폭탄이 없습니다',
     rewardGain: '+{amount} {resource}',
     resourceFull: '{resource} 가득',
     chestHealed: '상자: 체력 {amount} 회복',
     chestConsumable: '상자: +{amount} {resource}',
-    itemPickup: '{name}: {description}',
     itemPreview: '[{rarity} · {category}] {name}: {description}',
     secretItemSpawned: '비밀 입력 감지: 프리즘 창 + 쿼드샷 생성',
     clear: '클리어',
@@ -174,13 +171,11 @@ export const ko: TranslationTree = {
     },
     prismLance: {
       name: '프리즘 창',
-      description:
-        '씨앗 공격을 차징 관통 빔으로 바꿉니다. 쿼드샷과 함께면 빔이 4갈래로 발사됩니다.',
+      description: '씨앗 공격을 차징 관통 빔으로 바꿉니다.',
     },
     quadShot: {
       name: '쿼드샷',
-      description:
-        '씨앗 4개를 부채꼴로 발사합니다. 프리즘 창의 빔도 4갈래가 됩니다 (공격 속도 배율 ×0.42).',
+      description: '씨앗이 네 개씩 부채꼴로 발사됩니다.',
     },
     megaSeed: {
       name: '메가씨드',
