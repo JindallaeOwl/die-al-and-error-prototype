@@ -17,30 +17,21 @@ import {
   GAME_HEIGHT,
   GAME_WIDTH,
   ITEM_PREVIEW_RADIUS,
-  ROOM_RECT,
 } from '../config/gameConfig';
 import {
-  findItemByReference,
-  formatItemNumber,
   ITEM_SYNERGIES,
   PASSIVE_ITEMS,
   PRISM_LANCE_ITEM_ID,
   QUAD_SHOT_ITEM_ID,
 } from '../data/items';
-import { ROOM_CLEAR_REWARDS } from '../data/rewards';
 import { getShopProduct, SHOP_INTERACTION_RADIUS, type ShopProductDefinition } from '../data/shop';
 import { t, toggleLocale } from '../i18n';
 import { AudioSystem } from '../systems/AudioSystem';
 import { BombSystem } from '../systems/BombSystem';
 import { CombatCollisionSystem } from '../systems/CombatCollisionSystem';
+import { DeveloperConsoleController } from '../systems/DeveloperConsoleController';
 import { DungeonManager, type RoomNode } from '../systems/DungeonManager';
 import { EffectsSystem } from '../systems/EffectsSystem';
-import {
-  DEVELOPER_CONSOLE_HELP,
-  parseDeveloperCommand,
-  type DeveloperCommand,
-} from '../systems/DeveloperConsoleCommands';
-import { addConsumable } from '../systems/InventorySystem';
 import { ItemSystem } from '../systems/ItemSystem';
 import { MinimapExpansionController } from '../systems/MinimapExpansionController';
 import { getRoomMusicKey, MusicSystem } from '../systems/MusicSystem';
@@ -59,7 +50,6 @@ import {
 import { createInitialRunState, type RunState } from '../systems/RunState';
 import { getEffectiveDamage } from '../systems/PlayerStatSystem';
 import { BossHud } from '../ui/BossHud';
-import { DeveloperConsole, type DeveloperConsoleCommandResult } from '../ui/DeveloperConsole';
 import { Hud } from '../ui/Hud';
 import { isPauseCode } from '../ui/PauseMenuRules';
 import { UiCameraSystem } from '../ui/UiCameraSystem';
@@ -97,8 +87,7 @@ export class GameScene extends Phaser.Scene {
   private minimapExpansion = new MinimapExpansionController();
   private runElapsedMs = 0;
   private secretCodeTracker!: SecretCodeTracker;
-  private developerConsole!: DeveloperConsole;
-  private godModeEnabled = false;
+  private developerConsoleController!: DeveloperConsoleController;
   private debugVisible = false;
   private nextDoorAt = 0;
   private gameOverStarted = false;
@@ -172,9 +161,6 @@ export class GameScene extends Phaser.Scene {
     this.floorTransitionStarted = false;
     this.playerDamageFeedbackQueued = false;
     this.pauseTransitionStarted = false;
-    // A new run always starts normally. Resuming after closing Pause or the
-    // developer console must not silently desynchronise this flag from Player.
-    this.godModeEnabled = false;
     this.runElapsedMs = 0;
     this.minimapExpansion = new MinimapExpansionController();
     this.secretCodeTracker = new SecretCodeTracker(KONAMI_CODE);
@@ -252,7 +238,27 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.hud = new Hud(this, this.uiCameraSystem.register);
-    this.setupDeveloperConsole();
+    this.developerConsoleController = new DeveloperConsoleController({
+      scene: this,
+      runState: this.runState,
+      dungeon: this.dungeon,
+      player: this.player,
+      enemies: this.enemies,
+      items: this.items,
+      effects: this.effects,
+      shopSystem: this.shopSystem,
+      roomController: this.roomController,
+      roomTransitions: this.roomTransitions,
+      hud: this.hud,
+      isGameOver: () => this.gameOverStarted,
+      isPauseTransitionStarted: () => this.pauseTransitionStarted,
+      resetFloorTransition: () => {
+        this.floorTransitionStarted = false;
+      },
+      onRoomChanged: (room) => this.updateBackgroundMusic(room),
+      getShopProductName: (product) => this.getShopProductName(product),
+    });
+    this.developerConsoleController.setup();
     this.prepareGameOverOverlay();
     this.combatCollisions = new CombatCollisionSystem({
       scene: this,
@@ -628,294 +634,6 @@ export class GameScene extends Phaser.Scene {
   private setupAudioUnlock(): void {
     this.input.once('pointerdown', () => this.audio.unlock());
     this.input.keyboard?.once('keydown', () => this.audio.unlock());
-  }
-
-  private setupDeveloperConsole(): void {
-    this.developerConsole = new DeveloperConsole({
-      canOpen: () => !this.gameOverStarted && !this.pauseTransitionStarted && this.scene.isActive(),
-      onOpenChanged: (open) => {
-        const keyboard = this.input.keyboard;
-
-        if (open) {
-          keyboard?.resetKeys();
-          keyboard?.disableGlobalCapture();
-
-          if (keyboard) {
-            keyboard.enabled = false;
-          }
-
-          this.scene.pause();
-        } else if (!this.gameOverStarted) {
-          if (keyboard) {
-            keyboard.enabled = true;
-          }
-
-          keyboard?.enableGlobalCapture();
-          keyboard?.resetKeys();
-          this.scene.resume();
-        }
-      },
-      onCommand: (input) => this.executeDeveloperCommand(input),
-    });
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.developerConsole.destroy());
-  }
-
-  private executeDeveloperCommand(input: string): DeveloperConsoleCommandResult {
-    const parsed = parseDeveloperCommand(input);
-
-    if (!parsed.ok) {
-      return { lines: [parsed.error] };
-    }
-
-    if (parsed.command.type === 'help') {
-      return { lines: DEVELOPER_CONSOLE_HELP };
-    }
-
-    if (parsed.command.type === 'clear') {
-      return { clear: true };
-    }
-
-    if (parsed.command.type === 'items') {
-      return {
-        lines: PASSIVE_ITEMS.map(
-          (item) => `${formatItemNumber(item.itemNumber)}  ${item.id}  (${t(item.nameKey)})`,
-        ),
-      };
-    }
-
-    this.markAdminUsed();
-    return this.applyDeveloperCommand(parsed.command);
-  }
-
-  private applyDeveloperCommand(command: DeveloperCommand): DeveloperConsoleCommandResult {
-    if (command.type === 'god') {
-      this.godModeEnabled = !this.godModeEnabled;
-      this.player.setGodMode(this.godModeEnabled);
-      return { lines: [`무적 모드: ${this.godModeEnabled ? 'ON' : 'OFF'}`] };
-    }
-
-    if (command.type === 'heal') {
-      this.runState.stats.health = this.runState.stats.maxHealth;
-      this.player.setStats(this.runState.stats);
-      return {
-        lines: [`체력 회복: ${this.runState.stats.health}/${this.runState.stats.maxHealth}`],
-      };
-    }
-
-    if (command.type === 'add-resource') {
-      this.runState.inventory = addConsumable(
-        this.runState.inventory,
-        command.resource,
-        command.amount,
-      );
-      return {
-        lines: [
-          `${t(`resources.${command.resource}`)}: ${this.runState.inventory[command.resource]}`,
-        ],
-      };
-    }
-
-    if (command.type === 'kill') {
-      const activeEnemies = (this.enemies.getChildren() as BaseEnemy[]).filter(
-        (enemy) => enemy.active,
-      );
-
-      for (const enemy of activeEnemies) {
-        enemy.takeDamage(Number.MAX_SAFE_INTEGER, this.player.x, this.player.y);
-      }
-
-      return { lines: [`적 ${activeEnemies.length}명 처치`] };
-    }
-
-    if (command.type === 'boss') {
-      return this.moveToDeveloperRoom('boss', '보스방');
-    }
-
-    if (command.type === 'shop') {
-      return this.moveToDeveloperRoom('shop', '상점방');
-    }
-
-    if (command.type === 'treasure') {
-      return this.moveToDeveloperRoom('treasure', '보물방');
-    }
-
-    if (command.type === 'spawn') {
-      return this.spawnDeveloperItem(command.itemId);
-    }
-
-    if (command.type === 'sale') {
-      return this.forceDeveloperShopSale();
-    }
-
-    if (command.type === 'floor') {
-      this.runState.floor = command.floor;
-      this.floorTransitionStarted = false;
-      this.roomTransitions.enterFloor(
-        command.floor,
-        this.runState.unlockedAbilityIds.includes('charge-beam'),
-      );
-      this.updateBackgroundMusic(this.dungeon.getCurrentRoom());
-      return { lines: [`${command.floor}층으로 이동`] };
-    }
-
-    return { lines: ['실행할 수 없는 명령어입니다.'] };
-  }
-
-  private spawnDeveloperItem(itemId: string): DeveloperConsoleCommandResult {
-    if (itemId === 'chest') {
-      return this.spawnDeveloperChest();
-    }
-
-    if (itemId === 'coin') {
-      return this.spawnDeveloperCoin(1);
-    }
-
-    if (itemId === 'five-coin') {
-      return this.spawnDeveloperCoin(5);
-    }
-
-    if (itemId === 'heart') {
-      return this.spawnDeveloperHeart();
-    }
-
-    const item = findItemByReference(itemId);
-
-    if (!item) {
-      return {
-        lines: [
-          `아이템을 찾을 수 없습니다: ${itemId}`,
-          `사용 가능: chest, coin, five-coin, heart, ${PASSIVE_ITEMS.map((candidate) => candidate.id).join(', ')}`,
-        ],
-      };
-    }
-
-    const offsetX = this.player.x < GAME_CENTER_X ? 44 : -44;
-    const x = Phaser.Math.Clamp(this.player.x + offsetX, ROOM_RECT.left + 24, ROOM_RECT.right - 24);
-    const y = Phaser.Math.Clamp(this.player.y, ROOM_RECT.top + 24, ROOM_RECT.bottom - 24);
-    this.items.add(new ItemPickup(this, x, y, item, 'secret'));
-    this.effects.pickup(x, y);
-    return { lines: [`아이템 생성: ${formatItemNumber(item.itemNumber)} ${item.id}`] };
-  }
-
-  private spawnDeveloperChest(): DeveloperConsoleCommandResult {
-    const definition = ROOM_CLEAR_REWARDS.find((reward) => reward.kind === 'chest');
-
-    if (!definition) {
-      return { lines: ['상자 정보를 찾을 수 없습니다.'] };
-    }
-
-    const offsetX = this.player.x < GAME_CENTER_X ? 44 : -44;
-    const x = Phaser.Math.Clamp(this.player.x + offsetX, ROOM_RECT.left + 24, ROOM_RECT.right - 24);
-    const y = Phaser.Math.Clamp(this.player.y, ROOM_RECT.top + 24, ROOM_RECT.bottom - 24);
-    const reward = {
-      kind: definition.kind,
-      amount: definition.amountMin,
-      labelKey: definition.labelKey,
-      tint: definition.tint,
-    } as const;
-    this.roomTransitions.spawnPersistentReward(this.dungeon.getCurrentRoom(), reward, x, y);
-    this.effects.pickup(x, y);
-    return { lines: ['상자 생성: chest'] };
-  }
-
-  private spawnDeveloperCoin(amount: 1 | 5): DeveloperConsoleCommandResult {
-    const definition = ROOM_CLEAR_REWARDS.find((reward) => reward.kind === 'coins');
-
-    if (!definition) {
-      return { lines: ['코인 정보를 찾을 수 없습니다.'] };
-    }
-
-    const offsetX = this.player.x < GAME_CENTER_X ? 44 : -44;
-    const x = Phaser.Math.Clamp(this.player.x + offsetX, ROOM_RECT.left + 24, ROOM_RECT.right - 24);
-    const y = Phaser.Math.Clamp(this.player.y, ROOM_RECT.top + 24, ROOM_RECT.bottom - 24);
-    const reward = {
-      kind: 'coins',
-      amount,
-      labelKey: definition.labelKey,
-      tint: definition.tint,
-      appearance: amount === 5 ? 'five-coin' : undefined,
-    } as const;
-    this.roomTransitions.spawnPersistentReward(this.dungeon.getCurrentRoom(), reward, x, y);
-
-    this.effects.pickup(x, y);
-    return { lines: [`코인 생성: ${amount}코인`] };
-  }
-
-  private spawnDeveloperHeart(): DeveloperConsoleCommandResult {
-    const definition = ROOM_CLEAR_REWARDS.find((reward) => reward.kind === 'heart');
-
-    if (!definition) {
-      return { lines: ['하트 정보를 찾을 수 없습니다.'] };
-    }
-
-    const offsetX = this.player.x < GAME_CENTER_X ? 44 : -44;
-    const x = Phaser.Math.Clamp(this.player.x + offsetX, ROOM_RECT.left + 24, ROOM_RECT.right - 24);
-    const y = Phaser.Math.Clamp(this.player.y, ROOM_RECT.top + 24, ROOM_RECT.bottom - 24);
-    const reward = {
-      kind: 'heart',
-      amount: 1,
-      labelKey: definition.labelKey,
-      tint: definition.tint,
-    } as const;
-    this.roomTransitions.spawnPersistentReward(this.dungeon.getCurrentRoom(), reward, x, y);
-    this.effects.pickup(x, y);
-    return { lines: ['하트 생성: heart'] };
-  }
-
-  private moveToDeveloperRoom(
-    roomType: Extract<RoomNode['type'], 'boss' | 'shop' | 'treasure'>,
-    roomLabel: string,
-  ): DeveloperConsoleCommandResult {
-    const currentRoom = this.dungeon.getCurrentRoom();
-
-    if (currentRoom.type === roomType) {
-      return { lines: [`이미 ${roomLabel}에 있습니다.`] };
-    }
-
-    const targetRoom = this.dungeon.getRooms().find((room) => room.type === roomType);
-
-    if (!targetRoom) {
-      return { lines: [`현재 층에서 ${roomLabel}을 찾을 수 없습니다.`] };
-    }
-
-    if (roomType === 'shop' || roomType === 'treasure') {
-      this.dungeon.unlockRoom(targetRoom.id);
-    }
-
-    if (!this.dungeon.moveToRoom(targetRoom.id)) {
-      return { lines: [`${roomLabel} 이동에 실패했습니다.`] };
-    }
-
-    this.roomTransitions.enterRoomDirect(targetRoom);
-    this.updateBackgroundMusic(targetRoom);
-    return { lines: [`${this.runState.floor}층 ${roomLabel}으로 이동`] };
-  }
-
-  private forceDeveloperShopSale(): DeveloperConsoleCommandResult {
-    const room = this.dungeon.getCurrentRoom();
-
-    if (room.type !== 'shop' || !room.shopOffers) {
-      return { lines: ['상점방에서만 사용할 수 있습니다.'] };
-    }
-
-    const offer = this.shopSystem.forceDiscount(room.shopOffers);
-
-    if (!offer) {
-      return { lines: ['할인할 수 있는 상품이 없습니다.'] };
-    }
-
-    this.roomController.refreshCurrentShop();
-    const product = getShopProduct(offer.productId);
-    return {
-      lines: [
-        `세일 적용: ${product ? this.getShopProductName(product) : offer.productId} ${offer.price}코인`,
-      ],
-    };
-  }
-
-  private markAdminUsed(): void {
-    this.runState.adminUsed = true;
-    this.hud.setAdminVisible(true);
   }
 
   private setupPauseInput(): void {
