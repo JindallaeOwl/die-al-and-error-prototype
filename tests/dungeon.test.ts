@@ -87,6 +87,39 @@ describe('DungeonManager', () => {
 
     expect(room.pendingReward).toMatchObject({ x: 247, y: 139 });
   });
+
+  it('keeps one-coin and five-coin crate drops in their source room until collected', () => {
+    const dungeon = new DungeonManager(() => 0);
+    dungeon.generateFloor(1);
+    const room = dungeon.getCurrentRoom();
+    const oneCoin = dungeon.addDroppedReward(
+      room.id,
+      { kind: 'coins', amount: 1, labelKey: 'resources.coins', tint: 0xffd84a },
+      220,
+      130,
+    )!;
+    const fiveCoins = dungeon.addDroppedReward(
+      room.id,
+      {
+        kind: 'coins',
+        amount: 5,
+        labelKey: 'resources.coins',
+        tint: 0xffd84a,
+        appearance: 'five-coin',
+      },
+      260,
+      140,
+    )!;
+
+    expect(room.droppedRewards).toEqual([oneCoin, fiveCoins]);
+
+    dungeon.updateDroppedReward(room.id, fiveCoins.id, 265, 145);
+    expect(fiveCoins).toMatchObject({ x: 265, y: 145 });
+
+    dungeon.clearDroppedReward(room.id, oneCoin.id);
+
+    expect(room.droppedRewards).toEqual([fiveCoins]);
+  });
 });
 
 function getReachableRoomIds(dungeon: DungeonManager): Set<string> {

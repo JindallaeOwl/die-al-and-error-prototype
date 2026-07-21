@@ -807,13 +807,13 @@ export class GameScene extends Phaser.Scene {
     const offsetX = this.player.x < GAME_CENTER_X ? 44 : -44;
     const x = Phaser.Math.Clamp(this.player.x + offsetX, ROOM_RECT.left + 24, ROOM_RECT.right - 24);
     const y = Phaser.Math.Clamp(this.player.y, ROOM_RECT.top + 24, ROOM_RECT.bottom - 24);
-    const chest = new RewardPickup(this, x, y, {
+    const reward = {
       kind: definition.kind,
       amount: definition.amountMin,
       labelKey: definition.labelKey,
       tint: definition.tint,
-    });
-    this.rewards.add(chest);
+    } as const;
+    this.roomTransitions.spawnPersistentReward(this.dungeon.getCurrentRoom(), reward, x, y);
     this.effects.pickup(x, y);
     return { lines: ['상자 생성: chest'] };
   }
@@ -828,14 +828,15 @@ export class GameScene extends Phaser.Scene {
     const offsetX = this.player.x < GAME_CENTER_X ? 44 : -44;
     const x = Phaser.Math.Clamp(this.player.x + offsetX, ROOM_RECT.left + 24, ROOM_RECT.right - 24);
     const y = Phaser.Math.Clamp(this.player.y, ROOM_RECT.top + 24, ROOM_RECT.bottom - 24);
-    const coin = new RewardPickup(this, x, y, {
+    const reward = {
       kind: 'coins',
       amount,
       labelKey: definition.labelKey,
       tint: definition.tint,
       appearance: amount === 5 ? 'five-coin' : undefined,
-    });
-    this.rewards.add(coin);
+    } as const;
+    this.roomTransitions.spawnPersistentReward(this.dungeon.getCurrentRoom(), reward, x, y);
+
     this.effects.pickup(x, y);
     return { lines: [`코인 생성: ${amount}코인`] };
   }
@@ -850,13 +851,13 @@ export class GameScene extends Phaser.Scene {
     const offsetX = this.player.x < GAME_CENTER_X ? 44 : -44;
     const x = Phaser.Math.Clamp(this.player.x + offsetX, ROOM_RECT.left + 24, ROOM_RECT.right - 24);
     const y = Phaser.Math.Clamp(this.player.y, ROOM_RECT.top + 24, ROOM_RECT.bottom - 24);
-    const heart = new RewardPickup(this, x, y, {
+    const reward = {
       kind: 'heart',
       amount: 1,
       labelKey: definition.labelKey,
       tint: definition.tint,
-    });
-    this.rewards.add(heart);
+    } as const;
+    this.roomTransitions.spawnPersistentReward(this.dungeon.getCurrentRoom(), reward, x, y);
     this.effects.pickup(x, y);
     return { lines: ['하트 생성: heart'] };
   }
@@ -1281,7 +1282,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.rewards.add(new RewardPickup(this, x, y, reward));
+    this.roomTransitions.spawnPersistentReward(this.dungeon.getCurrentRoom(), reward, x, y);
   }
 
   private handleBossPhaseTwo(boss: BaseEnemy): void {

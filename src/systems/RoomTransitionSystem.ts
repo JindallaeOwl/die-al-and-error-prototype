@@ -5,7 +5,8 @@ import { RewardPickup } from '../entities/RewardPickup';
 import { GAME_CENTER_X, GAME_CENTER_Y, ROOM_ENTRY_PROTECTION_MS } from '../config/gameConfig';
 import type { Direction } from '../utils/directions';
 import type { BombSystem } from './BombSystem';
-import type { DungeonManager, RoomNode } from './DungeonManager';
+import type { DungeonManager, PendingDroppedReward, RoomNode } from './DungeonManager';
+import type { RewardDrop } from './RewardSystem';
 import type { RoomController } from './RoomController';
 
 interface RoomTransitionSystemConfig {
@@ -59,6 +60,7 @@ export class RoomTransitionSystem {
     this.player.grantInvulnerability(ROOM_ENTRY_PROTECTION_MS);
     this.roomController.enterCurrentRoom(spawnPosition);
     this.restorePendingReward(room);
+    this.restoreDroppedRewards(room);
     this.restoreFloorExit(room);
   }
 
@@ -69,6 +71,7 @@ export class RoomTransitionSystem {
     this.player.grantInvulnerability(ROOM_ENTRY_PROTECTION_MS);
     this.roomController.enterCurrentRoom(spawnPosition);
     this.restorePendingReward(room);
+    this.restoreDroppedRewards(room);
     this.restoreFloorExit(room);
   }
 
@@ -97,18 +100,52 @@ export class RoomTransitionSystem {
     this.rewards.add(pickup);
   }
 
+  spawnPersistentReward(room: RoomNode, reward: RewardDrop, x: number, y: number): boolean {
+    const droppedReward = this.dungeon.addDroppedReward(room.id, reward, x, y);
+
+    if (!droppedReward) {
+      return false;
+    }
+
+    this.spawnDroppedReward(room, droppedReward);
+    return true;
+  }
+
+  private spawnDroppedReward(room: RoomNode, droppedReward: PendingDroppedReward): void {
+    const pickup = new RewardPickup(
+      this.scene,
+      droppedReward.x,
+      droppedReward.y,
+      droppedReward.reward,
+    );
+    pickup.setData('sourceRoomId', room.id);
+    pickup.setData('droppedRewardId', droppedReward.id);
+
+    if (droppedReward.opened) {
+      pickup.openChest();
+    }
+
+    this.rewards.add(pickup);
+  }
+
   markPendingChestOpened(pickup: RewardPickup): void {
     const sourceRoomId = pickup.getData('sourceRoomId') as string | undefined;
+    const droppedRewardId = pickup.getData('droppedRewardId') as number | undefined;
 
-    if (sourceRoomId && pickup.isChest) {
+    if (sourceRoomId && droppedRewardId !== undefined && pickup.isChest) {
+      this.dungeon.updateDroppedReward(sourceRoomId, droppedRewardId, pickup.x, pickup.y, true);
+    } else if (sourceRoomId && pickup.isChest) {
       this.dungeon.updatePendingChest(sourceRoomId, pickup.x, pickup.y, true);
     }
   }
 
   clearPendingRewardForPickup(pickup: RewardPickup): void {
     const sourceRoomId = pickup.getData('sourceRoomId') as string | undefined;
+    const droppedRewardId = pickup.getData('droppedRewardId') as number | undefined;
 
-    if (sourceRoomId) {
+    if (sourceRoomId && droppedRewardId !== undefined) {
+      this.dungeon.clearDroppedReward(sourceRoomId, droppedRewardId);
+    } else if (sourceRoomId) {
       this.dungeon.clearPendingReward(sourceRoomId);
     }
   }
@@ -139,12 +176,21 @@ export class RoomTransitionSystem {
   private savePendingRewardPositions(): void {
     for (const pickup of this.rewards.getChildren() as RewardPickup[]) {
       const sourceRoomId = pickup.getData('sourceRoomId') as string | undefined;
+      const droppedRewardId = pickup.getData('droppedRewardId') as number | undefined;
 
       if (!pickup.active || !pickup.isPushable || !sourceRoomId) {
         continue;
       }
 
-      if (pickup.isChest) {
+      if (droppedRewardId !== undefined) {
+        this.dungeon.updateDroppedReward(
+          sourceRoomId,
+          droppedRewardId,
+          pickup.x,
+          pickup.y,
+          pickup.isOpenedChest || undefined,
+        );
+      } else if (pickup.isChest) {
         this.dungeon.updatePendingChest(sourceRoomId, pickup.x, pickup.y, pickup.isOpenedChest);
       } else {
         this.dungeon.updatePendingRewardPosition(sourceRoomId, pickup.x, pickup.y);
@@ -160,6 +206,12 @@ export class RoomTransitionSystem {
   private restorePendingReward(room: RoomNode): void {
     if (room.pendingReward) {
       this.spawnPendingReward(room);
+    }
+  }
+
+  private restoreDroppedRewards(room: RoomNode): void {
+    for (const droppedReward of room.droppedRewards) {
+      this.spawnDroppedReward(room, droppedReward);
     }
   }
 

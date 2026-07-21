@@ -17,4 +17,18 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
   },
+  {
+    files: ['src/**/*.ts'],
+    ignores: ['src/systems/RoomTransitionSystem.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: `NewExpression[callee.name='RewardPickup']`,
+          message:
+            'Use RoomTransitionSystem.spawnPersistentReward() so floor pickups survive room transitions.',
+        },
+      ],
+    },
+  },
 );

@@ -18,6 +18,10 @@ export interface PendingRoomReward {
   opened?: boolean;
 }
 
+export interface PendingDroppedReward extends PendingRoomReward {
+  id: number;
+}
+
 export interface GridCoord {
   x: number;
   y: number;
@@ -42,11 +46,13 @@ export interface RoomNode {
   combatItemRewardId?: string;
   obstacleHealth?: number[];
   pendingReward?: PendingRoomReward;
+  droppedRewards: PendingDroppedReward[];
 }
 
 export class DungeonManager {
   private rooms = new Map<string, RoomNode>();
   private currentKey = '0,0';
+  private nextDroppedRewardId = 1;
 
   floor = 1;
 
@@ -55,6 +61,7 @@ export class DungeonManager {
   generateFloor(floor: number): void {
     this.floor = floor;
     this.rooms.clear();
+    this.nextDroppedRewardId = 1;
 
     const startNode = this.createRoom({ x: 0, y: 0 }, 'start', START_ROOM_TEMPLATE.id);
     startNode.cleared = true;
@@ -210,6 +217,52 @@ export class DungeonManager {
     }
   }
 
+  addDroppedReward(
+    roomId: string,
+    reward: RewardDrop,
+    x: number,
+    y: number,
+  ): PendingDroppedReward | null {
+    const room = this.rooms.get(roomId);
+
+    if (!room) {
+      return null;
+    }
+
+    const droppedReward = { id: this.nextDroppedRewardId, reward, x, y };
+    this.nextDroppedRewardId += 1;
+    room.droppedRewards.push(droppedReward);
+    return droppedReward;
+  }
+
+  clearDroppedReward(roomId: string, droppedRewardId: number): void {
+    const room = this.rooms.get(roomId);
+
+    if (room) {
+      room.droppedRewards = room.droppedRewards.filter((reward) => reward.id !== droppedRewardId);
+    }
+  }
+
+  updateDroppedReward(
+    roomId: string,
+    droppedRewardId: number,
+    x: number,
+    y: number,
+    opened?: boolean,
+  ): void {
+    const droppedReward = this.rooms
+      .get(roomId)
+      ?.droppedRewards.find((reward) => reward.id === droppedRewardId);
+
+    if (!droppedReward) {
+      return;
+    }
+
+    droppedReward.x = x;
+    droppedReward.y = y;
+    droppedReward.opened = opened;
+  }
+
   unlockRoom(roomId: string): void {
     const room = this.rooms.get(roomId);
 
@@ -245,6 +298,7 @@ export class DungeonManager {
       bossRewardClaimed: false,
       combatItemRewardClaimed: false,
       combatItemRewardRolled: false,
+      droppedRewards: [],
     };
 
     this.rooms.set(key, node);
