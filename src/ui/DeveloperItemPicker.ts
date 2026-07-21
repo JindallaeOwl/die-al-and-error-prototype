@@ -4,7 +4,7 @@ export interface DeveloperItemPickerOption {
   id: string;
   itemNumber: number;
   name: string;
-  imageUrl: string;
+  imageSource: CanvasImageSource;
 }
 
 interface DeveloperItemPickerConfig {
@@ -78,10 +78,21 @@ export class DeveloperItemPicker {
   }
 
   open(): void {
-    this.options = this.getOptions();
-    this.selectedIndex = 0;
-    this.buttons = this.options.map((option, index) => this.createButton(option, index));
-    this.grid.replaceChildren(...this.buttons);
+    const selectedItemId = this.options[this.selectedIndex]?.id;
+    const nextOptions = this.getOptions();
+
+    if (this.optionsChanged(nextOptions)) {
+      this.options = nextOptions;
+      this.buttons = this.options.map((option, index) => this.createButton(option, index));
+      this.grid.replaceChildren(...this.buttons);
+    } else {
+      this.options = nextOptions;
+    }
+
+    this.selectedIndex = Math.max(
+      0,
+      selectedItemId ? this.options.findIndex((option) => option.id === selectedItemId) : 0,
+    );
     this.root.hidden = false;
     this.updateSelection(true);
     window.requestAnimationFrame(() => {
@@ -98,9 +109,6 @@ export class DeveloperItemPicker {
 
     this.root.hidden = true;
     this.cancelWindowInteraction();
-    this.grid.replaceChildren();
-    this.buttons = [];
-    this.options = [];
     this.onClose();
   }
 
@@ -274,10 +282,18 @@ export class DeveloperItemPicker {
     button.setAttribute('role', 'gridcell');
     button.setAttribute('aria-label', `ID ${option.itemNumber}: ${option.name}`);
 
-    const image = document.createElement('img');
-    image.src = option.imageUrl;
-    image.alt = '';
+    const image = document.createElement('canvas');
+    image.className = 'developer-item-icon';
+    image.width = 32;
+    image.height = 32;
+    image.setAttribute('aria-hidden', 'true');
     image.draggable = false;
+    const context = image.getContext('2d');
+
+    if (context) {
+      context.imageSmoothingEnabled = false;
+      context.drawImage(option.imageSource, 0, 0, image.width, image.height);
+    }
 
     const number = document.createElement('span');
     number.className = 'developer-item-number';
@@ -292,6 +308,22 @@ export class DeveloperItemPicker {
     });
     button.addEventListener('click', () => this.select(index));
     return button;
+  }
+
+  private optionsChanged(nextOptions: readonly DeveloperItemPickerOption[]): boolean {
+    return (
+      this.options.length !== nextOptions.length ||
+      nextOptions.some((option, index) => {
+        const previous = this.options[index];
+        return (
+          !previous ||
+          previous.id !== option.id ||
+          previous.itemNumber !== option.itemNumber ||
+          previous.name !== option.name ||
+          previous.imageSource !== option.imageSource
+        );
+      })
+    );
   }
 
   private readonly handleKeyDown = (event: KeyboardEvent): void => {

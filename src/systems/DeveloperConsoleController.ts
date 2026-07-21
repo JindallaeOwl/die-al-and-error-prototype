@@ -65,7 +65,9 @@ export class DeveloperConsoleController {
           id: item.id,
           itemNumber: item.itemNumber,
           name: t(item.nameKey),
-          imageUrl: scene.textures.getBase64(itemIconKey(item.id)),
+          imageSource: scene.textures
+            .get(itemIconKey(item.id))
+            .getSourceImage() as CanvasImageSource,
         })),
     });
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.destroy());
