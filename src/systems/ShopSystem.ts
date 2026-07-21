@@ -37,16 +37,14 @@ export class ShopSystem {
   ) {}
 
   createOffers(collectedItemIds: readonly string[]): ShopOfferState[] {
-    const unseenPassives = SHOP_PASSIVE_PRODUCTS.filter(
-      (product) => {
-        if (product.kind !== 'passive') {
-          return false;
-        }
+    const unseenPassives = SHOP_PASSIVE_PRODUCTS.filter((product) => {
+      if (product.kind !== 'passive') {
+        return false;
+      }
 
-        const item = PASSIVE_ITEMS.find((candidate) => candidate.id === product.itemId);
-        return item ? !isItemAtStackLimit(item, collectedItemIds) : false;
-      },
-    );
+      const item = PASSIVE_ITEMS.find((candidate) => candidate.id === product.itemId);
+      return item ? !isItemAtStackLimit(item, collectedItemIds) : false;
+    });
     const passiveProducts = shuffled(unseenPassives, this.random).slice(0, 2);
     const utilityProduct = randomOf(SHOP_CONSUMABLE_PRODUCTS, this.random);
     const products = shuffled(

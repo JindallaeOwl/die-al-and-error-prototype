@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { AnimationKeys, itemIconKey, PLAYER_DIRECTION_ROWS, TextureKeys } from '../config/assets';
-import { PASSIVE_ITEMS } from '../data/items';
+import { PASSIVE_ITEMS, type ItemCategory } from '../data/items';
 
 export function createPlaceholderTextures(scene: Phaser.Scene): void {
   createPlayerFrameTexture(scene, TextureKeys.player, 0, 0, 0, false);
@@ -436,12 +436,17 @@ function createDoorTexture(scene: Phaser.Scene, key: string, width: number, heig
 function createPassiveItemIcons(scene: Phaser.Scene): void {
   for (const item of PASSIVE_ITEMS) {
     if (!scene.textures.exists(itemIconKey(item.id))) {
-      createItemIcon(scene, item.id, item.tint);
+      createItemIcon(scene, item.id, item.tint, item.category);
     }
   }
 }
 
-function createItemIcon(scene: Phaser.Scene, id: string, tint: number): void {
+function createItemIcon(
+  scene: Phaser.Scene,
+  id: string,
+  tint: number,
+  category: ItemCategory,
+): void {
   const symbolColor = 0x10151c;
   const graphics = scene.add.graphics();
 
@@ -450,7 +455,7 @@ function createItemIcon(scene: Phaser.Scene, id: string, tint: number): void {
   graphics.lineStyle(2, symbolColor, 0.5);
   graphics.strokeCircle(16, 16, 14);
 
-  drawItemSymbol(graphics, id, symbolColor, tint);
+  drawItemSymbol(graphics, id, symbolColor, tint, category);
 
   graphics.generateTexture(itemIconKey(id), 32, 32);
   graphics.destroy();
@@ -461,6 +466,7 @@ function drawItemSymbol(
   id: string,
   color: number,
   tint: number,
+  category: ItemCategory,
 ): void {
   switch (id) {
     case 'red-mushroom': {
@@ -565,10 +571,47 @@ function drawItemSymbol(
       break;
     }
     default: {
-      graphics.fillStyle(color, 1);
-      graphics.fillCircle(16, 16, 6);
+      drawCategorySymbol(graphics, category, color);
     }
   }
+}
+
+function drawCategorySymbol(
+  graphics: Phaser.GameObjects.Graphics,
+  category: ItemCategory,
+  color: number,
+): void {
+  graphics.fillStyle(color, 1);
+
+  if (category === 'offense') {
+    graphics.fillTriangle(16, 6, 25, 24, 7, 24);
+    graphics.fillCircle(16, 18, 3);
+    return;
+  }
+
+  if (category === 'defense') {
+    graphics.beginPath();
+    graphics.moveTo(16, 6);
+    graphics.lineTo(25, 10);
+    graphics.lineTo(22, 23);
+    graphics.lineTo(16, 27);
+    graphics.lineTo(10, 23);
+    graphics.lineTo(7, 10);
+    graphics.closePath();
+    graphics.fillPath();
+    return;
+  }
+
+  if (category === 'utility') {
+    graphics.fillTriangle(7, 16, 18, 7, 18, 12);
+    graphics.fillRect(15, 12, 10, 8);
+    graphics.fillTriangle(18, 20, 18, 25, 7, 16);
+    return;
+  }
+
+  graphics.fillCircle(11, 16, 5);
+  graphics.fillCircle(21, 16, 5);
+  graphics.fillRect(11, 11, 10, 10);
 }
 
 function createKeyTexture(scene: Phaser.Scene): void {

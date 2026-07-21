@@ -113,4 +113,22 @@ describe('ShopSystem', () => {
     expect(state.inventory.coins).toBe(10);
     expect(offer.purchased).toBe(false);
   });
+
+  it('does not charge for a unique passive that is already owned', () => {
+    const system = new ShopSystem(new ItemSystem(() => 0), () => 0);
+    const state = createInitialRunState();
+    state.inventory.coins = 30;
+    state.collectedItemIds.push('toothpick');
+    const offer = {
+      slot: 0,
+      productId: 'shop-toothpick',
+      price: 16,
+      discounted: false,
+      purchased: false,
+    };
+
+    expect(system.purchase(state, offer)).toMatchObject({ status: 'item-capped' });
+    expect(state.inventory.coins).toBe(30);
+    expect(offer.purchased).toBe(false);
+  });
 });

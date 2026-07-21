@@ -22,6 +22,7 @@ import {
 import {
   findItemByReference,
   formatItemNumber,
+  ITEM_SYNERGIES,
   PASSIVE_ITEMS,
   PRISM_LANCE_ITEM_ID,
   QUAD_SHOT_ITEM_ID,
@@ -1023,9 +1024,11 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.hud.showItemHint(
-      t('messages.itemPickup', {
+      t('messages.itemPreview', {
         name: t(nearest.item.nameKey),
         description: t(nearest.item.descriptionKey),
+        rarity: t(`rarities.${nearest.item.rarity}`),
+        category: t(`itemCategories.${nearest.item.category}`),
       }),
     );
   }
@@ -1037,6 +1040,17 @@ export class GameScene extends Phaser.Scene {
 
     const acquisition = this.itemSystem.acquireItem(this.runState, pickup.item);
 
+    if (!acquisition.acquired) {
+      this.hud.showMessage(
+        t('messages.itemMaxStacks', {
+          name: t(pickup.item.nameKey),
+          max: pickup.item.maxStacks,
+        }),
+        1400,
+      );
+      return;
+    }
+
     if (acquisition.newlyUnlockedAbilityId === 'charge-beam') {
       this.player.hasChargeBeam = true;
     }
@@ -1047,14 +1061,23 @@ export class GameScene extends Phaser.Scene {
 
     if (pickup.source === 'room' && currentRoom.type === 'treasure') {
       this.dungeon.markCurrentTreasureClaimed();
+    } else if (pickup.source === 'room' && currentRoom.type === 'combat') {
+      this.dungeon.markCurrentCombatItemRewardClaimed();
     } else if (pickup.source === 'boss' && currentRoom.type === 'boss') {
       this.dungeon.markCurrentBossRewardClaimed();
     }
 
+    const synergyNames = acquisition.newlyActivatedSynergyIds
+      .map((synergyId) => ITEM_SYNERGIES.find((synergy) => synergy.id === synergyId))
+      .filter((synergy) => synergy !== undefined)
+      .map((synergy) => t(synergy.nameKey))
+      .join(', ');
+
     this.hud.showMessage(
-      t('messages.itemPickup', {
+      t(synergyNames ? 'messages.itemPickupSynergy' : 'messages.itemPickup', {
         name: t(pickup.item.nameKey),
         description: t(pickup.item.descriptionKey),
+        synergy: synergyNames,
       }),
       3000,
     );
@@ -1113,6 +1136,17 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    if (result.status === 'item-capped') {
+      this.hud.showMessage(
+        t('messages.itemMaxStacks', {
+          name: t(result.item.nameKey),
+          max: result.item.maxStacks,
+        }),
+        1400,
+      );
+      return;
+    }
+
     if (result.status !== 'purchased') {
       return;
     }
@@ -1124,7 +1158,18 @@ export class GameScene extends Phaser.Scene {
     this.player.setStats(this.runState.stats);
     this.player.setAttackProfile(this.runState.attackProfile);
     const productName = this.getShopProductName(result.product);
-    this.hud.showMessage(t('messages.shopPurchased', { name: productName }), 1800);
+    const synergyNames = (result.acquisition?.newlyActivatedSynergyIds ?? [])
+      .map((synergyId) => ITEM_SYNERGIES.find((synergy) => synergy.id === synergyId))
+      .filter((synergy) => synergy !== undefined)
+      .map((synergy) => t(synergy.nameKey))
+      .join(', ');
+    this.hud.showMessage(
+      t(synergyNames ? 'messages.shopPurchasedSynergy' : 'messages.shopPurchased', {
+        name: productName,
+        synergy: synergyNames,
+      }),
+      2200,
+    );
     this.effects.pickup(offerObject.x, offerObject.y);
     this.audio.play('pickup');
     offerObject.destroy();
@@ -1204,6 +1249,7 @@ export class GameScene extends Phaser.Scene {
   private handleRoomCleared(room: RoomNode): void {
     this.runState.clearedRooms += 1;
     this.dropRoomClearReward(room);
+    this.roomController.spawnCombatItemReward(room);
     this.hud.showMessage(
       room.type === 'boss'
         ? t('messages.stageClear')

@@ -85,12 +85,16 @@ export const en: TranslationTree = {
     shopHealthFull: 'Health is already full',
     shopResourceFull: 'You cannot carry any more',
     shopPurchased: 'Purchased {name}',
+    shopPurchasedSynergy: 'Purchased {name} · Synergy activated: {synergy}',
+    itemMaxStacks: '{name}: maximum stack count is {max}',
+    itemPickupSynergy: '{name}: {description} · Synergy activated: {synergy}',
     noBombs: 'No bombs left',
     rewardGain: '+{amount} {resource}',
     resourceFull: '{resource} is full',
     chestHealed: 'Chest: healed {amount}',
     chestConsumable: 'Chest: +{amount} {resource}',
     itemPickup: '{name}: {description}',
+    itemPreview: '[{rarity} · {category}] {name}: {description}',
     secretItemSpawned: 'Secret input detected: Prism Lance + Quad Shot spawned',
     clear: 'CLEAR',
     localeKo: 'Korean',
@@ -187,5 +191,74 @@ export const en: TranslationTree = {
       name: 'Toothpick',
       description: 'Attacks faster and turns seeds red (+0.7 attack speed, ×1.16 seed speed).',
     },
+    seedPouch: {
+      name: 'Seed Pouch',
+      description: 'Slightly raises damage and seed speed. Stacks up to 5 times.',
+    },
+    barkVest: {
+      name: 'Bark Vest',
+      description: 'Adds and restores half a heart. Stacks up to 3 times.',
+    },
+    runnerRoots: {
+      name: 'Runner Roots',
+      description: 'Raises movement speed. Stacks up to 4 times.',
+    },
+    cloverSprout: {
+      name: 'Clover Sprout',
+      description: 'Raises luck by 0.5. Stacks up to 4 times.',
+    },
+    scopeLens: {
+      name: 'Scope Lens',
+      description: 'Raises range and seed speed. Stacks up to 3 times.',
+    },
+    thornCrown: {
+      name: 'Thorn Crown',
+      description: 'Sacrifices half a maximum heart for a large damage increase.',
+    },
+    rainBoots: {
+      name: 'Rain Boots',
+      description: 'Greatly raises movement speed and slightly raises range.',
+    },
+    amberHeart: {
+      name: 'Amber Heart',
+      description: 'Adds two maximum hearts and restores one. Stacks up to 2 times.',
+    },
+    overclockBulb: {
+      name: 'Overclock Bulb',
+      description: 'Greatly raises fire-rate and seed-speed multipliers.',
+    },
+    luckyLedger: {
+      name: 'Lucky Ledger',
+      description: 'Raises luck by 2 and slightly raises movement speed.',
+    },
+    ironHusk: {
+      name: 'Iron Husk',
+      description:
+        'Trades a little speed for one maximum heart and half-heart healing. Stacks up to 3 times.',
+    },
+    starFertilizer: {
+      name: 'Star Fertilizer',
+      description: 'Raises the damage multiplier and range. Stacks up to 2 times.',
+    },
+  },
+  rarities: {
+    common: 'Common',
+    uncommon: 'Uncommon',
+    rare: 'Rare',
+    legendary: 'Legendary',
+  },
+  itemCategories: {
+    offense: 'Offense',
+    defense: 'Defense',
+    utility: 'Utility',
+    resource: 'Resource',
+  },
+  synergies: {
+    prismArray: 'Prism Array',
+    glassHorizon: 'Glass Horizon',
+    tunedCircuit: 'Tuned Circuit',
+    backupShell: 'Backup Shell',
+    compoundLuck: 'Compound Luck',
+    meteorSeed: 'Meteor Seed',
   },
 };

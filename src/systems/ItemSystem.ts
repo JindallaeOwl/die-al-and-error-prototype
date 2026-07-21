@@ -75,8 +75,7 @@ export class ItemSystem {
     collectedItemIds: readonly string[],
   ): PassiveItemDefinition | null {
     const pool = PASSIVE_ITEMS.filter(
-      (item) =>
-        item.dropSources.includes(source) && !isItemAtStackLimit(item, collectedItemIds),
+      (item) => item.dropSources.includes(source) && !isItemAtStackLimit(item, collectedItemIds),
     );
     return this.pickWeightedByRarity(pool, source);
   }
@@ -178,10 +177,7 @@ export class ItemSystem {
   }
 }
 
-export function getItemStackCount(
-  itemId: string,
-  collectedItemIds: readonly string[],
-): number {
+export function getItemStackCount(itemId: string, collectedItemIds: readonly string[]): number {
   return collectedItemIds.filter((collectedId) => collectedId === itemId).length;
 }
 
@@ -237,7 +233,6 @@ function applyAttackModifiers(
       0,
       6,
     ),
-    hasToothpickCosmetic:
-      profile.hasToothpickCosmetic || (modifiers.hasToothpickCosmetic ?? false),
+    hasToothpickCosmetic: profile.hasToothpickCosmetic || (modifiers.hasToothpickCosmetic ?? false),
   };
 }

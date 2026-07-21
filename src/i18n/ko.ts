@@ -85,12 +85,16 @@ export const ko: TranslationTree = {
     shopHealthFull: '체력이 이미 가득 찼습니다',
     shopResourceFull: '더 이상 보유할 수 없습니다',
     shopPurchased: '{name} 구매 완료',
+    shopPurchasedSynergy: '{name} 구매 완료 · 시너지 발동: {synergy}',
+    itemMaxStacks: '{name}: 최대 {max}개까지 중첩할 수 있습니다',
+    itemPickupSynergy: '{name}: {description} · 시너지 발동: {synergy}',
     noBombs: '폭탄이 없습니다',
     rewardGain: '+{amount} {resource}',
     resourceFull: '{resource} 가득',
     chestHealed: '상자: 체력 {amount} 회복',
     chestConsumable: '상자: +{amount} {resource}',
     itemPickup: '{name}: {description}',
+    itemPreview: '[{rarity} · {category}] {name}: {description}',
     secretItemSpawned: '비밀 입력 감지: 프리즘 창 + 쿼드샷 생성',
     clear: '클리어',
     localeKo: '한국어',
@@ -188,5 +192,74 @@ export const ko: TranslationTree = {
       name: '이쑤시개',
       description: '공격이 빨라지고 씨앗이 붉어집니다 (공격 속도 +0.7, 씨앗 속도 ×1.16).',
     },
+    seedPouch: {
+      name: '씨앗 주머니',
+      description: '공격력과 씨앗 속도가 조금 오릅니다. 최대 5회 중첩됩니다.',
+    },
+    barkVest: {
+      name: '나무껍질 조끼',
+      description: '최대 체력이 반 칸 늘고 반 칸을 회복합니다. 최대 3회 중첩됩니다.',
+    },
+    runnerRoots: {
+      name: '달림뿌리',
+      description: '이동 속도가 오릅니다. 최대 4회 중첩됩니다.',
+    },
+    cloverSprout: {
+      name: '클로버 새싹',
+      description: '행운이 0.5 오릅니다. 최대 4회 중첩됩니다.',
+    },
+    scopeLens: {
+      name: '조준 렌즈',
+      description: '사거리와 씨앗 속도가 오릅니다. 최대 3회 중첩됩니다.',
+    },
+    thornCrown: {
+      name: '가시 왕관',
+      description: '최대 체력 반 칸을 희생해 공격력을 크게 올립니다.',
+    },
+    rainBoots: {
+      name: '빗물 장화',
+      description: '이동 속도가 크게 오르고 사거리가 조금 늘어납니다.',
+    },
+    amberHeart: {
+      name: '호박 심장',
+      description: '최대 체력이 2칸 늘고 1칸을 회복합니다. 최대 2회 중첩됩니다.',
+    },
+    overclockBulb: {
+      name: '오버클럭 구근',
+      description: '공격 속도와 씨앗 속도 배율이 크게 오릅니다.',
+    },
+    luckyLedger: {
+      name: '행운 장부',
+      description: '행운이 2 오르고 이동 속도가 조금 빨라집니다.',
+    },
+    ironHusk: {
+      name: '철 껍질',
+      description:
+        '이동 속도를 조금 잃고 최대 체력 1칸과 체력 반 칸을 얻습니다. 최대 3회 중첩됩니다.',
+    },
+    starFertilizer: {
+      name: '별빛 비료',
+      description: '공격력 배율과 사거리가 오릅니다. 최대 2회 중첩됩니다.',
+    },
+  },
+  rarities: {
+    common: '일반',
+    uncommon: '고급',
+    rare: '희귀',
+    legendary: '전설',
+  },
+  itemCategories: {
+    offense: '공격',
+    defense: '방어',
+    utility: '기동',
+    resource: '자원',
+  },
+  synergies: {
+    prismArray: '프리즘 배열',
+    glassHorizon: '유리 지평선',
+    tunedCircuit: '조율 회로',
+    backupShell: '예비 껍질',
+    compoundLuck: '복리 행운',
+    meteorSeed: '유성 씨앗',
   },
 };
