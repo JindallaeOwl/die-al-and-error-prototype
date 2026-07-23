@@ -28,6 +28,11 @@ export function createEnemy(
     case 'dasher':
       enemy = new DasherEnemy(scene, x, y, definition, floor);
       break;
+    case 'splitter':
+    case 'splitterling':
+      // Both use the chaser's pursuit behavior; splitting is wired in RoomController.
+      enemy = new ChaserEnemy(scene, x, y, definition, floor);
+      break;
     case 'faultWarden':
       enemy = new FaultWardenBoss(scene, x, y, definition, floor);
       break;

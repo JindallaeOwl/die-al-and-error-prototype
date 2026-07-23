@@ -17,7 +17,13 @@ import {
   WALL_THICKNESS,
 } from '../config/gameConfig';
 import { PASSIVE_ITEMS } from '../data/items';
+import { ENEMY_DEFINITIONS, type EnemyId } from '../data/enemies';
 import { getRoomTemplate } from '../data/rooms';
+import {
+  getReinforcementCount,
+  getReinforcementPool,
+  getSplitChildSpawns,
+} from './EnemyReinforcementRules';
 import { SHOP_NPC_POSITION, SHOP_OFFER_POSITIONS } from '../data/shop';
 import type { ItemSystem } from './ItemSystem';
 import type { DungeonManager, RoomNode } from './DungeonManager';
@@ -251,12 +257,12 @@ export class RoomController {
   private spawnCombatRoom(room: RoomNode, entryPosition?: RoomPoint): void {
     const template = getRoomTemplate(room.templateId);
     const spawnSet = [...randomOf(template.spawnSets, this.random)];
-    const extraEnemies =
-      room.type === 'combat' ? Math.min(4, Math.floor((this.runState.floor - 1) * 0.8)) : 0;
+    const extraEnemies = getReinforcementCount(this.runState.floor, room.type);
+    const extraPool = getReinforcementPool(this.runState.floor);
 
     for (let i = 0; i < extraEnemies; i += 1) {
       spawnSet.push({
-        enemyId: randomOf(['chaser', 'shooter', 'dasher'] as const, this.random),
+        enemyId: randomOf(extraPool, this.random),
         x: randomInt(96, 384, this.random),
         y: randomInt(64, 208, this.random),
       });
@@ -281,11 +287,37 @@ export class RoomController {
         this.runState.floor,
       );
       occupiedPositions.push(safePosition);
-      enemy.once('enemy-defeated', this.onEnemyDefeated);
+      this.registerSpawnedEnemy(enemy, spawn.enemyId);
+    }
+  }
 
-      if (enemy.isBoss && this.onBossPhaseTwo) {
-        enemy.once('boss-phase-two', this.onBossPhaseTwo);
-      }
+  private registerSpawnedEnemy(enemy: BaseEnemy, enemyId: EnemyId): void {
+    enemy.once('enemy-defeated', this.onEnemyDefeated);
+
+    if (enemy.isBoss && this.onBossPhaseTwo) {
+      enemy.once('boss-phase-two', this.onBossPhaseTwo);
+    }
+
+    // A splitter spawns its children while it is still counted as active, so the
+    // room never briefly registers zero enemies and opens its doors early.
+    if (ENEMY_DEFINITIONS[enemyId].splitChildId) {
+      enemy.once('enemy-defeated', () => this.spawnSplitChildren(enemy, enemyId));
+    }
+  }
+
+  private spawnSplitChildren(parent: BaseEnemy, parentId: EnemyId): void {
+    const childSpawns = getSplitChildSpawns(parentId, parent.x, parent.y, ROOM_RECT, this.random);
+
+    for (const spawn of childSpawns) {
+      const child = createEnemy(
+        this.scene,
+        this.enemies,
+        spawn.enemyId,
+        spawn.x,
+        spawn.y,
+        this.runState.floor,
+      );
+      this.registerSpawnedEnemy(child, spawn.enemyId);
     }
   }
 

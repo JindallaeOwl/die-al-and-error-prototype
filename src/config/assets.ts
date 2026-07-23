@@ -19,6 +19,8 @@ export const TextureKeys = {
   enemyChaser: 'enemy-chaser',
   enemyShooter: 'enemy-shooter',
   enemyDasher: 'enemy-dasher',
+  enemySplitter: 'enemy-splitter',
+  enemySplitterling: 'enemy-splitterling',
   enemyBoss: 'enemy-boss',
   enemyRootKernel: 'enemy-root-kernel',
   doorHorizontal: 'door-horizontal',

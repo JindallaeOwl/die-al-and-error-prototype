@@ -16,6 +16,8 @@ export function createPlaceholderTextures(scene: Phaser.Scene): void {
   createChaserTexture(scene);
   createShooterTexture(scene);
   createDasherTexture(scene);
+  createSplitterTexture(scene);
+  createSplitterlingTexture(scene);
   createBossTexture(scene);
   createRootKernelTexture(scene);
   createDoorTexture(scene, TextureKeys.doorHorizontal, 48, 16);
@@ -319,6 +321,46 @@ function createDasherTexture(scene: Phaser.Scene): void {
   graphics.lineBetween(10, 31, 16, 27);
   graphics.lineBetween(32, 31, 26, 27);
   graphics.generateTexture(TextureKeys.enemyDasher, 42, 42);
+  graphics.destroy();
+}
+
+function createSplitterTexture(scene: Phaser.Scene): void {
+  const graphics = scene.add.graphics();
+  graphics.fillStyle(0x05090e, 0.4);
+  graphics.fillEllipse(21, 37, 32, 7);
+  graphics.fillStyle(0x3fbf9a, 1);
+  graphics.lineStyle(3, 0x11463a, 1);
+  graphics.fillCircle(21, 21, 17);
+  graphics.strokeCircle(21, 21, 17);
+  graphics.fillStyle(0x7fe6c6, 0.75);
+  graphics.fillCircle(15, 14, 5);
+  // Central seam hints that this enemy will split apart when defeated.
+  graphics.lineStyle(3, 0x0c3329, 1);
+  graphics.lineBetween(21, 5, 21, 37);
+  graphics.lineStyle(2, 0x0c3329, 1);
+  graphics.lineBetween(21, 14, 12, 20);
+  graphics.lineBetween(21, 26, 31, 30);
+  graphics.fillStyle(0x0c1a17, 1);
+  graphics.fillCircle(15, 22, 2.5);
+  graphics.fillCircle(27, 22, 2.5);
+  graphics.generateTexture(TextureKeys.enemySplitter, 42, 42);
+  graphics.destroy();
+}
+
+function createSplitterlingTexture(scene: Phaser.Scene): void {
+  const graphics = scene.add.graphics();
+  graphics.fillStyle(0x05090e, 0.4);
+  graphics.fillEllipse(12, 21, 18, 5);
+  graphics.fillStyle(0x5fd9b4, 1);
+  graphics.lineStyle(2, 0x11463a, 1);
+  graphics.fillCircle(12, 12, 9);
+  graphics.strokeCircle(12, 12, 9);
+  graphics.fillStyle(0xbdf4e2, 0.8);
+  graphics.fillCircle(9, 9, 2.5);
+  graphics.fillStyle(0x0c1a17, 1);
+  graphics.fillCircle(9, 13, 1.8);
+  graphics.fillCircle(15, 13, 1.8);
+  graphics.generateTexture(TextureKeys.enemySplitterling, 24, 24);
   graphics.destroy();
 }
 

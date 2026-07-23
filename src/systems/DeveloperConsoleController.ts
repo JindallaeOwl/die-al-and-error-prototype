@@ -179,15 +179,28 @@ export class DeveloperConsoleController {
   }
 
   private killActiveEnemies(): DeveloperConsoleCommandResult {
-    const activeEnemies = (this.config.enemies.getChildren() as BaseEnemy[]).filter(
-      (enemy) => enemy.active,
-    );
+    let killed = 0;
 
-    for (const enemy of activeEnemies) {
-      enemy.takeDamage(Number.MAX_SAFE_INTEGER, this.config.player.x, this.config.player.y);
+    // Killing a splitter spawns children during the loop, so a single snapshot
+    // would leave them alive. Repeat until the group is empty, bounded to avoid
+    // an infinite loop if an enemy ever replicates without end.
+    for (let pass = 0; pass < 8; pass += 1) {
+      const activeEnemies = (this.config.enemies.getChildren() as BaseEnemy[]).filter(
+        (enemy) => enemy.active,
+      );
+
+      if (activeEnemies.length === 0) {
+        break;
+      }
+
+      for (const enemy of activeEnemies) {
+        enemy.takeDamage(Number.MAX_SAFE_INTEGER, this.config.player.x, this.config.player.y);
+      }
+
+      killed += activeEnemies.length;
     }
 
-    return { lines: [`적 ${activeEnemies.length}명 처치`] };
+    return { lines: [`적 ${killed}명 처치`] };
   }
 
   private enterFloor(floor: number): DeveloperConsoleCommandResult {

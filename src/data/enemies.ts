@@ -1,7 +1,8 @@
 import { TextureKeys } from '../config/assets';
 import { BOSS_TUNING, PLAYER_DAMAGE_PER_HIT, ROOT_KERNEL_TUNING } from '../config/gameConfig';
 
-export type EnemyId = 'chaser' | 'shooter' | 'dasher' | 'faultWarden' | 'rootKernel';
+export type EnemyId =
+  'chaser' | 'shooter' | 'dasher' | 'splitter' | 'splitterling' | 'faultWarden' | 'rootKernel';
 
 export interface EnemyDefinition {
   id: EnemyId;
@@ -22,6 +23,8 @@ export interface EnemyDefinition {
   dashDurationMs?: number;
   dashSpeed?: number;
   wanderSpeed?: number;
+  splitChildId?: EnemyId;
+  splitChildCount?: number;
   bossBarColor?: number;
   bossPhaseTwoBarColor?: number;
   phaseTwoMessageKey?: string;
@@ -68,6 +71,30 @@ export const ENEMY_DEFINITIONS: Record<EnemyId, EnemyDefinition> = {
     dashDurationMs: 280,
     dashSpeed: 170,
     wanderSpeed: 54,
+  },
+  splitter: {
+    id: 'splitter',
+    kind: 'normal',
+    displayName: 'Cleave Bulb',
+    textureKey: TextureKeys.enemySplitter,
+    maxHealth: 4.2,
+    speed: 38,
+    contactDamage: PLAYER_DAMAGE_PER_HIT,
+    bodyRadius: 13,
+    score: 22,
+    splitChildId: 'splitterling',
+    splitChildCount: 2,
+  },
+  splitterling: {
+    id: 'splitterling',
+    kind: 'normal',
+    displayName: 'Cleave Spore',
+    textureKey: TextureKeys.enemySplitterling,
+    maxHealth: 1.1,
+    speed: 84,
+    contactDamage: PLAYER_DAMAGE_PER_HIT,
+    bodyRadius: 8,
+    score: 6,
   },
   faultWarden: {
     id: 'faultWarden',
