@@ -374,10 +374,11 @@ export class TitleScene extends Phaser.Scene {
     // Normally these Scenes are already stopped by TitleTransitionScene.
     // Repeating the cleanup here makes starting a new run safe even if an
     // earlier shutdown listener failed and left a paused Scene behind.
-    stopScenesSafely(this.scene.manager, ['PauseScene', 'GameScene']);
+    stopScenesSafely(this.scene.manager, ['PauseScene', 'GameScene', 'OverworldScene']);
 
     try {
-      this.scene.start('GameScene');
+      // 새 게임 흐름: 타이틀 → 오버월드(대륙) → 던전(GameScene).
+      this.scene.start('OverworldScene');
     } catch (error) {
       console.error('Failed to start a new game.', error);
       this.startTransitionStarted = false;

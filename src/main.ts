@@ -3,6 +3,7 @@ import './styles.css';
 import { GAME_HEIGHT, GAME_WIDTH } from './config/gameConfig';
 import { BootScene } from './scenes/BootScene';
 import { GameScene } from './scenes/GameScene';
+import { OverworldScene } from './scenes/OverworldScene';
 import { PauseScene } from './scenes/PauseScene';
 import { TitleScene } from './scenes/TitleScene';
 import { TitleTransitionScene } from './scenes/TitleTransitionScene';
@@ -45,7 +46,7 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
-  scene: [BootScene, TitleScene, GameScene, PauseScene, TitleTransitionScene],
+  scene: [BootScene, TitleScene, OverworldScene, GameScene, PauseScene, TitleTransitionScene],
 };
 
 new Phaser.Game(config);
