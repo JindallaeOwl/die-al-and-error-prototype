@@ -1,4 +1,5 @@
 import type { EnemyId } from './enemies';
+import { STAGES } from './stages';
 
 export type RoomType = 'start' | 'combat' | 'shop' | 'treasure' | 'boss';
 
@@ -42,20 +43,23 @@ export const TREASURE_ROOM_TEMPLATE: RoomTemplate = {
   spawnSets: [[]],
 };
 
+export function bossRoomTemplateId(bossId: EnemyId): string {
+  return `boss-${bossId}`;
+}
+
+// 보스방 템플릿은 스테이지 데이터에 등장하는 모든 보스에서 파생한다.
+// 보스별 전용 방 구조(장애물 배치 등)는 추후 확장 작업으로 남기고,
+// v1.0은 공통 구조(중앙 상단 스폰)에 보스만 다르게 배치한다.
+const BOSS_SPAWN_POINT = { x: 240, y: 110 } as const;
+
 export const BOSS_ROOM_TEMPLATES: RoomTemplate[] = [
-  {
-    id: 'error-sanctum',
-    roomType: 'boss',
-    accentColor: 0xd84f66,
-    spawnSets: [[{ enemyId: 'faultWarden', x: 240, y: 110 }]],
-  },
-  {
-    id: 'root-cellar',
-    roomType: 'boss',
-    accentColor: 0x4f9f71,
-    spawnSets: [[{ enemyId: 'rootKernel', x: 240, y: 110 }]],
-  },
-];
+  ...new Set(STAGES.flatMap((stage) => stage.bossIds)),
+].map((bossId) => ({
+  id: bossRoomTemplateId(bossId),
+  roomType: 'boss',
+  accentColor: 0xd84f66,
+  spawnSets: [[{ enemyId: bossId, x: BOSS_SPAWN_POINT.x, y: BOSS_SPAWN_POINT.y }]],
+}));
 
 export const COMBAT_ROOM_TEMPLATES: RoomTemplate[] = [
   {

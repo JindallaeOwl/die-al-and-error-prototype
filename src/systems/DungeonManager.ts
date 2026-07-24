@@ -1,11 +1,12 @@
 import {
-  BOSS_ROOM_TEMPLATES,
+  bossRoomTemplateId,
   COMBAT_ROOM_TEMPLATES,
   SHOP_ROOM_TEMPLATE,
   START_ROOM_TEMPLATE,
   TREASURE_ROOM_TEMPLATE,
   type RoomType,
 } from '../data/rooms';
+import { getStageProgress, TOTAL_FLOORS } from '../data/stages';
 import { DIRECTIONS, OPPOSITE_DIRECTION, type Direction, moveCoord } from '../utils/directions';
 import { randomOf, shuffled, type RandomSource } from '../utils/random';
 import type { RewardDrop } from './RewardSystem';
@@ -59,6 +60,10 @@ export class DungeonManager {
   constructor(private readonly random: RandomSource = Math.random) {}
 
   generateFloor(floor: number): void {
+    if (!Number.isInteger(floor) || floor < 1 || floor > TOTAL_FLOORS) {
+      throw new Error(`Invalid floor: ${floor} (expected an integer in 1-${TOTAL_FLOORS})`);
+    }
+
     this.floor = floor;
     this.rooms.clear();
     this.nextDroppedRewardId = 1;
@@ -416,7 +421,7 @@ export class DungeonManager {
     const bossNode = this.createRoom(
       moveCoord(baseNode.coord, direction),
       'boss',
-      BOSS_ROOM_TEMPLATES[(this.floor - 1) % BOSS_ROOM_TEMPLATES.length].id,
+      bossRoomTemplateId(getStageProgress(this.floor).bossId),
     );
     this.connectRooms(baseNode, bossNode, direction);
   }

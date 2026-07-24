@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { BOSS_ROOM_TEMPLATES, bossRoomTemplateId, getRoomTemplate } from '../src/data/rooms';
+import { STAGES } from '../src/data/stages';
 import { DungeonManager } from '../src/systems/DungeonManager';
 
 describe('DungeonManager', () => {
@@ -35,16 +37,54 @@ describe('DungeonManager', () => {
     expect(specialRooms.every((room) => !room.specialRoomUnlocked)).toBe(true);
   });
 
-  it('alternates boss templates by floor', () => {
+  it('selects each floor boss from the stage data (1-8)', () => {
+    const dungeon = new DungeonManager(() => 0);
+    // 순환 검증을 피하기 위해 층별 기대 보스를 리터럴로 명시한다.
+    const expected: [number, string][] = [
+      [1, 'boss-rootGnarl'],
+      [2, 'boss-rootKernel'],
+      [3, 'boss-wriggleMass'],
+      [4, 'boss-faultWarden'],
+      [5, 'boss-flyQueen'],
+      [6, 'boss-faultWarden'],
+      [7, 'boss-thornTangle'],
+      [8, 'boss-rootKernel'],
+    ];
+
+    for (const [floor, templateId] of expected) {
+      dungeon.generateFloor(floor);
+      expect(
+        dungeon.getRooms().find((room) => room.type === 'boss')?.templateId,
+        `floor ${floor}`,
+      ).toBe(templateId);
+    }
+  });
+
+  it('rejects floors outside the stage range', () => {
     const dungeon = new DungeonManager(() => 0);
 
-    dungeon.generateFloor(1);
-    expect(dungeon.getRooms().find((room) => room.type === 'boss')?.templateId).toBe(
-      'error-sanctum',
-    );
+    for (const invalid of [0, 9, -1, 1.5]) {
+      expect(() => dungeon.generateFloor(invalid), `floor ${invalid}`).toThrow();
+    }
+  });
 
-    dungeon.generateFloor(2);
-    expect(dungeon.getRooms().find((room) => room.type === 'boss')?.templateId).toBe('root-cellar');
+  it('derives one valid boss room template per unique stage boss', () => {
+    const uniqueBossIds = [...new Set(STAGES.flatMap((stage) => stage.bossIds))];
+    const templateIds = BOSS_ROOM_TEMPLATES.map((template) => template.id);
+
+    expect(new Set(templateIds).size).toBe(templateIds.length);
+    expect(templateIds).toHaveLength(uniqueBossIds.length);
+
+    for (const bossId of uniqueBossIds) {
+      const template = BOSS_ROOM_TEMPLATES.find(
+        (candidate) => candidate.id === bossRoomTemplateId(bossId),
+      );
+
+      expect(template, bossId).toBeDefined();
+      expect(template?.roomType).toBe('boss');
+      expect(template?.spawnSets.flat().map((spawn) => spawn.enemyId)).toEqual([bossId]);
+      expect(() => getRoomTemplate(bossRoomTemplateId(bossId))).not.toThrow();
+    }
   });
 
   it('can directly select a generated room for developer navigation', () => {
