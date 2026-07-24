@@ -19,7 +19,7 @@ interface CombatCollisionConfig {
   obstacles: Phaser.Physics.Arcade.StaticGroup;
   effects: EffectsSystem;
   audio: AudioSystem;
-  isGameOver: () => boolean;
+  isRunEnded: () => boolean;
   onPlayerDamaged: () => void;
 }
 
@@ -34,7 +34,7 @@ export class CombatCollisionSystem {
   private readonly obstacles: Phaser.Physics.Arcade.StaticGroup;
   private readonly effects: EffectsSystem;
   private readonly audio: AudioSystem;
-  private readonly isGameOver: () => boolean;
+  private readonly isRunEnded: () => boolean;
   private readonly onPlayerDamaged: () => void;
 
   constructor(config: CombatCollisionConfig) {
@@ -48,7 +48,7 @@ export class CombatCollisionSystem {
     this.obstacles = config.obstacles;
     this.effects = config.effects;
     this.audio = config.audio;
-    this.isGameOver = config.isGameOver;
+    this.isRunEnded = config.isRunEnded;
     this.onPlayerDamaged = config.onPlayerDamaged;
   }
 
@@ -88,7 +88,7 @@ export class CombatCollisionSystem {
   }
 
   update(): void {
-    if (!this.player.active || !this.player.body || this.isGameOver()) {
+    if (!this.player.active || !this.player.body || this.isRunEnded()) {
       return;
     }
 

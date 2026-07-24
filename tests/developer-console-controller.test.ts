@@ -53,7 +53,7 @@ function createController() {
     items: { add: vi.fn() },
     shopSystem: { forceDiscount: vi.fn() },
     roomController: { refreshCurrentShop: vi.fn() },
-    isGameOver: () => false,
+    isRunEnded: () => false,
     isPauseTransitionStarted: () => false,
     resetFloorTransition: vi.fn(),
     onRoomChanged: vi.fn(),

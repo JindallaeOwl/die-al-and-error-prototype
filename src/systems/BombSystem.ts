@@ -17,7 +17,7 @@ interface BombSystemConfig {
   obstacles: Phaser.Physics.Arcade.StaticGroup;
   effects: EffectsSystem;
   audio: AudioSystem;
-  isGameOver: () => boolean;
+  isRunEnded: () => boolean;
 }
 
 export type BombPlantResult = 'planted' | 'no-bombs' | 'cooldown' | 'blocked';
@@ -30,7 +30,7 @@ export class BombSystem {
   private readonly obstacles: Phaser.Physics.Arcade.StaticGroup;
   private readonly effects: EffectsSystem;
   private readonly audio: AudioSystem;
-  private readonly isGameOver: () => boolean;
+  private readonly isRunEnded: () => boolean;
   private readonly plantedBombs: Phaser.GameObjects.Group;
   private nextBombAt = 0;
 
@@ -42,7 +42,7 @@ export class BombSystem {
     this.obstacles = config.obstacles;
     this.effects = config.effects;
     this.audio = config.audio;
-    this.isGameOver = config.isGameOver;
+    this.isRunEnded = config.isRunEnded;
     this.plantedBombs = this.scene.add.group();
     this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.clear());
   }
@@ -52,7 +52,7 @@ export class BombSystem {
       this.runState,
       this.scene.time.now,
       this.nextBombAt,
-      this.isGameOver(),
+      this.isRunEnded(),
     );
 
     if (decision.status !== 'planted') {

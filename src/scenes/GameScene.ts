@@ -42,7 +42,7 @@ import {
   KONAMI_CODE,
   SecretCodeTracker,
 } from '../systems/SecretCodeSystem';
-import { createInitialRunState, type RunState } from '../systems/RunState';
+import { createInitialRunState, isRunEnded, type RunState } from '../systems/RunState';
 import { getEffectiveDamage } from '../systems/PlayerStatSystem';
 import { BossHud } from '../ui/BossHud';
 import { Hud } from '../ui/Hud';
@@ -116,7 +116,7 @@ export class GameScene extends Phaser.Scene {
     if (
       !isPauseCode(event.code) ||
       event.repeat ||
-      this.gameOverStarted ||
+      isRunEnded(this.runState) ||
       this.pauseTransitionStarted ||
       !this.scene.isActive()
     ) {
@@ -222,7 +222,7 @@ export class GameScene extends Phaser.Scene {
       obstacles: this.roomController.obstacles,
       effects: this.effects,
       audio: this.audio,
-      isGameOver: () => this.gameOverStarted,
+      isRunEnded: () => isRunEnded(this.runState),
     });
     this.roomTransitions = new RoomTransitionSystem({
       scene: this,
@@ -253,7 +253,7 @@ export class GameScene extends Phaser.Scene {
       roomController: this.roomController,
       roomTransitions: this.roomTransitions,
       hud: this.hud,
-      isGameOver: () => this.gameOverStarted,
+      isRunEnded: () => isRunEnded(this.runState),
       isPauseTransitionStarted: () => this.pauseTransitionStarted,
       resetFloorTransition: () => {
         this.floorTransitionStarted = false;
@@ -274,7 +274,7 @@ export class GameScene extends Phaser.Scene {
       obstacles: this.roomController.obstacles,
       effects: this.effects,
       audio: this.audio,
-      isGameOver: () => this.gameOverStarted,
+      isRunEnded: () => isRunEnded(this.runState),
       onPlayerDamaged: () => this.queuePlayerDamagedFeedback(),
     });
     this.setupRuntimeErrorReporting();
@@ -290,7 +290,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(time: number, delta: number): void {
-    if (this.gameOverStarted) {
+    if (isRunEnded(this.runState)) {
       return;
     }
 
@@ -415,7 +415,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private spawnSecretSynergyItems(): void {
-    if (this.gameOverStarted) {
+    if (isRunEnded(this.runState)) {
       return;
     }
 
@@ -507,7 +507,9 @@ export class GameScene extends Phaser.Scene {
 
   private setupPlayerEvents(): void {
     this.player.on('player-died', () => {
-      if (this.gameOverStarted) {
+      // 판정은 RunState.outcome이 기준이고, gameOverStarted는 오버레이·전환의
+      // 중복 실행을 막는 표시용 상태로만 쓴다.
+      if (isRunEnded(this.runState) || this.gameOverStarted) {
         return;
       }
 
@@ -516,6 +518,7 @@ export class GameScene extends Phaser.Scene {
         itemCount: this.runState.collectedItemIds.length,
         score: this.runState.score,
       };
+      this.runState.outcome = 'defeated';
       this.gameOverStarted = true;
 
       // Display the browser overlay before touching the physics world. It is
@@ -982,7 +985,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handleBossPhaseTwo(boss: BaseEnemy): void {
-    if (this.gameOverStarted) {
+    if (isRunEnded(this.runState)) {
       return;
     }
 
@@ -1012,7 +1015,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handlePlayerDamaged(): void {
-    if (this.gameOverStarted) {
+    if (isRunEnded(this.runState)) {
       return;
     }
 
@@ -1023,7 +1026,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private queuePlayerDamagedFeedback(): void {
-    if (this.playerDamageFeedbackQueued || this.gameOverStarted) {
+    if (this.playerDamageFeedbackQueued || isRunEnded(this.runState)) {
       return;
     }
 
@@ -1035,7 +1038,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handleFloorExitOverlap(exit: FloorExit): void {
-    if (this.gameOverStarted || this.floorTransitionStarted || !exit.canEnter(this.time.now)) {
+    if (isRunEnded(this.runState) || this.floorTransitionStarted || !exit.canEnter(this.time.now)) {
       return;
     }
 
@@ -1046,7 +1049,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private advanceFloor(): void {
-    if (this.gameOverStarted) {
+    if (isRunEnded(this.runState)) {
       return;
     }
 

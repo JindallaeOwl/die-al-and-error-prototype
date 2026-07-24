@@ -8,8 +8,13 @@ import type { ConsumableType } from '../data/rewards';
 
 export type InventoryState = Record<ConsumableType, number>;
 
+// 런 종료 여부의 유일한 논리 기준. Scene의 표시용 상태(gameOverStarted 등)는
+// 오버레이·전환의 중복 실행만 막고, 패배/탈출 판정은 항상 이 값에서 읽는다.
+export type RunOutcome = 'playing' | 'defeated' | 'escaped';
+
 export interface RunState {
   adminUsed: boolean;
+  outcome: RunOutcome;
   floor: number;
   clearedRooms: number;
   score: number;
@@ -24,6 +29,7 @@ export interface RunState {
 export function createInitialRunState(): RunState {
   return {
     adminUsed: false,
+    outcome: 'playing',
     floor: 1,
     clearedRooms: 0,
     score: 0,
@@ -42,4 +48,9 @@ export function createInitialRunState(): RunState {
 
 export function isRunEligibleForRanking(runState: RunState): boolean {
   return !runState.adminUsed;
+}
+
+// 패배·탈출을 공통으로 확인하는 게임 동작 차단 기준.
+export function isRunEnded(runState: RunState): boolean {
+  return runState.outcome !== 'playing';
 }

@@ -35,7 +35,7 @@ export interface DeveloperConsoleControllerConfig {
   roomController: RoomController;
   roomTransitions: RoomTransitionSystem;
   hud: Hud;
-  isGameOver: () => boolean;
+  isRunEnded: () => boolean;
   isPauseTransitionStarted: () => boolean;
   resetFloorTransition: () => void;
   onRoomChanged: (room: RoomNode) => void;
@@ -55,7 +55,7 @@ export class DeveloperConsoleController {
     const { scene } = this.config;
     this.developerConsole = new DeveloperConsole({
       canOpen: () =>
-        !this.config.isGameOver() &&
+        !this.config.isRunEnded() &&
         !this.config.isPauseTransitionStarted() &&
         scene.scene.isActive(),
       onOpenChanged: (open) => this.handleOpenChanged(open),
@@ -114,7 +114,7 @@ export class DeveloperConsoleController {
       }
 
       scene.scene.pause();
-    } else if (!this.config.isGameOver()) {
+    } else if (!this.config.isRunEnded()) {
       if (keyboard) {
         keyboard.enabled = true;
       }
